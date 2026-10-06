@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoryAtlas</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <header>
+    <div class="logo">
+      <div class="logo-mark">🧭</div>
+      <div>
+        StoryAtlas
+        <span class="logo-sub">Family Memory Project</span>
+      </div>
+    </div>
+    <nav>
+      <button id="nav-interview" class="active">Interview</button>
+      <button id="nav-timeline">Stories</button>
+      <button id="nav-map">Map</button>
+      <button id="nav-keepsake">Keepsake</button>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ════════════════════════════════════════════════════════
+         INTERVIEW PAGE
+    ═════════════════════════════════════════════════════════ -->
+    <section id="page-interview" class="page active">
+
+      <!-- Ordering question card -->
+      <div id="ordering-card" class="ordering-card" style="display:none; max-width:920px; margin:20px auto 0; padding:0 32px;">
+        <div style="background:var(--gold-light); border:1px solid #e0c870; border-left:4px solid var(--gold-mid); border-radius:var(--radius-sm); padding:16px 18px;">
+          <div class="ordering-label">One quick question to place this story in time</div>
+          <div class="ordering-question" id="ordering-question-text">…</div>
+          <div class="btn-row">
+            <button class="btn btn-secondary btn-sm" data-ordering="before">⬆ Before</button>
+            <button class="btn btn-secondary btn-sm" data-ordering="after">⬇ After</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-column layout -->
+      <div class="interview-layout" style="margin-top:28px;">
+
+        <!-- ── LEFT: main interview ── -->
+        <div class="interview-main">
+
+          <!-- Identity strip -->
+          <div class="identity-strip">
+            <div class="avatar" id="storyteller-avatar">?</div>
+            <div>
+              <div class="identity-name" id="storyteller-display-name">Loading…</div>
+              <div class="identity-sub" id="session-label">Session in progress</div>
+            </div>
+          </div>
+
+          <!-- Question -->
+          <div class="question-block">
+            <div class="question-eyebrow" id="question-eyebrow">StoryAtlas asks</div>
+            <div class="question-text" id="ai-question-text">
+              Tell me about the town or neighbourhood you grew up in — what did the streets look like when you stepped outside as a child?
+            </div>
+            <div class="question-escape" id="question-escape">
+              Or start anywhere — just press the mic and begin.
+            </div>
+          </div>
+
+          <!-- Transcript -->
+          <div class="transcript-wrap" id="transcript-wrap">
+            <div class="transcript-body"
+                 id="transcript"
+                 data-placeholder="Your story will appear here as you speak…"
+                 contenteditable="false"></div>
+            <div class="transcript-footer">
+              <div class="pulse-dot" id="pulse-dot"></div>
+              <span class="transcript-status" id="transcript-status">Ready to record</span>
+            </div>
+          </div>
+
+          <!-- Mic -->
+          <div class="mic-section">
+            <button class="btn-mic" id="btn-mic" title="Start / stop recording">🎙</button>
+            <div class="mic-info">
+              <div class="mic-label" id="mic-label">Press to start recording</div>
+              <div class="mic-sub">Chrome or Edge recommended for voice input</div>
+            </div>
+          </div>
+
+          <!-- Primary actions -->
+          <div class="primary-actions">
+            <button class="btn btn-primary" id="btn-save-chunk" disabled>Save this story</button>
+            <button class="btn btn-secondary" id="btn-edit" style="display:none">✏ Edit</button>
+            <button class="btn btn-secondary" id="btn-discard" style="display:none">Discard</button>
+          </div>
+
+          <!-- Secondary actions -->
+          <div class="secondary-actions">
+            <button class="btn-ghost" id="btn-next-q">Skip → next question</button>
+            <label class="btn-ghost" style="cursor:pointer;" title="Attach a photo">
+              📷 Attach photo
+              <input type="file" id="photo-input" accept="image/*" style="display:none">
+            </label>
+          </div>
+
+          <!-- Saved banner -->
+          <div class="saved-banner" id="chunk-saved-banner">
+            <span>✓</span>
+            <span class="banner-title">Story saved.</span>
+            <button class="dismiss-btn" onclick="document.getElementById('chunk-saved-banner').classList.remove('show')" title="Dismiss">×</button>
+          </div>
+
+          <!-- Auto follow-up block (shown after save) -->
+          <div class="followup-block" id="followup-block">
+            <div class="followup-eyebrow">Follow-up question</div>
+            <div class="followup-question" id="followup-question-text">Loading…</div>
+            <div class="followup-actions">
+              <button class="btn btn-gold btn-sm" id="btn-answer-followup">Answer this</button>
+              <button class="btn btn-secondary btn-sm" id="btn-skip-followup">Skip →</button>
+            </div>
+          </div>
+
+          <!-- No-speech fallback -->
+          <div id="speech-unsupported" style="display:none; margin-top:16px; padding:13px 16px; background:var(--sienna-light); border:1px solid #d8b0a0; border-radius:var(--radius-sm); font-size:14px; color:var(--sienna); line-height:1.6; font-family:var(--font-ui);">
+            ⚠ Your browser doesn't support the Web Speech API. Please use <strong>Chrome</strong> or <strong>Edge</strong>. You can still type your story in the box above.
+          </div>
+
+        </div><!-- /interview-main -->
+
+        <!-- ── RIGHT: context aside ── -->
+        <div class="interview-aside">
+
+          <div class="aside-card">
+            <div class="aside-title">This collection</div>
+            <div class="aside-stat">
+              <div class="aside-stat-num" id="aside-chunk-count">0</div>
+              <div class="aside-stat-label">stories saved</div>
+            </div>
+            <div class="aside-stat">
+              <div class="aside-stat-num" id="aside-place-count">0</div>
+              <div class="aside-stat-label">places on the map</div>
+            </div>
+          </div>
+
+          <div class="aside-card">
+            <div class="aside-title">Recent stories</div>
+            <ul class="recent-chunks" id="aside-recent"></ul>
+            <div style="margin-top:12px;">
+              <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="showPage('timeline')">View all stories →</button>
+            </div>
+          </div>
+
+          <div class="compass-rule">✦ · · ✦</div>
+
+          <div style="font-size:12px; color:var(--faint); font-family:var(--font-ui); line-height:1.7; padding:0 2px;">
+            All stories are saved locally on this device. Nothing leaves your browser.
+          </div>
+
+        </div><!-- /interview-aside -->
+      </div><!-- /interview-layout -->
+
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         STORIES / TIMELINE PAGE
+    ═════════════════════════════════════════════════════════ -->
+    <section id="page-timeline" class="page">
+      <div class="timeline-layout">
+        <div class="page-masthead">
+          <h1 id="timeline-name">Stories</h1>
+          <div class="subtitle" id="timeline-subtitle"></div>
+          <div class="masthead-actions">
+            <button class="btn btn-primary btn-sm" onclick="showPage('interview')">+ Record a new story</button>
+          </div>
+        </div>
+        <div id="timeline-chunks"></div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         MAP PAGE
+    ═════════════════════════════════════════════════════════ -->
+    <section id="page-map" class="page">
+      <div class="map-toolbar">
+        <div class="map-mode-toggle">
+          <button id="btn-armchair" class="active">🛋 Armchair</button>
+          <button id="btn-walking">🚶 Walking</button>
+        </div>
+        <span class="map-toolbar-hint">Armchair: browse stories &nbsp;·&nbsp; Walking: stories surface as you pass each pin</span>
+        <button class="btn btn-secondary btn-sm" style="margin-left:auto; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:var(--paper-light);"
+          onclick="fitAllPins && fitAllPins()">Fit all pins</button>
+      </div>
+      <div class="walking-banner" id="walking-banner">
+        <span>🚶</span>
+        <span class="walking-status">Walking mode — getting your location…</span>
+      </div>
+      <div id="map-container"></div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         KEEPSAKE PAGE
+    ═════════════════════════════════════════════════════════ -->
+    <section id="page-keepsake" class="page">
+      <div class="keepsake-layout">
+        <div class="page-masthead" style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h1>Keepsake</h1>
+            <div class="subtitle">A printed record of a life, told in their own words.</div>
+          </div>
+          <button class="btn btn-primary" onclick="window.print()">🖨 Print / Save PDF</button>
+        </div>
+        <div class="keepsake-paper">
+          <div id="keepsake-content"></div>
+        </div>
+        <div id="keepsake-options"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ── Place-pin modal ──────────────────────────────────────── -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="place-modal">
+    <h2>📍 Pin this story to a place</h2>
+    <p class="modal-sub">The story mentioned a location. Confirm or edit the name below — we'll find it on the map using OpenStreetMap.</p>
+    <label for="place-input">Place name or address</label>
+    <input type="text" id="place-input" placeholder="e.g. Nairobi, Kenya">
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="place-skip-btn">Skip — no pin</button>
+      <button class="btn btn-primary" id="place-confirm-btn">Find on map</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Welcome modal ────────────────────────────────────────── -->
+<div class="modal-overlay" id="name-modal-overlay">
+  <div class="modal welcome-modal">
+    <h2>Welcome to StoryAtlas</h2>
+    <p class="modal-sub">Every story needs a name. Whose memories are we preserving today?</p>
+    <label for="storyteller-name-input">Full name</label>
+    <input type="text" id="storyteller-name-input" placeholder="e.g. Robert Osei" autocomplete="off">
+    <div class="btn-row">
+      <button class="btn btn-primary" id="name-save-btn">Begin the interview →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLcE=" crossorigin=""></script>
+
+<!-- App -->
+<script type="module" src="js/app.js"></script>
+
+<!-- Speech API check -->
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+      document.getElementById('speech-unsupported').style.display = 'block';
+      const ta = document.getElementById('transcript');
+      ta.contentEditable = 'true';
+      ta.addEventListener('input', () => {
+        const hasText = ta.textContent.trim().length > 0;
+        document.getElementById('btn-save-chunk').disabled = !hasText;
+        if (hasText) {
+          document.getElementById('transcript-status').textContent = 'Ready to save';
+          document.getElementById('btn-edit').style.display = '';
+          document.getElementById('btn-discard').style.display = '';
+        }
+      });
+    }
+    import('./js/map.js').then(m => { window.fitAllPins = m.fitAllPins; }).catch(() => {});
+  });
+</script>
+
+</body>
+</html>
