@@ -694,6 +694,10 @@ main { flex: 1; }
 .modal input:focus, .modal textarea:focus { outline: none; border-color: var(--navy); background: #fff; }
 .modal .btn-row { display: flex; gap: 10px; justify-content: flex-end; }
 
+/* Edit modal */
+.edit-modal { max-width: 640px; }
+.edit-modal textarea { resize: vertical; min-height: 180px; line-height: 1.7; }
+
 /* Welcome modal */
 .welcome-modal { text-align: center; }
 .welcome-modal h2 { font-size: 28px; }

@@ -256,6 +256,22 @@
   </div>
 </div>
 
+<!-- ── Edit story modal ─────────────────────────────────────── -->
+<div class="modal-overlay" id="edit-modal-overlay">
+  <div class="modal edit-modal">
+    <h2>✏ Edit story</h2>
+    <p class="modal-sub">Fix transcription errors or tidy up the text. The voice and facts should stay yours.</p>
+    <label for="edit-modal-title">Title</label>
+    <input type="text" id="edit-modal-title" placeholder="e.g. Growing up in Nairobi">
+    <label for="edit-modal-body" style="margin-top:14px;">Story text</label>
+    <textarea id="edit-modal-body" rows="10" placeholder="Your story…"></textarea>
+    <div class="btn-row" style="margin-top:18px;">
+      <button class="btn btn-secondary" id="edit-modal-cancel-btn">Cancel</button>
+      <button class="btn btn-primary" id="edit-modal-save-btn">Save changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLcE=" crossorigin=""></script>

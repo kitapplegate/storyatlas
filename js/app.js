@@ -426,6 +426,8 @@ function renderTimeline() {
           removePin(chunkId);
           renderTimeline();
         }
+      } else if (action === 'edit') {
+        openEditModal(chunkId);
       } else if (action === 'map') {
         const chunk = getChunksSorted().find(c => c.id === chunkId);
         if (chunk && chunk.place) {
@@ -439,6 +441,26 @@ function renderTimeline() {
   });
 }
 
+function openEditModal(chunkId) {
+  const chunk = getChunkById(chunkId);
+  if (!chunk) return;
+  $('edit-modal-title').value = chunk.title || '';
+  $('edit-modal-body').value = chunk.cleaned || chunk.raw || '';
+  $('edit-modal-overlay').classList.add('open');
+  $('edit-modal-save-btn').onclick = () => {
+    chunk.title   = $('edit-modal-title').value.trim() || chunk.title;
+    chunk.cleaned = $('edit-modal-body').value.trim();
+    chunk.raw     = chunk.raw || chunk.cleaned;
+    saveChunk(chunk);
+    $('edit-modal-overlay').classList.remove('open');
+    renderTimeline();
+    showToast('Story updated.');
+  };
+  $('edit-modal-cancel-btn').onclick = () => {
+    $('edit-modal-overlay').classList.remove('open');
+  };
+}
+
 function chunkCardHtml(c) {
   const placeTag = c.place
     ? `<span class="place-badge" title="${escHtml(c.place.label||'')}">📍 ${escHtml((c.place.label||'').split(',')[0])}</span>`
@@ -448,6 +470,7 @@ function chunkCardHtml(c) {
     <div class="chunk-card">
       <div class="chunk-actions">
         ${c.place ? `<button data-action="map" data-chunk-id="${c.id}">Map</button>` : ''}
+        <button data-action="edit" data-chunk-id="${c.id}">Edit</button>
         <button data-action="delete" data-chunk-id="${c.id}">Delete</button>
       </div>
       <div class="chunk-title">${escHtml(c.title || 'Untitled')}</div>
