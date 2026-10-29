@@ -6,6 +6,12 @@ Built for the **IBM Explore AI for Good Challenge** (deadline: December 2, 2026)
 
 ---
 
+> ### 🤖 Built with IBM Bob
+> **Every file in this project was designed, scaffolded, and iterated using IBM Bob as the primary development tool.**
+> The question bank, grammar cleanup prompt, watsonx.ai integration stubs, UI design system, and this README were all produced through IBM Bob conversations. See [`BOB_USAGE.md`](BOB_USAGE.md) for the full record of what Bob built and where those integration points live in the code.
+
+---
+
 ## Quick start (local, zero install)
 
 ```bash
