@@ -14,3 +14,19 @@
 | Place pin from spoken address | Not yet run | **not yet verified** |
 | Keepsake print view | Not yet run | **not yet verified** |
 | Walking / armchair map modes | Not yet run | **not yet verified** |
+
+## 2026-10-06 — Edit modal
+
+| Scenario | Command / Steps | Result |
+|---|---|---|
+| Edit button renders on story cards | Code review — `chunkCardHtml()` in `js/app.js` | **implemented** |
+| `openEditModal()` loads chunk, saves on confirm | Code review — function in `js/app.js` | **implemented** |
+| Edit modal HTML present | `index.html` — `#edit-modal-overlay` | **implemented** |
+| Edit modal in real browser | Not yet run | **not yet verified** |
+
+## 2026-10-06 — GitHub Pages deploy
+
+| Scenario | Steps | Result |
+|---|---|---|
+| Repo pushed to GitHub | `git push -u origin master` | **verified** — https://github.com/kitapplegate/storyatlas |
+| GitHub Pages live | Settings → Pages → master / root | **verified** — https://kitapplegate.github.io/storyatlas/ (Kit confirmed) |
