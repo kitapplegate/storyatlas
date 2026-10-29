@@ -1,588 +1,644 @@
 /**
- * StoryAtlas — main app controller
- * Wires together: interview, storage, map, keepsake.
+ * Story Atlas — App controller
+ * Wires all modules together. Manages page routing and state.
  */
 
 import {
-  pickNextQuestion, pickFollowUp, detectPlace,
-  buildOrderingQuestion, VoiceCapture,
-} from './interview.js';
-import { cleanGrammar } from './grammar.js';
-import {
-  saveChunk, deleteChunk, getChunksSorted, reorderChunk,
-  generateId, getStoryteller, saveStoryteller,
+  getStoriesSorted, getStoryById, saveStory, deleteStory,
+  getStoryteller, saveStoryteller,
+  generateId, formatDuration, assignEra,
 } from './storage.js';
-import { initMap, geocode, pinChunk, removePin, flyToChunk, fitAllPins, startWalking, stopWalking } from './map.js';
-import { renderKeepsake, renderPrintOptions } from './keepsake.js';
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let currentQuestion = null;
-let voice = null;
-let pendingChunk = null;       // chunk being saved, awaiting ordering answer
-let answeredQIds = [];         // question IDs used this session
-let mapInitialised = false;
-let walkingMode = false;
+import { Recorder, renderWaveform } from './recorder.js';
+import { transcribe, detectPlaces }  from './transcriber.js';
+import { startPlacer, hidePlacer }    from './placer.js';
+import { Player }                     from './player.js';
+import {
+  initHomeMap, refreshHomePins,
+  initListenMap, renderListenPins, flyToStory, addListenPin, fitAllListenPins,
+} from './map.js';
 
-// ── DOM refs ──────────────────────────────────────────────────────────────────
+// ── State ────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-// ── Page routing ──────────────────────────────────────────────────────────────
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  const page = $(`page-${name}`);
-  const btn  = $(`nav-${name}`);
-  if (page) page.classList.add('active');
-  if (btn)  btn.classList.add('active');
+let _currentPage    = 'home';
+let _recorder       = null;
+let _timerInterval  = null;
+let _player         = null;
+let _currentStory   = null;   // story open in listen view
+let _listenMapReady = false;
+let _currentQuestion = null;
 
-  if (name === 'map') initMapPage();
-  if (name === 'timeline') renderTimeline();
-  if (name === 'keepsake') renderKeepsakePage();
-}
+// Question bank (15 open-ended prompts)
+const QUESTIONS = [
+  'Tell me about the town or neighbourhood you grew up in — what did the streets look like when you stepped outside as a child?',
+  'Tell me about the house you grew up in.',
+  'What is your earliest memory of school?',
+  'Tell me about a journey or trip that changed something for you.',
+  'Tell me about the work you did that you are most proud of.',
+  'What was the neighbourhood like when you first moved somewhere new?',
+  'Tell me about the people who shaped who you became.',
+  'Tell me about a celebration or gathering you still remember clearly.',
+  'What was happening in the world when you were young, and how did you feel it?',
+  'Tell me about a time you had to make a hard decision.',
+  'Tell me about someone you loved and what they were like.',
+  'Tell me about a place that no longer exists but that you remember well.',
+  'Tell me about the food, music, or smells that take you back to a particular time.',
+  'What is something you made, built, or created that you are proud of?',
+  'Tell me what you would want the people who come after you to know about your life.',
+];
+let _usedQIndices = [];
 
-// ── Interview page ────────────────────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────────
 
-function initInterview() {
-  answeredQIds = JSON.parse(sessionStorage.getItem('sa_answered') || '[]');
-  currentQuestion = pickNextQuestion(answeredQIds);
-  renderQuestion(currentQuestion.text);
-  updateStorytellterBar();
-  updateAside();
+document.addEventListener('DOMContentLoaded', () => {
+  _checkWelcome();
+  _bindNav();
+  _bindRecord();
+  _showPage('home');
+});
 
-  // Mic
-  $('btn-mic').addEventListener('click', toggleMic);
-
-  // Save
-  $('btn-save-chunk').addEventListener('click', saveCurrentChunk);
-
-  // Edit
-  $('btn-edit').addEventListener('click', () => {
-    $('transcript').contentEditable = 'true';
-    $('transcript').focus();
-    $('btn-edit').style.display = 'none';
-  });
-
-  // Discard
-  $('btn-discard').addEventListener('click', () => {
-    clearTranscript();
-    hideFollowUp();
-    showToast('Story discarded.');
-  });
-
-  // Next question
-  $('btn-next-q').addEventListener('click', () => {
-    clearTranscript();
-    hideFollowUp();
-    answeredQIds.push(currentQuestion.id);
-    sessionStorage.setItem('sa_answered', JSON.stringify(answeredQIds));
-    currentQuestion = pickNextQuestion(answeredQIds);
-    renderQuestion(currentQuestion.text);
-    $('chunk-saved-banner').classList.remove('show');
-  });
-
-  // Auto follow-up: "Answer this" loads the follow-up as the next question
-  $('btn-answer-followup').addEventListener('click', () => {
-    const fu = $('followup-question-text').textContent;
-    renderQuestion(fu, false);
-    hideFollowUp();
-    clearTranscript();
-  });
-
-  // Auto follow-up: "Skip" advances to next bank question
-  $('btn-skip-followup').addEventListener('click', () => {
-    hideFollowUp();
-    answeredQIds.push(currentQuestion.id);
-    sessionStorage.setItem('sa_answered', JSON.stringify(answeredQIds));
-    currentQuestion = pickNextQuestion(answeredQIds);
-    renderQuestion(currentQuestion.text);
-  });
-
-  // Ordering answer buttons
-  document.addEventListener('click', e => {
-    if (e.target.matches('[data-ordering]')) {
-      handleOrderingAnswer(e.target.dataset.ordering);
-    }
-  });
-
-  // Place modal
-  $('place-confirm-btn').addEventListener('click', confirmPlaceGeocode);
-  $('place-skip-btn').addEventListener('click', () => closeModal('place-modal'));
-
-  // Photo
-  $('photo-input').addEventListener('change', handlePhotoAttach);
-}
-
-function renderQuestion(text, isFromBank = true) {
-  $('ai-question-text').textContent = text;
-  const eyebrow = $('question-eyebrow');
-  const escape  = $('question-escape');
-  if (isFromBank) {
-    eyebrow.textContent = 'StoryAtlas asks';
-    if (escape) escape.style.display = '';
-  } else {
-    eyebrow.textContent = 'Follow-up (optional)';
-    if (escape) escape.style.display = 'none';
-  }
-  setActionState('idle');
-}
-
-function hideFollowUp() {
-  $('followup-block').classList.remove('visible');
-}
-
-function showFollowUp() {
-  const fu = pickFollowUp();
-  $('followup-question-text').textContent = fu;
-  $('followup-block').classList.add('visible');
-}
-
-function setActionState(state) {
-  const btnMic   = $('btn-mic');
-  const btnSave  = $('btn-save-chunk');
-  const btnEdit  = $('btn-edit');
-  const btnDis   = $('btn-discard');
-  const label    = $('mic-label');
-  const status   = $('transcript-status');
-  const wrap     = $('transcript-wrap');
-
-  if (state === 'idle') {
-    btnMic.textContent = '🎙';
-    btnMic.classList.remove('listening');
-    btnMic.disabled = false;
-    btnSave.disabled = true;
-    btnEdit.style.display = 'none';
-    btnDis.style.display = 'none';
-    label.textContent = 'Press to start recording';
-    status.textContent = 'Ready to record';
-    wrap.classList.remove('listening');
-  } else if (state === 'listening') {
-    btnMic.textContent = '⏹';
-    btnMic.classList.add('listening');
-    btnMic.disabled = false;
-    btnSave.disabled = true;
-    btnEdit.style.display = 'none';
-    btnDis.style.display = 'none';
-    label.textContent = 'Listening… press to stop';
-    status.textContent = 'Recording…';
-    wrap.classList.add('listening');
-  } else if (state === 'hasText') {
-    btnMic.textContent = '🎙';
-    btnMic.classList.remove('listening');
-    btnMic.disabled = false;
-    btnSave.disabled = false;
-    btnEdit.style.display = '';
-    btnDis.style.display = '';
-    label.textContent = 'Press to keep talking';
-    status.textContent = 'Ready to save — or keep talking';
-    wrap.classList.remove('listening');
-  }
-}
-
-function toggleMic() {
-  if (!voice) {
-    voice = new VoiceCapture({
-      onPartial: (text) => {
-        showTranscript(text);
-        setActionState('listening');
-      },
-      onEnd: (text) => {
-        if (text) {
-          const cleaned = cleanGrammar(text);
-          showTranscript(cleaned, true);
-          setActionState('hasText');
-        } else {
-          setActionState('idle');
-        }
-        voice = null;
-      },
-      onError: (msg) => {
-        showToast(msg);
-        setActionState('idle');
-        voice = null;
-      },
+function _checkWelcome() {
+  const st = getStoryteller();
+  if (!st.name) {
+    $('welcome-modal-overlay').classList.add('open');
+    $('welcome-name-input').focus();
+    $('welcome-save-btn').onclick = () => {
+      const name = $('welcome-name-input').value.trim();
+      if (!name) return;
+      saveStoryteller({ name });
+      $('welcome-modal-overlay').classList.remove('open');
+      _refreshAll();
+    };
+    $('welcome-name-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') $('welcome-save-btn').click();
     });
-    voice.start();
-    setActionState('listening');
-  } else {
-    voice.stop();
   }
 }
 
-function showTranscript(text, isFinal = false) {
-  const ta = $('transcript');
-  ta.innerHTML = escHtml(text);
-  if (isFinal) ta.classList.remove('listening');
+// ── Navigation ───────────────────────────────────────────────────
+
+function _bindNav() {
+  const navHome = $('nav-home');
+  if (navHome) navHome.onclick = () => _showPage('home');
+  $('nav-record').onclick  = () => _showPage('record');
+  $('nav-listen').onclick  = () => _showPage('listen');
+  $('nav-family').onclick  = () => _showToast('Family sharing coming soon.');
 }
 
-function clearTranscript() {
-  $('transcript').innerHTML = '';
-  $('transcript').contentEditable = 'false';
-  setActionState('idle');
-  pendingChunk = null;
-  $('chunk-saved-banner').classList.remove('show');
-}
+function _showPage(name) {
+  ['home', 'record', 'listen', 'placer'].forEach(p => {
+    const el = $(  `page-${p}`);
+    if (el) el.style.display = (p === name) ? '' : 'none';
+  });
+  _currentPage = name;
 
-function saveCurrentChunk() {
-  const text = $('transcript').textContent.trim();
-  if (!text) return;
+  // Update nav active state
+  ['home','record','listen'].forEach(p => {
+    const btn = $(`nav-${p}`);
+    if (btn) btn.classList.toggle('on', p === name);
+  });
 
-  // Build a title from first ~8 words
-  const words = text.split(/\s+/).slice(0, 8).join(' ');
-  const title = words + (text.split(/\s+/).length > 8 ? '…' : '');
-
-  pendingChunk = {
-    id: generateId(),
-    title,
-    raw: text,
-    cleaned: cleanGrammar(text),
-    place: null,
-    era: currentQuestion?.era || 'General',
-    orderIndex: 0,
-    createdAt: new Date().toISOString(),
-    photo: null,
-    complete: false,
-  };
-
-  // Check for a place mention
-  const placeHint = detectPlace(text);
-  if (placeHint) {
-    openPlaceModal(placeHint);
-  } else {
-    finaliseChunk();
+  if (name === 'home') {
+    _renderHome();
+    setTimeout(() => initHomeMap('home-leaflet'), 50);
+  }
+  if (name === 'listen' && _currentStory) {
+    _renderListen(_currentStory);
+  }
+  if (name === 'listen' && !_currentStory) {
+    const stories = getStoriesSorted();
+    if (stories.length) _renderListen(stories[0]);
+    else _renderListenEmpty();
   }
 }
 
-function openPlaceModal(hint) {
-  $('place-input').value = hint;
-  $('modal-overlay').classList.add('open');
+// ── Home page ────────────────────────────────────────────────────
+
+function _renderHome() {
+  const st     = getStoryteller();
+  const stories = getStoriesSorted();
+
+  // Appbar
+  $('appbar-name').textContent = st.name || 'Story Atlas';
+
+  // Hero
+  $('home-storyteller-name').textContent = st.name || 'Stories';
+  const places = stories.filter(s => s.place).length;
+  $('home-meta').textContent = `${stories.length} stor${stories.length === 1 ? 'y' : 'ies'} · ${places} place${places === 1 ? '' : 's'} · Family only`;
+
+  // Timeline strip in atlas card
+  _renderHomeTimeline(stories);
+
+  // Stories list
+  _renderStoryList(stories);
+
+  // Refresh map pins
+  refreshHomePins();
 }
 
-function closeModal(id) {
-  $('modal-overlay').classList.remove('open');
+function _renderHomeTimeline(stories) {
+  const tl = $('home-timeline');
+  if (!tl) return;
+  const total = stories.length;
+  const ERAS  = ['Childhood', 'Youth', 'Work', 'Family', 'Later'];
+
+  let html = '<div class="tl-track"></div>';
+  stories.forEach((s, i) => {
+    const pct = total < 2 ? 50 : Math.round((i / (total - 1)) * 92 + 4);
+    html += `<i class="tl-dot" style="left:${pct}%" title="${_esc(s.title || '')}"></i>`;
+  });
+  html += `<div class="tl-eras">${ERAS.map(e => `<span>${e}</span>`).join('')}</div>`;
+  tl.innerHTML = html;
 }
 
-async function confirmPlaceGeocode() {
-  const query = $('place-input').value.trim();
-  closeModal('place-modal');
+function _renderStoryList(stories) {
+  const container = $('story-list');
+  if (!container) return;
 
-  if (!query) {
-    finaliseChunk();
-    return;
-  }
-
-  showToast('Looking up location…');
-  const result = await geocode(query);
-  if (result) {
-    pendingChunk.place = { label: result.displayName.split(',').slice(0,3).join(','), lat: result.lat, lng: result.lng };
-    showToast('Location found: ' + pendingChunk.place.label.split(',')[0]);
-  } else {
-    showToast('Could not find that location — saving without a pin.');
-  }
-  finaliseChunk();
-}
-
-function finaliseChunk() {
-  // Show ordering question if chunks already exist
-  const existing = getChunksSorted();
-  if (existing.length > 0) {
-    const ord = buildOrderingQuestion(pendingChunk, existing);
-    if (ord) {
-      renderOrderingCard(ord);
-      return; // wait for user answer
-    }
-  }
-  commitChunk();
-}
-
-function renderOrderingCard(ord) {
-  const card = $('ordering-card');
-  $('ordering-question-text').textContent = ord.question;
-  card.dataset.refId = ord.refId;
-  card.style.display = '';
-}
-
-function handleOrderingAnswer(relation) {
-  const card = $('ordering-card');
-  const refId = card.dataset.refId;
-  card.style.display = 'none';
-
-  // Capture id before commitChunk may clear pendingChunk
-  const newId = pendingChunk.id;
-  commitChunk();
-
-  // Now re-order
-  if (refId) {
-    reorderChunk(newId, refId, relation.toLowerCase());
-  }
-  const refTitle = getChunksSorted().find(c => c.id === refId)?.title || 'the previous one';
-  showToast(`Story placed ${relation.toLowerCase()} "${refTitle}".`);
-}
-
-function commitChunk() {
-  saveChunk(pendingChunk);
-
-  // Pin on map if has place
-  if (pendingChunk.place && mapInitialised) pinChunk(pendingChunk);
-
-  // Show saved banner
-  $('chunk-saved-banner').classList.add('show');
-  $('chunk-saved-banner').querySelector('.banner-title').textContent =
-    `"${pendingChunk.title}" saved.`;
-
-  setActionState('idle');
-  $('transcript').innerHTML = '';
-  updateAside();
-
-  // Automatically show a follow-up question
-  showFollowUp();
-}
-
-function handlePhotoAttach(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    if (pendingChunk) pendingChunk.photo = ev.target.result;
-    showToast('Photo attached.');
-  };
-  reader.readAsDataURL(file);
-}
-
-// ── Timeline page ─────────────────────────────────────────────────────────────
-
-function updateStorytellterBar() {
-  const st = getStoryteller();
-  const name = st.name || '?';
-  const initial = name.charAt(0).toUpperCase();
-  const avatar = $('storyteller-avatar');
-  const displayName = $('storyteller-display-name');
-  if (avatar) avatar.textContent = initial;
-  if (displayName) displayName.textContent = name;
-  const chunks = getChunksSorted();
-  const sessionLabel = $('session-label');
-  if (sessionLabel) sessionLabel.textContent = chunks.length
-    ? `${chunks.length} stor${chunks.length === 1 ? 'y' : 'ies'} saved`
-    : 'No stories yet — let\'s begin';
-}
-
-function updateAside() {
-  const chunks = getChunksSorted();
-  const withPlace = chunks.filter(c => c.place);
-  const countEl = $('aside-chunk-count');
-  const placeEl = $('aside-place-count');
-  if (countEl) countEl.textContent = chunks.length;
-  if (placeEl) placeEl.textContent = withPlace.length;
-  const recentEl = $('aside-recent');
-  if (recentEl) {
-    const recent = [...chunks].reverse().slice(0, 5);
-    recentEl.innerHTML = recent.length
-      ? recent.map(c => `<li title="${escHtml(c.cleaned || c.raw || '')}">${escHtml(c.title || 'Untitled')}</li>`).join('')
-      : '<li style="font-style:italic; color:var(--faint)">No stories yet</li>';
-  }
-}
-
-function renderTimeline() {
-  const chunks = getChunksSorted();
-  const container = $('timeline-chunks');
-  const st = getStoryteller();
-  $('timeline-name').textContent = st.name || 'Stories';
-  const sub = $('timeline-subtitle');
-  if (sub) sub.textContent = chunks.length
-    ? `${chunks.length} stor${chunks.length === 1 ? 'y' : 'ies'} · in chronological order`
-    : '';
-
-  if (!chunks.length) {
+  if (!stories.length) {
     container.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">📜</div>
-        <p>No stories yet. Start an interview and your first chunk will appear here.</p>
-        <button class="btn btn-primary" onclick="showPage('interview')">Start your first story</button>
+        <div class="empty-map">
+          <div id="empty-leaflet"></div>
+          ${_emptyPinSvg()}
+        </div>
+        <p class="t-h2" style="margin-top:22px">No stories yet.</p>
+        <p class="t-body soft" style="margin-top:4px">Press Record to tell the first one.</p>
+        <button class="btn btn-primary btn-block" style="margin-top:20px;height:64px;font-size:20px" onclick="document.getElementById('nav-record').click()">
+          ${_micSvg()} Record a story
+        </button>
       </div>`;
+    // Small empty map
+    setTimeout(() => {
+      if ($('empty-leaflet') && !$('empty-leaflet')._mapInit) {
+        const m = L.map('empty-leaflet', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false }).setView([20,0],2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
+        $('empty-leaflet')._mapInit = true;
+      }
+    }, 50);
     return;
   }
 
-  // Group by era
-  const byEra = {};
-  chunks.forEach(c => {
-    const era = c.era || 'General';
-    if (!byEra[era]) byEra[era] = [];
-    byEra[era].push(c);
-  });
-
-  container.innerHTML = Object.entries(byEra).map(([era, cs]) => `
-    <div class="era-group">
-      <div class="era-label">${escHtml(era)}</div>
-      ${cs.map(c => chunkCardHtml(c)).join('')}
-    </div>
-  `).join('');
-
-  // Wire edit / delete / map buttons
-  container.querySelectorAll('[data-action]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const { action, chunkId } = btn.dataset;
-      if (action === 'delete') {
-        if (confirm('Delete this story chunk?')) {
-          deleteChunk(chunkId);
-          removePin(chunkId);
-          renderTimeline();
-        }
-      } else if (action === 'edit') {
-        openEditModal(chunkId);
-      } else if (action === 'map') {
-        const chunk = getChunksSorted().find(c => c.id === chunkId);
-        if (chunk && chunk.place) {
-          showPage('map');
-          setTimeout(() => flyToChunk(chunk), 400);
-        } else {
-          showToast('No map pin for this story yet.');
-        }
-      }
-    });
+  container.innerHTML = stories.map(s => _storyCardHtml(s, stories.length)).join('');
+  container.querySelectorAll('.story-card').forEach(card => {
+    card.onclick = () => {
+      _currentStory = getStoryById(card.dataset.id);
+      _showPage('listen');
+    };
   });
 }
 
-function openEditModal(chunkId) {
-  const chunk = getChunkById(chunkId);
-  if (!chunk) return;
-  $('edit-modal-title').value = chunk.title || '';
-  $('edit-modal-body').value = chunk.cleaned || chunk.raw || '';
-  $('edit-modal-overlay').classList.add('open');
-  $('edit-modal-save-btn').onclick = () => {
-    chunk.title   = $('edit-modal-title').value.trim() || chunk.title;
-    chunk.cleaned = $('edit-modal-body').value.trim();
-    chunk.raw     = chunk.raw || chunk.cleaned;
-    saveChunk(chunk);
-    $('edit-modal-overlay').classList.remove('open');
-    renderTimeline();
-    showToast('Story updated.');
-  };
-  $('edit-modal-cancel-btn').onclick = () => {
-    $('edit-modal-overlay').classList.remove('open');
-  };
-}
+function _storyCardHtml(story, total) {
+  const era    = story.era || assignEra(story, total);
+  const dur    = formatDuration(story.duration);
+  const status = _statusHtml(story);
+  const place  = story.place
+    ? `<span class="chip chip-place">${_pinSvg()}${_esc(story.place.label.split(',')[0])}</span>` : '';
+  const eraChip = era
+    ? `<span class="chip chip-era">${_clockSvg()}${_esc(era)}</span>` : '';
+  const ageChip = story.ageAtEvent != null
+    ? `<span class="chip chip-age">Age about ${story.ageAtEvent}</span>` : '';
 
-function chunkCardHtml(c) {
-  const placeTag = c.place
-    ? `<span class="place-badge" title="${escHtml(c.place.label||'')}">📍 ${escHtml((c.place.label||'').split(',')[0])}</span>`
-    : '';
-  const preview = (c.cleaned || c.raw || '').slice(0, 160);
   return `
-    <div class="chunk-card">
-      <div class="chunk-actions">
-        ${c.place ? `<button data-action="map" data-chunk-id="${c.id}">Map</button>` : ''}
-        <button data-action="edit" data-chunk-id="${c.id}">Edit</button>
-        <button data-action="delete" data-chunk-id="${c.id}">Delete</button>
-      </div>
-      <div class="chunk-title">${escHtml(c.title || 'Untitled')}</div>
-      <div class="chunk-body">${escHtml(preview)}${preview.length < (c.cleaned||c.raw||'').length ? '…' : ''}</div>
-      <div class="chunk-meta">
-        <span>${new Date(c.createdAt).toLocaleDateString()}</span>
-        ${placeTag}
+    <div class="story-row">
+      <div class="story-spine"><i></i></div>
+      <div class="card story-card" data-id="${story.id}">
+        <div class="story-card-header">
+          <h3 class="story-card-title">${_esc(story.title || 'Untitled')}</h3>
+          <span class="story-dur">${dur}</span>
+        </div>
+        <div class="story-chips">${place}${eraChip}${ageChip}</div>
+        ${status}
       </div>
     </div>`;
 }
 
-// ── Map page ──────────────────────────────────────────────────────────────────
-
-function initMapPage() {
-  if (!mapInitialised) {
-    initMap('map-container');
-    mapInitialised = true;
-    // Pin all existing chunks
-    const chunks = getChunksSorted().filter(c => c.place);
-    chunks.forEach(c => pinChunk(c, () => {}));
-    if (chunks.length) setTimeout(fitAllPins, 300);
-    // Wire mode toggle exactly once
-    $('btn-armchair').addEventListener('click', setArmchairMode);
-    $('btn-walking').addEventListener('click', setWalkingMode);
+function _statusHtml(story) {
+  switch (story.transcriptStatus) {
+    case 'done':
+      return `<div class="status status-ok">${_checkSvg()} Written down</div>`;
+    case 'transcribing':
+      return `<div class="status status-busy">${_penSvg()} Writing it down...</div>`;
+    case 'failed':
+      return `
+        <div class="state-panel state-panel-failed">
+          <div class="row gap8 status-fail" style="font-weight:700">${_alertSvg()} Couldn't write this one down.</div>
+          <div style="font-size:16px;color:var(--ink-soft);margin-top:4px;padding-left:32px">The recording is still safe. You can listen anytime.</div>
+        </div>`;
+    case 'pending':
+    default:
+      return `
+        <div class="state-panel state-panel-pending">
+          <div class="row gap8 status-warn" style="align-items:flex-start">${_deviceSvg()}
+            <div><div style="font-weight:700">Kept safe on this device.</div><div style="font-size:16px">Not on the server yet.</div></div>
+          </div>
+        </div>`;
   }
 }
 
-function setArmchairMode() {
-  walkingMode = false;
-  stopWalking();
-  $('btn-armchair').classList.add('active');
-  $('btn-walking').classList.remove('active');
-  $('walking-banner').classList.remove('visible');
-  showToast('Armchair mode — browse stories on the map.');
+// ── Record page ───────────────────────────────────────────────────
+
+function _bindRecord() {
+  $('record-btn').onclick  = () => _startRecording();
+  $('btn-skip-q').onclick  = () => _nextQuestion();
+  $('btn-write-q').onclick = () => {
+    $('custom-q-wrap').style.display = 'block';
+    $('custom-q-input').focus();
+    $('btn-write-q').style.display = 'none';
+  };
+  $('custom-q-submit').onclick = () => {
+    const val = $('custom-q-input').value.trim();
+    if (val) {
+      $('record-question-text').textContent = val;
+      $('custom-q-wrap').style.display = 'none';
+      $('btn-write-q').style.display = '';
+    }
+  };
+
+  $('stop-btn').onclick = () => _stopRecording();
+
+  _nextQuestion();
 }
 
-function setWalkingMode() {
-  walkingMode = true;
-  $('btn-walking').classList.add('active');
-  $('btn-armchair').classList.remove('active');
-  $('walking-banner').classList.add('visible');
-  $('walking-banner').querySelector('.walking-status').textContent = 'Getting your location…';
+function _nextQuestion() {
+  if (_usedQIndices.length >= QUESTIONS.length) _usedQIndices = [];
+  let idx;
+  do { idx = Math.floor(Math.random() * QUESTIONS.length); }
+  while (_usedQIndices.includes(idx));
+  _usedQIndices.push(idx);
+  _currentQuestion = QUESTIONS[idx];
+  $('record-question-text').textContent = _currentQuestion;
+  $('record-question-compact').textContent = _currentQuestion;
+}
 
-  const chunks = getChunksSorted().filter(c => c.place);
-  startWalking(chunks, (nearby, err) => {
-    if (err) {
-      $('walking-banner').querySelector('.walking-status').textContent = `Location error: ${err}`;
-      return;
-    }
-    if (nearby && nearby.length) {
-      const names = nearby.map(c => c.title || 'a story').join(', ');
-      $('walking-banner').querySelector('.walking-status').textContent = `📍 Nearby: ${names}`;
+function _showRecordReady() {
+  $('record-state-ready').style.display = '';
+  $('record-state-recording').style.display = 'none';
+}
+
+function _showRecordRecording() {
+  $('record-state-ready').style.display = 'none';
+  $('record-state-recording').style.display = '';
+}
+
+async function _startRecording() {
+  if (_recorder && _recorder.isRecording) return;
+
+  _recorder = new Recorder({
+    onStart: () => {
+      _showRecordRecording();
+    },
+    onTick: (secs) => {
+      $('record-timer').textContent = _fmtSecs(secs);
+    },
+    onWaveform: (bars) => {
+      renderWaveform($('waveform'), bars);
+    },
+    onStop: (blob, duration, dataUrl) => {
+      _onRecordingComplete(blob, duration, dataUrl);
+    },
+    onError: (msg) => {
+      _showToast(msg);
+      _showRecordReady();
+    },
+  });
+
+  if (!Recorder.isSupported()) {
+    _showToast('Audio recording is not supported in this browser. Try Chrome or Edge.');
+    return;
+  }
+
+  await _recorder.start();
+}
+
+function _stopRecording() {
+  if (_recorder) _recorder.stop();
+}
+
+async function _onRecordingComplete(blob, duration, dataUrl) {
+  _showRecordReady();
+  $('record-timer').textContent = '0:00';
+  renderWaveform($('waveform'), []);
+
+  const st    = getStoryteller();
+  const id    = generateId();
+  const title = `Story — ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+
+  const story = {
+    id, title,
+    audioDataUrl:     dataUrl,
+    duration,
+    transcriptStatus: 'transcribing',
+    transcriptLines:  [],
+    place:            null,
+    placeQuote:       null,
+    era:              null,
+    ageAtEvent:       null,
+    orderIndex:       0,
+    createdAt:        new Date().toISOString(),
+    uploadStatus:     'local',
+  };
+
+  saveStory(story);
+
+  // Start transcription in background
+  transcribe(blob, dataUrl, (status) => {
+    const s = getStoryById(id);
+    if (!s) return;
+    s.transcriptStatus = status;
+    saveStory(s);
+    if (_currentPage === 'home') _renderHome();
+  }).then(result => {
+    const s = getStoryById(id);
+    if (!s) return;
+    s.transcriptStatus = result.status;
+    s.transcriptLines  = result.lines;
+    saveStory(s);
+    if (_currentPage === 'home') _renderHome();
+  }).catch(() => {
+    const s = getStoryById(id);
+    if (s) { s.transcriptStatus = 'failed'; saveStory(s); }
+    if (_currentPage === 'home') _renderHome();
+  });
+
+  // Detect places in question text (best proxy without real transcript)
+  const detectedPlaces = detectPlaces(_currentQuestion);
+
+  // Show the placer wizard
+  $('page-placer').style.display = 'block';
+  $('page-record').style.display = 'none';
+
+  const step1 = $('placer-step1');
+  const step2 = $('placer-step2');
+  if (step1) step1.innerHTML = '';
+  if (step2) step2.innerHTML = '';
+
+  startPlacer(story, detectedPlaces, (updatedStory) => {
+    $('page-placer').style.display = 'none';
+    _currentStory = updatedStory;
+    _renderHome();
+    _showPage('listen');
+    _showToast('Story saved.');
+  });
+}
+
+// ── Listen page ───────────────────────────────────────────────────
+
+function _renderListen(story) {
+  _currentStory = story;
+  const stories = getStoriesSorted();
+  const idx     = stories.findIndex(s => s.id === story.id);
+  const total   = stories.length;
+  const st      = getStoryteller();
+
+  // Destroy previous player
+  if (_player) { _player.destroy(); _player = null; }
+
+  // Build mobile sheet content
+  const sheet = $('listen-sheet-content');
+  if (sheet) {
+    sheet.innerHTML = _listenSheetHtml(story, idx, total);
+  }
+
+  // Build desktop panel content
+  const desktop = $('listen-desktop-content');
+  if (desktop) {
+    desktop.innerHTML = _listenDesktopHtml(story, idx, total);
+  }
+
+  // Init map
+  if (!_listenMapReady) {
+    initListenMap('listen-map');
+    _listenMapReady = true;
+  }
+  renderListenPins(stories, story.id, (s) => {
+    _renderListen(s);
+    flyToStory(s);
+  });
+  if (story.place) flyToStory(story);
+
+  // Wire players (mobile + desktop share same audio element)
+  _initPlayer(story, 'mobile');
+  _initPlayer(story, 'desktop');
+
+  // Up-next
+  const next = stories[idx + 1];
+  ['mobile-upnext', 'desktop-upnext'].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    if (next) {
+      el.style.display = '';
+      el.querySelector('.up-next-title').textContent = next.title || 'Untitled';
+      const placeEl = el.querySelector('.up-next-place');
+      if (placeEl) placeEl.textContent = next.place ? next.place.label.split(',')[0] : '';
+      el.querySelector('.up-next-dur').textContent = formatDuration(next.duration);
+      el.querySelector('.up-next-play-btn').onclick = () => _renderListen(next);
+    } else {
+      el.style.display = 'none';
     }
   });
 }
 
-// ── Keepsake page ─────────────────────────────────────────────────────────────
+function _listenSheetHtml(story, idx, total) {
+  const lines  = (story.transcriptLines || []);
+  const er     = story.era || assignEra(story, total) || '';
+  const age    = story.ageAtEvent != null ? `Age about ${story.ageAtEvent}` : '';
 
-function renderKeepsakePage() {
-  renderKeepsake($('keepsake-content'));
-  renderPrintOptions($('keepsake-options'));
+  return `
+    <div class="listen-grabber"></div>
+    <div class="pad" style="margin-top:10px">
+      <div class="t-over">Story ${idx + 1} of ${total}</div>
+      <h1 class="t-h2" style="margin-top:4px">${_esc(story.title || 'Untitled')}</h1>
+      <div class="row gap8" style="margin-top:8px;flex-wrap:wrap">
+        ${er  ? `<span class="chip chip-era">${_clockSvg()}${_esc(er)}</span>` : ''}
+        ${age ? `<span class="chip chip-age">${_esc(age)}</span>` : ''}
+      </div>
+      ${_timelineStripHtml(getStoriesSorted(), story.id)}
+      ${_scrubberHtml('mobile')}
+      ${_audioControlsHtml('mobile')}
+      <div class="listen-transcript" id="transcript-mobile">
+        ${lines.map(l => `<p class="transcript-line">${_esc(l)}</p>`).join('')}
+        ${!lines.length && story.transcriptStatus === 'transcribing'
+          ? `<div class="status status-busy" style="margin-top:12px">${_penSvg()} Writing it down...</div>
+             <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+               <i class="skeleton" style="width:94%"></i>
+               <i class="skeleton" style="width:86%"></i>
+               <i class="skeleton" style="width:62%"></i>
+             </div>`
+          : ''}
+        ${!lines.length && story.transcriptStatus === 'done'
+          ? `<p class="t-body soft" style="margin-top:12px;font-style:italic">No transcript yet — you can add one by editing this story.</p>`
+          : ''}
+      </div>
+    </div>
+    <div class="listen-fade"></div>
+  `;
 }
 
-// ── Storyteller name modal ────────────────────────────────────────────────────
+function _listenDesktopHtml(story, idx, total) {
+  const lines = (story.transcriptLines || []);
+  const er    = story.era || assignEra(story, total) || '';
+  const age   = story.ageAtEvent != null ? `Age about ${story.ageAtEvent}` : '';
 
-function initNameModal() {
-  const st = getStoryteller();
-  if (!st.name || st.name === 'My Story') {
-    openNameModal();
-  }
-  $('name-save-btn').addEventListener('click', () => {
-    const name = $('storyteller-name-input').value.trim();
-    if (name) {
-      saveStoryteller({ name });
-      $('name-modal-overlay').classList.remove('open');
-      document.title = `StoryAtlas — ${name}`;
-      updateStorytellterBar();
-    }
+  return `
+    <div class="t-over">Story ${idx + 1} of ${total} · Life order</div>
+    <h1 class="t-h1" style="margin-top:6px">${_esc(story.title || 'Untitled')}</h1>
+    <div class="row gap8" style="margin-top:10px;flex-wrap:wrap">
+      ${story.place ? `<span class="chip chip-place">${_pinSvg()}${_esc(story.place.label.split(',')[0])}</span>` : ''}
+      ${er  ? `<span class="chip chip-era">${_clockSvg()}${_esc(er)}</span>`  : ''}
+      ${age ? `<span class="chip chip-age">${_esc(age)}</span>` : ''}
+    </div>
+    <div class="card" style="margin-top:20px;padding:16px 18px 18px">
+      ${_scrubberHtml('desktop')}
+      ${_audioControlsHtml('desktop')}
+    </div>
+    <div class="t-over" style="margin-top:22px;display:flex;align-items:center;gap:10px">
+      Transcript
+      <span style="flex:1;height:1px;background:var(--line)"></span>
+    </div>
+    <div id="transcript-desktop" style="margin-top:8px;margin-left:-12px">
+      ${lines.map(l => `<p class="transcript-line">${_esc(l)}</p>`).join('')}
+      ${!lines.length && story.transcriptStatus === 'transcribing'
+        ? `<div class="status status-busy" style="margin-top:12px;padding-left:12px">${_penSvg()} Writing it down...</div>`
+        : ''}
+      ${!lines.length && story.transcriptStatus === 'done'
+        ? `<p class="t-body soft" style="margin-top:12px;font-style:italic;padding-left:12px">No transcript yet.</p>`
+        : ''}
+    </div>
+    <div class="listen-fade" style="bottom:80px"></div>
+  `;
+}
+
+function _timelineStripHtml(stories, activeId) {
+  const total = stories.length;
+  const ERAS  = ['Childhood', 'Youth', 'Work', 'Family', 'Later'];
+  const fill  = total < 2 ? 0 : (() => {
+    const idx = stories.findIndex(s => s.id === activeId);
+    return idx < 0 ? 0 : Math.round((idx / (total - 1)) * 92 + 4);
+  })();
+
+  let dots = '';
+  stories.forEach((s, i) => {
+    const pct    = total < 2 ? 50 : Math.round((i / (total - 1)) * 92 + 4);
+    const isCur  = s.id === activeId;
+    dots += `<i class="tl-dot${isCur ? ' cur' : ''}" style="left:${pct}%" title="${_esc(s.title||'')}"></i>`;
   });
+
+  return `
+    <div style="margin-top:12px">
+      <div class="tl">
+        <div class="tl-track"></div>
+        <div class="tl-fill" style="width:${fill}%"></div>
+        ${dots}
+        <div class="tl-eras">${ERAS.map(e => `<span>${e}</span>`).join('')}</div>
+      </div>
+    </div>`;
 }
 
-function openNameModal() {
-  $('name-modal-overlay').classList.add('open');
+function _scrubberHtml(key) {
+  return `
+    <div class="scrubber-wrap" id="scrubber-${key}">
+      <div class="scrubber-track"></div>
+      <div class="scrubber-fill" id="scrubber-fill-${key}"></div>
+      <div class="scrubber-thumb" id="scrubber-thumb-${key}"></div>
+    </div>
+    <div class="scrubber-times">
+      <span id="time-elapsed-${key}">0:00</span>
+      <span id="time-dur-${key}">0:00</span>
+    </div>`;
 }
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
+function _audioControlsHtml(key) {
+  return `
+    <div class="audio-controls">
+      <button class="icon-btn skip-btn" id="skip-back-${key}" aria-label="Back 15 seconds">
+        <svg class="ico lg" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v4h4"/><text x="12" y="15.2" text-anchor="middle" font-size="7" font-weight="700" fill="currentColor" stroke="none" font-family="Source Sans 3">15</text></svg>
+      </button>
+      <button class="play-btn" id="play-btn-${key}" aria-label="Play">
+        <svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
+      <button class="icon-btn skip-btn" id="skip-fwd-${key}" aria-label="Forward 15 seconds">
+        <svg class="ico lg" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v4h-4"/><text x="12" y="15.2" text-anchor="middle" font-size="7" font-weight="700" fill="currentColor" stroke="none" font-family="Source Sans 3">15</text></svg>
+      </button>
+    </div>`;
+}
 
-function showToast(msg) {
+function _initPlayer(story, key) {
+  if (!$(`scrubber-${key}`)) return;
+  // For the mobile/desktop split, both share the same audio element
+  // We create one player and reuse the audio for both UI instances
+  const player = new Player({
+    scrubberWrap:  $(`scrubber-${key}`),
+    scrubberFill:  $(`scrubber-fill-${key}`),
+    scrubberThumb: $(`scrubber-thumb-${key}`),
+    timeElapsed:   $(`time-elapsed-${key}`),
+    timeDuration:  $(`time-dur-${key}`),
+    playBtn:       $(`play-btn-${key}`),
+    transcriptEl:  $(`transcript-${key}`),
+    lines:         story.transcriptLines || [],
+  });
+
+  if (story.audioDataUrl) player.load(story.audioDataUrl);
+
+  $(`skip-back-${key}`).onclick = () => player.skip(-15);
+  $(`skip-fwd-${key}`).onclick  = () => player.skip(15);
+
+  if (key === 'mobile') _player = player;
+}
+
+function _renderListenEmpty() {
+  const sheet = $('listen-sheet-content');
+  if (sheet) {
+    sheet.innerHTML = `
+      <div class="pad" style="margin-top:40px;text-align:center">
+        <p class="t-h2">No stories yet.</p>
+        <p class="t-body soft" style="margin-top:8px">Record your first story to see it here.</p>
+        <button class="btn btn-primary" style="margin-top:24px" onclick="document.getElementById('nav-record').click()">
+          ${_micSvg()} Record a story
+        </button>
+      </div>`;
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+
+function _refreshAll() {
+  if (_currentPage === 'home') _renderHome();
+}
+
+function _showToast(msg) {
   const t = $('toast');
+  if (!t) return;
   t.textContent = msg;
   t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ── Utility ───────────────────────────────────────────────────────────────────
+function _fmtSecs(secs) {
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
 
-function escHtml(str) {
+function _esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Expose showPage globally for inline onclick attributes
-window.showPage = showPage;
+// ── Inline SVG helpers ────────────────────────────────────────────
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  // Nav buttons
-  ['interview', 'timeline', 'map', 'keepsake'].forEach(name => {
-    $(`nav-${name}`)?.addEventListener('click', () => showPage(name));
-  });
-
-  initInterview();
-  initNameModal();
-  showPage('interview');
-});
+function _micSvg()    { return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>`; }
+function _pinSvg()    { return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`; }
+function _clockSvg()  { return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`; }
+function _checkSvg()  { return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`; }
+function _penSvg()    { return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></svg>`; }
+function _alertSvg()  { return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V13M12 16.5v.01"/></svg>`; }
+function _deviceSvg() { return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18h2"/></svg>`; }
+function _emptyPinSvg() {
+  return `<svg style="position:absolute;left:50%;top:50%;width:64px;height:76px;margin:-52px 0 0 -32px" viewBox="-16 -40 32 44">
+    <path d="M0 0 C-3 -7 -12 -13 -12 -22 A12 12 0 1 1 12 -22 C12 -13 3 -7 0 0Z" fill="rgba(251,248,241,.8)" stroke="#a4502c" stroke-width="1.6" stroke-dasharray="3 3"/>
+    <circle cx="0" cy="-22" r="4.5" fill="none" stroke="#a4502c" stroke-width="1.6"/>
+  </svg>`;
+}

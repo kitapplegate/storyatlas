@@ -3,301 +3,352 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StoryAtlas</title>
+  <title>Story Atlas</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
-<body>
+<body class="paper-bg">
 <div id="app">
 
-  <!-- ── Header ─────────────────────────────────────────────── -->
-  <header>
-    <div class="logo">
-      <div class="logo-mark">🧭</div>
-      <div>
-        StoryAtlas
-        <span class="logo-sub">Family Memory Project</span>
-      </div>
+  <!-- ══════════════════════════════════════════════════════════
+       APP BAR (all pages share this)
+  ═══════════════════════════════════════════════════════════ -->
+  <header class="appbar">
+    <div class="appbar-logo" id="nav-home" role="button" tabindex="0" aria-label="Go to home" style="cursor:pointer">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/>
+        <circle cx="12" cy="9.5" r="2.5"/>
+      </svg>
     </div>
-    <nav>
-      <button id="nav-interview" class="active">Interview</button>
-      <button id="nav-timeline">Stories</button>
-      <button id="nav-map">Map</button>
-      <button id="nav-keepsake">Keepsake</button>
-    </nav>
+    <span class="appbar-wordmark">Story Atlas</span>
+    <span class="appbar-divider" aria-hidden="true"></span>
+    <span class="appbar-name" id="appbar-name"></span>
+
+    <div class="grow" style="display:flex;justify-content:center">
+      <!-- Desktop nav only — mobile uses bottom bar or page-level buttons -->
+    </div>
+
+    <button class="btn btn-secondary btn-sm" id="nav-record" style="gap:8px">
+      <svg class="ico sm" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="9" y="3" width="6" height="11" rx="3"/>
+        <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>
+      </svg>
+      Record
+    </button>
+    <button class="icon-btn outline" id="nav-family" aria-label="Family and sharing" style="margin-left:6px">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="9" cy="8" r="3.5"/>
+        <path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/>
+      </svg>
+    </button>
   </header>
 
-  <main>
+  <!-- ══════════════════════════════════════════════════════════
+       HOME PAGE
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="page-home" style="display:none">
 
-    <!-- ════════════════════════════════════════════════════════
-         INTERVIEW PAGE
-    ═════════════════════════════════════════════════════════ -->
-    <section id="page-interview" class="page active">
+    <!-- Topo decoration -->
+    <svg class="topo-bg" viewBox="0 0 330 300" aria-hidden="true">
+      <path d="M250.3,110.0 L248.9,116.4 L245.0,122.2 L239.7,127.6 L234.8,130.3 L228.8,131.3 L222.8,130.7 L217.4,129.4 L212.3,128.7 L206.5,128.5 L200.0,127.8 L194.1,125.6 L191.8,123.8 L190.1,121.7 L189.2,119.4 L188.8,116.9 L189.3,112.2 L190.5,107.9 L192.1,103.8 L194.6,100.0 L198.4,97.0 L202.6,95.8 L207.4,92.7 L212.4,89.7 L217.0,87.5 L223.3,85.7 L229.9,86.1 L235.4,88.9 L239.2,92.8 L241.9,96.8 L244.6,100.3 L247.6,103.9 L249.9,107.8Z" fill="none" stroke="#cdbf9f" stroke-width="1.3"/>
+      <path d="M278.3,110.0 L275.3,118.0 L271.7,125.7 L266.9,132.9 L259.8,139.1 L250.5,143.4 L240.4,146.1 L230.4,148.4 L220.0,151.0 L208.4,152.8 L196.4,151.7 L186.6,146.6 L183.1,142.9 L180.6,138.8 L177.6,130.8 L174.8,123.7 L172.9,120.5 L168.2,113.7 L164.5,106.0 L163.9,101.8 L165.7,93.5 L170.9,86.0 L178.0,79.3 L186.5,73.2 L196.6,68.7 L208.3,67.1 L220.0,69.1 L229.9,73.4 L238.3,77.7 L246.9,80.5 L257.3,82.7 L268.0,86.5 L276.1,93.0 L279.3,101.4Z" fill="none" stroke="#cdbf9f" stroke-width="1.3"/>
+    </svg>
 
-      <!-- Ordering question card -->
-      <div id="ordering-card" class="ordering-card" style="display:none; max-width:920px; margin:20px auto 0; padding:0 32px;">
-        <div style="background:var(--gold-light); border:1px solid #e0c870; border-left:4px solid var(--gold-mid); border-radius:var(--radius-sm); padding:16px 18px;">
-          <div class="ordering-label">One quick question to place this story in time</div>
-          <div class="ordering-question" id="ordering-question-text">…</div>
-          <div class="btn-row">
-            <button class="btn btn-secondary btn-sm" data-ordering="before">⬆ Before</button>
-            <button class="btn btn-secondary btn-sm" data-ordering="after">⬇ After</button>
+    <div class="pad" style="margin-top:14px;position:relative">
+      <div class="t-over">Stories of</div>
+      <h1 class="t-h1" id="home-storyteller-name" style="margin-top:4px">Loading…</h1>
+      <p class="t-caption" id="home-meta" style="margin-top:6px"></p>
+    </div>
+
+    <!-- Atlas preview card -->
+    <div class="pad" style="margin-top:16px">
+      <div class="card home-atlas-card">
+        <div class="home-map">
+          <div id="home-leaflet" style="height:100%"></div>
+          <button class="chip chip-paper" id="nav-listen"
+            style="position:absolute;right:10px;top:10px;cursor:pointer"
+            aria-label="Open atlas">
+            <svg class="ico sm" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 4L3 6.2v13.8l6-2.2 6 2.2 6-2.2V4l-6 2.2z"/><path d="M9 4v13.8M15 6.2V20"/>
+            </svg>
+            Open atlas
+          </button>
+        </div>
+        <div style="padding:12px 16px 14px">
+          <div class="row" style="justify-content:space-between;margin-bottom:2px">
+            <span class="t-label">A life in stories</span>
+            <span class="t-caption">Life order</span>
+          </div>
+          <div class="tl" id="home-timeline">
+            <div class="tl-track"></div>
+            <div class="tl-eras">
+              <span>Childhood</span><span>Youth</span><span>Work</span><span>Family</span><span>Later</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Record CTA -->
+    <div class="pad" style="margin-top:16px">
+      <button class="record-cta" id="home-record-cta">
+        <span class="record-cta-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <rect x="9" y="3" width="6" height="11" rx="3"/>
+            <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>
+          </svg>
+        </span>
+        <span class="record-cta-text">
+          <strong>Record a story</strong>
+          <span>We'll offer a question to start</span>
+        </span>
+      </button>
+    </div>
+
+    <!-- Stories list -->
+    <div class="pad" style="margin-top:22px">
+      <div class="home-stories-header">
+        <h2 class="t-h2">Stories</h2>
+        <div class="seg">
+          <button class="on" id="seg-life">Life order</button>
+          <button id="seg-place">By place</button>
+        </div>
+      </div>
+      <div class="story-list" id="story-list"></div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       RECORD PAGE
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="page-record" style="display:none">
+
+    <!-- Back button in appbar slot -->
+    <div style="padding:8px 16px 0">
+      <button class="icon-btn" id="record-back-btn" aria-label="Back">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- 2a: Ready state -->
+    <div id="record-state-ready">
+      <div class="pad" style="margin-top:8px">
+        <!-- Question card -->
+        <div class="card question-card">
+          <div class="t-over" style="color:var(--rust-dark)">A question to start</div>
+          <p class="t-h2" id="record-question-text" style="margin-top:8px">Loading…</p>
+          <p class="t-caption" style="margin-top:8px">What did it feel like? Who else was there?</p>
+          <div class="row gap8" style="margin-top:14px">
+            <button class="btn btn-secondary btn-sm" id="btn-skip-q">
+              <svg class="ico sm" viewBox="0 0 24 24"><path d="M6 5l9 7-9 7zM18 5v14"/></svg>
+              Skip
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-write-q">
+              <svg class="ico sm" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></svg>
+              Write my own
+            </button>
+          </div>
+          <!-- Custom question input (hidden until "Write my own") -->
+          <div id="custom-q-wrap" style="display:none;margin-top:12px">
+            <input id="custom-q-input" type="text" placeholder="Type your question…"
+              style="width:100%;border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;font-size:16px;background:var(--parchment)">
+            <button class="btn btn-secondary btn-sm" id="custom-q-submit" style="margin-top:8px">Use this question</button>
           </div>
         </div>
       </div>
 
-      <!-- Two-column layout -->
-      <div class="interview-layout" style="margin-top:28px;">
-
-        <!-- ── LEFT: main interview ── -->
-        <div class="interview-main">
-
-          <!-- Identity strip -->
-          <div class="identity-strip">
-            <div class="avatar" id="storyteller-avatar">?</div>
-            <div>
-              <div class="identity-name" id="storyteller-display-name">Loading…</div>
-              <div class="identity-sub" id="session-label">Session in progress</div>
-            </div>
-          </div>
-
-          <!-- Question -->
-          <div class="question-block">
-            <div class="question-eyebrow" id="question-eyebrow">StoryAtlas asks</div>
-            <div class="question-text" id="ai-question-text">
-              Tell me about the town or neighbourhood you grew up in — what did the streets look like when you stepped outside as a child?
-            </div>
-            <div class="question-escape" id="question-escape">
-              Or start anywhere — just press the mic and begin.
-            </div>
-          </div>
-
-          <!-- Transcript -->
-          <div class="transcript-wrap" id="transcript-wrap">
-            <div class="transcript-body"
-                 id="transcript"
-                 data-placeholder="Your story will appear here as you speak…"
-                 contenteditable="false"></div>
-            <div class="transcript-footer">
-              <div class="pulse-dot" id="pulse-dot"></div>
-              <span class="transcript-status" id="transcript-status">Ready to record</span>
-            </div>
-          </div>
-
-          <!-- Mic -->
-          <div class="mic-section">
-            <button class="btn-mic" id="btn-mic" title="Start / stop recording">🎙</button>
-            <div class="mic-info">
-              <div class="mic-label" id="mic-label">Press to start recording</div>
-              <div class="mic-sub">Chrome or Edge recommended for voice input</div>
-            </div>
-          </div>
-
-          <!-- Primary actions -->
-          <div class="primary-actions">
-            <button class="btn btn-primary" id="btn-save-chunk" disabled>Save this story</button>
-            <button class="btn btn-secondary" id="btn-edit" style="display:none">✏ Edit</button>
-            <button class="btn btn-secondary" id="btn-discard" style="display:none">Discard</button>
-          </div>
-
-          <!-- Secondary actions -->
-          <div class="secondary-actions">
-            <button class="btn-ghost" id="btn-next-q">Skip → next question</button>
-            <label class="btn-ghost" style="cursor:pointer;" title="Attach a photo">
-              📷 Attach photo
-              <input type="file" id="photo-input" accept="image/*" style="display:none">
-            </label>
-          </div>
-
-          <!-- Saved banner -->
-          <div class="saved-banner" id="chunk-saved-banner">
-            <span>✓</span>
-            <span class="banner-title">Story saved.</span>
-            <button class="dismiss-btn" onclick="document.getElementById('chunk-saved-banner').classList.remove('show')" title="Dismiss">×</button>
-          </div>
-
-          <!-- Auto follow-up block (shown after save) -->
-          <div class="followup-block" id="followup-block">
-            <div class="followup-eyebrow">Follow-up question</div>
-            <div class="followup-question" id="followup-question-text">Loading…</div>
-            <div class="followup-actions">
-              <button class="btn btn-gold btn-sm" id="btn-answer-followup">Answer this</button>
-              <button class="btn btn-secondary btn-sm" id="btn-skip-followup">Skip →</button>
-            </div>
-          </div>
-
-          <!-- No-speech fallback -->
-          <div id="speech-unsupported" style="display:none; margin-top:16px; padding:13px 16px; background:var(--sienna-light); border:1px solid #d8b0a0; border-radius:var(--radius-sm); font-size:14px; color:var(--sienna); line-height:1.6; font-family:var(--font-ui);">
-            ⚠ Your browser doesn't support the Web Speech API. Please use <strong>Chrome</strong> or <strong>Edge</strong>. You can still type your story in the box above.
-          </div>
-
-        </div><!-- /interview-main -->
-
-        <!-- ── RIGHT: context aside ── -->
-        <div class="interview-aside">
-
-          <div class="aside-card">
-            <div class="aside-title">This collection</div>
-            <div class="aside-stat">
-              <div class="aside-stat-num" id="aside-chunk-count">0</div>
-              <div class="aside-stat-label">stories saved</div>
-            </div>
-            <div class="aside-stat">
-              <div class="aside-stat-num" id="aside-place-count">0</div>
-              <div class="aside-stat-label">places on the map</div>
-            </div>
-          </div>
-
-          <div class="aside-card">
-            <div class="aside-title">Recent stories</div>
-            <ul class="recent-chunks" id="aside-recent"></ul>
-            <div style="margin-top:12px;">
-              <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="showPage('timeline')">View all stories →</button>
-            </div>
-          </div>
-
-          <div class="compass-rule">✦ · · ✦</div>
-
-          <div style="font-size:12px; color:var(--faint); font-family:var(--font-ui); line-height:1.7; padding:0 2px;">
-            All stories are saved locally on this device. Nothing leaves your browser.
-          </div>
-
-        </div><!-- /interview-aside -->
-      </div><!-- /interview-layout -->
-
-    </section>
-
-    <!-- ════════════════════════════════════════════════════════
-         STORIES / TIMELINE PAGE
-    ═════════════════════════════════════════════════════════ -->
-    <section id="page-timeline" class="page">
-      <div class="timeline-layout">
-        <div class="page-masthead">
-          <h1 id="timeline-name">Stories</h1>
-          <div class="subtitle" id="timeline-subtitle"></div>
-          <div class="masthead-actions">
-            <button class="btn btn-primary btn-sm" onclick="showPage('interview')">+ Record a new story</button>
-          </div>
-        </div>
-        <div id="timeline-chunks"></div>
+      <!-- Record button -->
+      <div class="record-center" style="margin-top:80px;flex-direction:column;gap:0">
+        <button class="record-btn" id="record-btn" aria-label="Record a story">
+          <span class="record-ring r1" aria-hidden="true"></span>
+          <span class="record-ring r2" aria-hidden="true"></span>
+          <span class="record-ring r3" aria-hidden="true"></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="3" width="6" height="11" rx="3"/>
+            <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>
+          </svg>
+        </button>
+        <p class="t-h2" style="text-align:center;margin-top:32px">Record a story</p>
+        <p class="t-body soft" style="text-align:center;margin-top:4px">Tap once to start. Take your time.</p>
       </div>
-    </section>
+    </div>
 
-    <!-- ════════════════════════════════════════════════════════
-         MAP PAGE
-    ═════════════════════════════════════════════════════════ -->
-    <section id="page-map" class="page">
-      <div class="map-toolbar">
-        <div class="map-mode-toggle">
-          <button id="btn-armchair" class="active">🛋 Armchair</button>
-          <button id="btn-walking">🚶 Walking</button>
+    <!-- 2b: Recording state (hidden until recording starts) -->
+    <div id="record-state-recording" style="display:none">
+      <div class="pad" style="margin-top:8px">
+        <div class="card question-card-compact" id="record-question-compact-wrap">
+          <div class="t-over" style="color:var(--rust-dark)">Question</div>
+          <p class="t-h3" id="record-question-compact" style="margin-top:4px"></p>
         </div>
-        <span class="map-toolbar-hint">Armchair: browse stories &nbsp;·&nbsp; Walking: stories surface as you pass each pin</span>
-        <button class="btn btn-secondary btn-sm" style="margin-left:auto; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:var(--paper-light);"
-          onclick="fitAllPins && fitAllPins()">Fit all pins</button>
       </div>
-      <div class="walking-banner" id="walking-banner">
-        <span>🚶</span>
-        <span class="walking-status">Walking mode — getting your location…</span>
-      </div>
-      <div id="map-container"></div>
-    </section>
 
-    <!-- ════════════════════════════════════════════════════════
-         KEEPSAKE PAGE
-    ═════════════════════════════════════════════════════════ -->
-    <section id="page-keepsake" class="page">
-      <div class="keepsake-layout">
-        <div class="page-masthead" style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-          <div>
-            <h1>Keepsake</h1>
-            <div class="subtitle">A printed record of a life, told in their own words.</div>
-          </div>
-          <button class="btn btn-primary" onclick="window.print()">🖨 Print / Save PDF</button>
+      <div style="text-align:center;margin-top:28px">
+        <div class="row gap8" style="justify-content:center">
+          <span class="rec-dot" aria-hidden="true"></span>
+          <span class="t-label" style="color:var(--record);font-size:17px">Recording</span>
         </div>
-        <div class="keepsake-paper">
-          <div id="keepsake-content"></div>
-        </div>
-        <div id="keepsake-options"></div>
+        <div class="t-timer" id="record-timer" style="margin-top:6px">0:00</div>
       </div>
-    </section>
 
-  </main>
-</div>
+      <!-- Waveform -->
+      <div class="pad" style="margin-top:14px">
+        <div class="waveform" id="waveform" aria-hidden="true"></div>
+      </div>
+
+      <!-- Stop button -->
+      <div class="record-center" style="margin-top:40px;flex-direction:column;gap:0">
+        <button class="stop-btn" id="stop-btn" aria-label="Stop recording">
+          <span class="stop-sq" aria-hidden="true"></span>
+        </button>
+        <p class="t-h2" style="text-align:center;margin-top:18px">Stop</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="record-footer" aria-live="polite">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+      </svg>
+      Saved on this device as you talk
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PLACER PAGE (two-step wizard, rendered by placer.js)
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="page-placer" style="display:none">
+    <div id="placer-step1"></div>
+    <div id="placer-step2" style="display:none"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       LISTEN PAGE
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="page-listen" class="paper-bg" style="display:none">
+
+    <!-- ── Mobile layout ── -->
+    <div class="listen-map-area map-area" id="listen-map-wrap">
+      <div id="listen-map" style="height:100%"></div>
+      <!-- Floating controls over map -->
+      <button class="icon-btn float" style="position:absolute;left:16px;top:20px;z-index:10"
+        id="listen-back-btn" aria-label="Back to home">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <span class="chip chip-paper" style="position:absolute;right:16px;top:28px;z-index:10">
+        <svg class="ico sm" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+        Life order
+      </span>
+    </div>
+
+    <!-- Mobile bottom sheet -->
+    <div class="listen-sheet paper-bg" id="listen-sheet-content"></div>
+
+    <!-- Up-next (mobile) -->
+    <div id="mobile-upnext" class="card"
+      style="position:fixed;left:16px;right:16px;bottom:16px;z-index:20;display:none">
+      <div class="up-next-card">
+        <button class="up-next-play up-next-play-btn" aria-label="Play next story">
+          <svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg>
+        </button>
+        <div class="grow" style="line-height:1.25;min-width:0">
+          <div class="t-caption" style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Up next</div>
+          <div class="serif up-next-title" style="font-size:19px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        </div>
+        <span class="chip chip-place up-next-place" style="flex:none"></span>
+        <span class="story-dur up-next-dur"></span>
+      </div>
+    </div>
+
+    <!-- ── Desktop layout (shown via CSS @media) ── -->
+    <div class="listen-desktop" id="listen-desktop-content">
+      <!-- filled by app.js -->
+    </div>
+
+    <!-- Up-next (desktop) -->
+    <div id="desktop-upnext" class="card listen-desktop-upnext" style="display:none">
+      <div class="up-next-card">
+        <button class="up-next-play up-next-play-btn" aria-label="Play next story">
+          <svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg>
+        </button>
+        <div class="grow" style="line-height:1.25;min-width:0">
+          <div class="t-caption" style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Up next</div>
+          <div class="serif up-next-title" style="font-size:19px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        </div>
+        <span class="chip chip-place up-next-place" style="flex:none"></span>
+        <span class="story-dur up-next-dur"></span>
+      </div>
+    </div>
+
+  </section>
+
+</div><!-- /#app -->
 
 <!-- Toast -->
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
-<!-- ── Place-pin modal ──────────────────────────────────────── -->
-<div class="modal-overlay" id="modal-overlay">
-  <div class="modal" id="place-modal">
-    <h2>📍 Pin this story to a place</h2>
-    <p class="modal-sub">The story mentioned a location. Confirm or edit the name below — we'll find it on the map using OpenStreetMap.</p>
-    <label for="place-input">Place name or address</label>
-    <input type="text" id="place-input" placeholder="e.g. Nairobi, Kenya">
-    <div class="btn-row">
-      <button class="btn btn-secondary" id="place-skip-btn">Skip — no pin</button>
-      <button class="btn btn-primary" id="place-confirm-btn">Find on map</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── Welcome modal ────────────────────────────────────────── -->
-<div class="modal-overlay" id="name-modal-overlay">
+<!-- ══════════════════════════════════════════════════════════
+     WELCOME MODAL
+═══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="welcome-modal-overlay">
   <div class="modal welcome-modal">
-    <h2>Welcome to StoryAtlas</h2>
+    <h2>Welcome to Story Atlas</h2>
     <p class="modal-sub">Every story needs a name. Whose memories are we preserving today?</p>
-    <label for="storyteller-name-input">Full name</label>
-    <input type="text" id="storyteller-name-input" placeholder="e.g. Robert Osei" autocomplete="off">
-    <div class="btn-row">
-      <button class="btn btn-primary" id="name-save-btn">Begin the interview →</button>
+    <label for="welcome-name-input">Full name</label>
+    <input type="text" id="welcome-name-input" placeholder="e.g. Grandpa Joe" autocomplete="off">
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-block" id="welcome-save-btn" style="font-size:17px;height:56px">
+        Begin the interview →
+      </button>
     </div>
   </div>
 </div>
 
-<!-- ── Edit story modal ─────────────────────────────────────── -->
-<div class="modal-overlay" id="edit-modal-overlay">
-  <div class="modal edit-modal">
-    <h2>✏ Edit story</h2>
-    <p class="modal-sub">Fix transcription errors or tidy up the text. The voice and facts should stay yours.</p>
-    <label for="edit-modal-title">Title</label>
-    <input type="text" id="edit-modal-title" placeholder="e.g. Growing up in Nairobi">
-    <label for="edit-modal-body" style="margin-top:14px;">Story text</label>
-    <textarea id="edit-modal-body" rows="10" placeholder="Your story…"></textarea>
-    <div class="btn-row" style="margin-top:18px;">
-      <button class="btn btn-secondary" id="edit-modal-cancel-btn">Cancel</button>
-      <button class="btn btn-primary" id="edit-modal-save-btn">Save changes</button>
-    </div>
-  </div>
-</div>
-
-<!-- Leaflet -->
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLcE=" crossorigin=""></script>
 
 <!-- App -->
 <script type="module" src="js/app.js"></script>
 
-<!-- Speech API check -->
+<!-- Wire up back buttons and home record CTA (outside module scope) -->
 <script>
-  window.addEventListener('DOMContentLoaded', () => {
-    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-      document.getElementById('speech-unsupported').style.display = 'block';
-      const ta = document.getElementById('transcript');
-      ta.contentEditable = 'true';
-      ta.addEventListener('input', () => {
-        const hasText = ta.textContent.trim().length > 0;
-        document.getElementById('btn-save-chunk').disabled = !hasText;
-        if (hasText) {
-          document.getElementById('transcript-status').textContent = 'Ready to save';
-          document.getElementById('btn-edit').style.display = '';
-          document.getElementById('btn-discard').style.display = '';
-        }
-      });
-    }
-    import('./js/map.js').then(m => { window.fitAllPins = m.fitAllPins; }).catch(() => {});
-  });
+window.addEventListener('DOMContentLoaded', () => {
+  // "Back" from record goes to home
+  const recBack = document.getElementById('record-back-btn');
+  if (recBack) recBack.onclick = () => {
+    document.getElementById('page-record').style.display = 'none';
+    document.getElementById('page-home').style.display = '';
+  };
+
+  // "Back" from listen goes to home
+  const lisBack = document.getElementById('listen-back-btn');
+  if (lisBack) lisBack.onclick = () => {
+    document.getElementById('page-listen').style.display = 'none';
+    document.getElementById('page-home').style.display = '';
+  };
+
+  // Home record CTA → record page
+  const cta = document.getElementById('home-record-cta');
+  if (cta) cta.onclick = () => document.getElementById('nav-record').click();
+
+  // Seg control (Life order / By place) — cosmetic only for now
+  const segLife  = document.getElementById('seg-life');
+  const segPlace = document.getElementById('seg-place');
+  if (segLife && segPlace) {
+    segLife.onclick  = () => { segLife.classList.add('on');  segPlace.classList.remove('on'); };
+    segPlace.onclick = () => { segPlace.classList.add('on'); segLife.classList.remove('on'); };
+  }
+
+  // Placer step visibility — step1 shows, step2 hidden by default
+  const step1 = document.getElementById('placer-step1');
+  const step2 = document.getElementById('placer-step2');
+  if (step1) step1.style.display = '';
+  if (step2) step2.style.display = 'none';
+});
 </script>
 
 </body>

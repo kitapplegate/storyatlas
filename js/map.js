@@ -1,161 +1,124 @@
 /**
- * StoryAtlas — Map
- *
- * Leaflet + OpenStreetMap Nominatim geocoding.
- * Two modes: armchair (browse) and walking (proximity alerts via Geolocation API).
+ * Story Atlas — Map
+ * Leaflet map for the home atlas preview and the listen screen.
+ * Styled toward the atlas palette (sepia tiles, rust pins).
  */
 
-let _map = null;
-let _markers = {};
-let _walkingWatch = null;
-let _walkingCallback = null;
+import { getStoriesSorted, formatDuration } from './storage.js';
 
-const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
-const PROXIMITY_METRES = 200;
+let _atlasMap  = null;   // home page mini-map
+let _listenMap = null;   // listen page full map
+const _pins    = {};     // id → L.marker
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Custom pin icon ──────────────────────────────────────────────
 
-function initMap(containerId) {
-  if (_map) return _map;
-  _map = L.map(containerId, { zoomControl: true }).setView([20, 0], 2);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  }).addTo(_map);
-  return _map;
+function makePinIcon(active = false) {
+  const color  = active ? '#a4502c' : '#56697a';
+  const ring   = active ? 'rgba(164,80,44,.22)' : 'transparent';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="38" viewBox="-16 -34 32 38">
+    <circle cx="0" cy="-34" r="18" fill="${ring}"/>
+    <path d="M0 0 C-4 -8 -12 -14 -12 -22 A12 12 0 1 1 12 -22 C12 -14 4 -8 0 0Z"
+      fill="${color}" stroke="${active ? '#86401f' : '#3f5162'}" stroke-width="1"/>
+    <circle cx="0" cy="-22" r="4.5" fill="white" opacity="0.9"/>
+  </svg>`;
+  return L.divIcon({
+    html: svg, className: '', iconSize: [32, 38], iconAnchor: [16, 0],
+  });
 }
 
-function getMap() { return _map; }
+// ── Home mini-map ────────────────────────────────────────────────
 
-// ── Geocoding ─────────────────────────────────────────────────────────────────
+export function initHomeMap(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el || _atlasMap) return;
 
-/**
- * Geocode a place string using Nominatim.
- * Returns { lat, lng, displayName } or null.
- */
-async function geocode(query) {
-  const url = `${NOMINATIM}?q=${encodeURIComponent(query)}&format=json&limit=1`;
-  const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (!data.length) return null;
-  return {
-    lat: parseFloat(data[0].lat),
-    lng: parseFloat(data[0].lon),
-    displayName: data[0].display_name,
-  };
+  _atlasMap = L.map(containerId, {
+    zoomControl: false, attributionControl: false,
+    dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
+    touchZoom: false,
+  }).setView([20, 0], 2);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_atlasMap);
+  refreshHomePins();
 }
 
-// ── Markers ───────────────────────────────────────────────────────────────────
+export function refreshHomePins() {
+  if (!_atlasMap) return;
+  const stories = getStoriesSorted().filter(s => s.place);
+  if (!stories.length) return;
 
-const pinIcon = L.divIcon({
-  className: '',
-  html: `<svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="14" cy="36" rx="5" ry="2" fill="rgba(0,0,0,0.2)"/>
-    <path d="M14 0C8.48 0 4 4.48 4 10c0 7.5 10 26 10 26S24 17.5 24 10C24 4.48 19.52 0 14 0z" fill="#5c6bc0"/>
-    <circle cx="14" cy="10" r="5" fill="white"/>
-  </svg>`,
-  iconSize: [28, 38],
-  iconAnchor: [14, 38],
-  popupAnchor: [0, -38],
-});
+  stories.forEach(s => {
+    if (!_pins[s.id + '_home']) {
+      const m = L.marker([s.place.lat, s.place.lng], { icon: makePinIcon(false) }).addTo(_atlasMap);
+      _pins[s.id + '_home'] = m;
+    }
+  });
 
-/**
- * Add or update a map pin for a chunk.
- * @param {object} chunk - full chunk with place: { label, lat, lng }
- * @param {function} onOpen - called with chunkId when popup opens
- */
-function pinChunk(chunk, onOpen) {
-  if (!_map || !chunk.place || !chunk.place.lat) return;
-  const { lat, lng, label } = chunk.place;
+  const lls = stories.map(s => [s.place.lat, s.place.lng]);
+  if (lls.length === 1) _atlasMap.setView(lls[0], 12);
+  else _atlasMap.fitBounds(lls, { padding: [16, 16] });
+}
 
-  // Remove old marker for this chunk if it exists
-  if (_markers[chunk.id]) {
-    _map.removeLayer(_markers[chunk.id]);
+// ── Listen map ───────────────────────────────────────────────────
+
+export function initListenMap(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el || _listenMap) return;
+
+  _listenMap = L.map(containerId, {
+    zoomControl: false, attributionControl: false,
+  }).setView([20, 0], 2);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_listenMap);
+  L.control.zoom({ position: 'bottomright' }).addTo(_listenMap);
+  return _listenMap;
+}
+
+/** Place all story pins on the listen map. */
+export function renderListenPins(stories, activeId, onPinClick) {
+  if (!_listenMap) return;
+
+  // Clear old pins
+  Object.values(_pins).forEach(m => {
+    if (m._map === _listenMap) _listenMap.removeLayer(m);
+  });
+
+  stories.filter(s => s.place).forEach(s => {
+    const active = s.id === activeId;
+    const marker = L.marker([s.place.lat, s.place.lng], { icon: makePinIcon(active) }).addTo(_listenMap);
+    if (onPinClick) marker.on('click', () => onPinClick(s));
+    _pins[s.id + '_listen'] = marker;
+  });
+}
+
+/** Fly to a story's pin. */
+export function flyToStory(story, zoom = 14) {
+  if (!_listenMap || !story.place) return;
+  _listenMap.flyTo([story.place.lat, story.place.lng], zoom, { duration: 1.2 });
+}
+
+/** Add a single new pin (after placer completes). */
+export function addListenPin(story, onPinClick) {
+  if (!_listenMap || !story.place) return;
+  if (_pins[story.id + '_listen']) _listenMap.removeLayer(_pins[story.id + '_listen']);
+  const marker = L.marker([story.place.lat, story.place.lng], { icon: makePinIcon(false) }).addTo(_listenMap);
+  if (onPinClick) marker.on('click', () => onPinClick(story));
+  _pins[story.id + '_listen'] = marker;
+}
+
+/** Fit the listen map to show all pins. */
+export function fitAllListenPins() {
+  if (!_listenMap) return;
+  const lls = Object.values(_pins)
+    .filter(m => m._map === _listenMap)
+    .map(m => m.getLatLng());
+  if (lls.length > 0) _listenMap.fitBounds(lls, { padding: [40, 40] });
+}
+
+export function destroyListenMap() {
+  if (_listenMap) {
+    _listenMap.remove();
+    _listenMap = null;
+    Object.keys(_pins).forEach(k => { if (k.endsWith('_listen')) delete _pins[k]; });
   }
-
-  const marker = L.marker([lat, lng], { icon: pinIcon }).addTo(_map);
-  const popupHtml = `
-    <div class="popup-title">${escHtml(chunk.title || 'Untitled')}</div>
-    <div class="popup-body">${escHtml((chunk.cleaned || chunk.raw || '').slice(0, 200))}${(chunk.cleaned || chunk.raw || '').length > 200 ? '…' : ''}</div>
-    <div style="margin-top:8px; font-size:12px; color:#666">📍 ${escHtml(label || '')}</div>
-  `;
-  marker.bindPopup(popupHtml, { maxWidth: 280 });
-  if (onOpen) marker.on('popupopen', () => onOpen(chunk.id));
-  _markers[chunk.id] = marker;
 }
-
-function removePin(chunkId) {
-  if (_markers[chunkId]) {
-    _map.removeLayer(_markers[chunkId]);
-    delete _markers[chunkId];
-  }
-}
-
-function flyToChunk(chunk) {
-  if (!_map || !chunk.place) return;
-  _map.flyTo([chunk.place.lat, chunk.place.lng], 13, { duration: 1.2 });
-  if (_markers[chunk.id]) _markers[chunk.id].openPopup();
-}
-
-function fitAllPins() {
-  const pins = Object.values(_markers);
-  if (!pins.length) return;
-  if (pins.length === 1) {
-    _map.setView(pins[0].getLatLng(), 10);
-  } else {
-    const group = L.featureGroup(pins);
-    _map.fitBounds(group.getBounds().pad(0.15));
-  }
-}
-
-// ── Walking mode ──────────────────────────────────────────────────────────────
-
-/**
- * Start watching the user's position; call cb(nearbyChunks) when within PROXIMITY_METRES.
- */
-function startWalking(chunks, cb) {
-  _walkingCallback = cb;
-  if (!navigator.geolocation) {
-    cb(null, 'Geolocation is not supported by your browser.');
-    return;
-  }
-  _walkingWatch = navigator.geolocation.watchPosition(
-    (pos) => {
-      const { latitude, longitude } = pos.coords;
-      const nearby = chunks.filter(c => {
-        if (!c.place || !c.place.lat) return false;
-        return haversineMetres(latitude, longitude, c.place.lat, c.place.lng) <= PROXIMITY_METRES;
-      });
-      if (nearby.length) cb(nearby);
-    },
-    (err) => cb(null, err.message),
-    { enableHighAccuracy: true, maximumAge: 5000 }
-  );
-}
-
-function stopWalking() {
-  if (_walkingWatch !== null) {
-    navigator.geolocation.clearWatch(_walkingWatch);
-    _walkingWatch = null;
-  }
-  _walkingCallback = null;
-}
-
-// ── Utility ───────────────────────────────────────────────────────────────────
-
-function haversineMetres(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-function toRad(deg) { return deg * Math.PI / 180; }
-
-function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-export { initMap, getMap, geocode, pinChunk, removePin, flyToChunk, fitAllPins, startWalking, stopWalking };
