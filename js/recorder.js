@@ -3,9 +3,14 @@
  * Wraps MediaRecorder. Records audio, animates waveform, ticks timer.
  * Falls back gracefully when MediaRecorder is unavailable.
  *
+ * Live transcription: Web Speech API runs in parallel with MediaRecorder,
+ * capturing the transcript in real-time from the same mic session.
+ * No API key required. The accumulated transcript is returned alongside
+ * the audio blob in onStop so transcriber.js can use it immediately.
+ *
  * Usage:
  *   import { Recorder } from './recorder.js';
- *   const rec = new Recorder({ onStop: (blob, duration) => { ... } });
+ *   const rec = new Recorder({ onStop: (blob, duration, dataUrl, liveTranscript) => { ... } });
  *   rec.start();
  *   rec.stop();
  */
@@ -13,29 +18,36 @@
 export class Recorder {
   /**
    * @param {object} opts
-   * @param {(blob: Blob, durationSecs: number) => void} opts.onStop
+   * @param {(blob: Blob, durationSecs: number, dataUrl: string, transcript: string) => void} opts.onStop
    * @param {(bars: number[]) => void} [opts.onWaveform]  — array of 46 amplitudes 0-1
    * @param {(secs: number) => void}  [opts.onTick]       — called every second
    * @param {() => void}              [opts.onStart]
    * @param {(msg: string) => void}   [opts.onError]
+   * @param {(text: string) => void}  [opts.onTranscriptPartial] — live partial text
    */
   constructor(opts = {}) {
-    this._onStop     = opts.onStop     || (() => {});
-    this._onWaveform = opts.onWaveform || null;
-    this._onTick     = opts.onTick     || null;
-    this._onStart    = opts.onStart    || null;
-    this._onError    = opts.onError    || null;
+    this._onStop              = opts.onStop              || (() => {});
+    this._onWaveform          = opts.onWaveform          || null;
+    this._onTick              = opts.onTick              || null;
+    this._onStart             = opts.onStart             || null;
+    this._onError             = opts.onError             || null;
+    this._onTranscriptPartial = opts.onTranscriptPartial || null;
 
-    this._mediaRecorder = null;
-    this._chunks        = [];
-    this._startTime     = null;
-    this._timerInterval = null;
-    this._animFrame     = null;
-    this._analyser      = null;
-    this._dataArray     = null;
-    this._stream        = null;
-    this.isRecording    = false;
-    this.duration       = 0;
+    this._mediaRecorder  = null;
+    this._chunks         = [];
+    this._startTime      = null;
+    this._timerInterval  = null;
+    this._animFrame      = null;
+    this._analyser       = null;
+    this._dataArray      = null;
+    this._stream         = null;
+    this.isRecording     = false;
+    this.duration        = 0;
+
+    // Live transcript state
+    this._recognition    = null;
+    this._liveTranscript = '';   // accumulated final segments
+    this._recogStopped   = false;
   }
 
   static isSupported() {
@@ -89,6 +101,9 @@ export class Recorder {
     }, 1000);
 
     this._onStart && this._onStart();
+
+    // Start live Speech Recognition in parallel
+    this._startLiveSpeechRecognition();
   }
 
   stop() {
@@ -97,6 +112,12 @@ export class Recorder {
     clearInterval(this._timerInterval);
     cancelAnimationFrame(this._animFrame);
     this.duration = (Date.now() - this._startTime) / 1000;
+
+    // Stop speech recognition first so its final results come in before finalize
+    this._recogStopped = true;
+    if (this._recognition) {
+      try { this._recognition.stop(); } catch (_) {}
+    }
 
     if (this._mediaRecorder && this._mediaRecorder.state !== 'inactive') {
       this._mediaRecorder.stop();
@@ -108,11 +129,58 @@ export class Recorder {
     if (!this._chunks.length) return;
     const mimeType = this._mediaRecorder.mimeType || 'audio/webm';
     const blob = new Blob(this._chunks, { type: mimeType });
+    const transcript = this._liveTranscript.trim();
 
     // Convert to base64 data URL for localStorage
     const reader = new FileReader();
-    reader.onload = () => this._onStop(blob, this.duration, reader.result);
+    reader.onload = () => this._onStop(blob, this.duration, reader.result, transcript);
     reader.readAsDataURL(blob);
+  }
+
+  // ── Live speech recognition ─────────────────────────────────────
+
+  _startLiveSpeechRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return; // not available — transcript will be empty, user can edit
+
+    this._liveTranscript = '';
+    this._recogStopped   = false;
+    const recog = new SR();
+    recog.continuous      = true;
+    recog.interimResults  = true;
+    recog.lang            = 'en-US';
+    recog.maxAlternatives = 1;
+    this._recognition     = recog;
+
+    recog.onresult = (e) => {
+      let finalChunk = '';
+      let interimChunk = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalChunk += t + ' ';
+        else interimChunk += t;
+      }
+      if (finalChunk) this._liveTranscript += finalChunk;
+      if (this._onTranscriptPartial) {
+        this._onTranscriptPartial(this._liveTranscript + interimChunk);
+      }
+    };
+
+    // Auto-restart if recognition ends while still recording
+    // (Chrome stops recognition after ~60 s of silence)
+    recog.onend = () => {
+      if (this.isRecording && !this._recogStopped) {
+        try { recog.start(); } catch (_) {}
+      }
+    };
+
+    recog.onerror = (e) => {
+      // 'no-speech' is normal during pauses — ignore
+      if (e.error === 'no-speech' || e.error === 'aborted') return;
+      // Don't surface recognition errors to the user — audio recording continues
+    };
+
+    try { recog.start(); } catch (_) {}
   }
 
   _animateWaveform() {

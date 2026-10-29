@@ -28,43 +28,71 @@
  * or rejects with an error.
  *
  * @param {Blob}   audioBlob
- * @param {string} audioDataUrl  — base64 data URL
+ * @param {string} audioDataUrl     — base64 data URL
  * @param {(status: string) => void} onStatus  — called with 'transcribing' then 'done'|'failed'
+ * @param {string} [liveTranscript] — real-time transcript captured by Recorder during recording
  */
-export async function transcribe(audioBlob, audioDataUrl, onStatus) {
+export async function transcribe(audioBlob, audioDataUrl, onStatus, liveTranscript) {
   onStatus('transcribing');
 
-  // ── WATSONX HOOK ─────────────────────────────────────────────
+  // ── IBM watsonx / Speech to Text hook ────────────────────────
   // if (window.WATSONX_SPEECH_KEY) {
   //   return transcribeWithWatsonx(audioBlob, onStatus);
   // }
   // ─────────────────────────────────────────────────────────────
 
-  // Browser Speech Recognition on a recorded blob is not reliable
-  // (it requires a live stream). So for local MVP we:
-  //   1. Try Web Speech API as a live fallback (gives best results if the
-  //      user just finished recording — the API often still has the audio).
-  //   2. Fall back to a placeholder that marks the transcript as needing review.
-  return transcribeLocally(onStatus);
+  // Use the live transcript captured by Recorder if available
+  if (liveTranscript && liveTranscript.trim().length > 0) {
+    return transcribeFromLive(liveTranscript, onStatus);
+  }
+
+  // Fallback: no live transcript — mark as pending so user can type it in
+  return transcribeFallback(onStatus);
 }
 
 /**
- * Attempt transcription using Web Speech API.
- * This fires a new recognition session; it won't replay the recording
- * but will capture any speech the user adds during the "transcribing" state.
- * In practice the transcript already arrived in real-time during recording
- * via the recorder's SpeechRecognition session if used.
+ * The Recorder captured a live transcript via Web Speech API.
+ * Clean it up lightly and return it as lines.
  */
-async function transcribeLocally(onStatus) {
-  // In the new audio-first model, transcription of the stored blob
-  // isn't possible client-side without a server.
-  // We mark it 'done' with a placeholder and let the user edit it.
-  await delay(1200); // simulate async work
+async function transcribeFromLive(rawTranscript, onStatus) {
+  await delay(400); // brief pause so the UI shows "transcribing" state
+  const lines = splitIntoLines(rawTranscript.trim());
+  onStatus('done');
+  return { status: 'done', lines };
+}
+
+/**
+ * No live transcript available (non-Chrome browser, or mic permission denied).
+ * Mark as pending — the user can type the transcript manually.
+ */
+async function transcribeFallback(onStatus) {
+  await delay(800);
   onStatus('done');
   return {
     status: 'done',
-    lines: [], // transcript filled by user editing or watsonx
+    lines: [],
   };
+}
+
+/**
+ * Split a raw spoken transcript into sentence-like lines.
+ * Capitalises first letter, adds full stop if missing.
+ */
+function splitIntoLines(text) {
+  if (!text) return [];
+  // Capitalise first letter
+  text = text.charAt(0).toUpperCase() + text.slice(1);
+  // Add trailing full stop if missing
+  if (!/[.!?]$/.test(text)) text += '.';
+  // Capitalise after sentence-ending punctuation
+  text = text.replace(/([.!?]\s+)([a-z])/g, (_, p, c) => p + c.toUpperCase());
+  // Remove filler words
+  text = text.replace(/\b(uh|um|er|hmm|hm),?\s*/gi, '');
+  // Collapse spaces
+  text = text.replace(/\s{2,}/g, ' ').trim();
+  // Split at sentence boundaries into lines
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  return sentences.map(s => s.trim()).filter(Boolean);
 }
 
 function delay(ms) {

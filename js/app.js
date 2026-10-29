@@ -295,8 +295,8 @@ async function _startRecording() {
     onWaveform: (bars) => {
       renderWaveform($('waveform'), bars);
     },
-    onStop: (blob, duration, dataUrl) => {
-      _onRecordingComplete(blob, duration, dataUrl);
+    onStop: (blob, duration, dataUrl, liveTranscript) => {
+      _onRecordingComplete(blob, duration, dataUrl, liveTranscript);
     },
     onError: (msg) => {
       _showToast(msg);
@@ -316,7 +316,7 @@ function _stopRecording() {
   if (_recorder) _recorder.stop();
 }
 
-async function _onRecordingComplete(blob, duration, dataUrl) {
+async function _onRecordingComplete(blob, duration, dataUrl, liveTranscript = '') {
   _showRecordReady();
   $('record-timer').textContent = '0:00';
   renderWaveform($('waveform'), []);
@@ -342,14 +342,14 @@ async function _onRecordingComplete(blob, duration, dataUrl) {
 
   saveStory(story);
 
-  // Start transcription in background
+  // Start transcription in background — pass live transcript from Recorder
   transcribe(blob, dataUrl, (status) => {
     const s = getStoryById(id);
     if (!s) return;
     s.transcriptStatus = status;
     saveStory(s);
     if (_currentPage === 'home') _renderHome();
-  }).then(result => {
+  }, liveTranscript).then(result => {
     const s = getStoryById(id);
     if (!s) return;
     s.transcriptStatus = result.status;
