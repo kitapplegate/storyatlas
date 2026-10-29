@@ -295,13 +295,16 @@
 ═══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="welcome-modal-overlay">
   <div class="modal welcome-modal">
-    <h2>Welcome to Story Atlas</h2>
-    <p class="modal-sub">Every story needs a name. Whose memories are we preserving today?</p>
+    <h2>Whose stories are these?</h2>
+    <p class="modal-sub">Add a name so stories are labelled correctly. You can always change it later.</p>
     <label for="welcome-name-input">Full name</label>
     <input type="text" id="welcome-name-input" placeholder="e.g. Grandpa Joe" autocomplete="off">
     <div class="modal-actions">
       <button class="btn btn-primary btn-block" id="welcome-save-btn" style="font-size:17px;height:56px">
-        Begin the interview →
+        Start recording →
+      </button>
+      <button id="welcome-skip-btn" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-soft,#888);margin-top:12px;width:100%;padding:6px 0;">
+        Browse first — I'll add a name later
       </button>
     </div>
   </div>

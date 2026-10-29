@@ -52,28 +52,43 @@ let _usedQIndices = [];
 // ── Init ─────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  _checkWelcome();
+  _initWelcome();
   _bindNav();
   _bindRecord();
   _showPage('home');
 });
 
-function _checkWelcome() {
-  const st = getStoryteller();
-  if (!st.name) {
-    $('welcome-modal-overlay').classList.add('open');
-    $('welcome-name-input').focus();
-    $('welcome-save-btn').onclick = () => {
-      const name = $('welcome-name-input').value.trim();
-      if (!name) return;
-      saveStoryteller({ name });
-      $('welcome-modal-overlay').classList.remove('open');
-      _refreshAll();
-    };
-    $('welcome-name-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter') $('welcome-save-btn').click();
-    });
-  }
+function _initWelcome() {
+  // Wire the save button once — modal is shown on demand, not on load
+  $('welcome-save-btn').onclick = () => {
+    const name = $('welcome-name-input').value.trim();
+    if (!name) return;
+    saveStoryteller({ name });
+    $('welcome-modal-overlay').classList.remove('open');
+    _refreshAll();
+  };
+  $('welcome-name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('welcome-save-btn').click();
+  });
+  // "Browse first" link dismisses without saving
+  $('welcome-skip-btn').onclick = () => {
+    $('welcome-modal-overlay').classList.remove('open');
+  };
+}
+
+/** Show the name modal — called when the user tries to record without a name set */
+function _promptForName(afterSave) {
+  $('welcome-modal-overlay').classList.add('open');
+  $('welcome-name-input').focus();
+  // Override save to also run the callback
+  $('welcome-save-btn').onclick = () => {
+    const name = $('welcome-name-input').value.trim();
+    if (!name) return;
+    saveStoryteller({ name });
+    $('welcome-modal-overlay').classList.remove('open');
+    _refreshAll();
+    if (afterSave) afterSave();
+  };
 }
 
 // ── Navigation ───────────────────────────────────────────────────
@@ -284,6 +299,12 @@ function _showRecordRecording() {
 
 async function _startRecording() {
   if (_recorder && _recorder.isRecording) return;
+
+  // If no name set yet, ask for it first then come back
+  if (!getStoryteller().name) {
+    _promptForName(() => _startRecording());
+    return;
+  }
 
   _recorder = new Recorder({
     onStart: () => {
