@@ -64,9 +64,9 @@ These are recordings of older people, often with health and family details.
 - The privacy note in the app must match what the code actually does.
 
 ### Storage estimate
-Speech audio at a fixed speech bitrate (~32 kbps) is about 15 MB per recorded
-hour; at a 128 kbps default it's about 60 MB/hour. Set `audioBitsPerSecond` in
-`js/recorder.js` before launch so sizes are predictable. Text is a few KB per story.
+`js/recorder.js` records at a fixed 48 kbps (`audioBitsPerSecond`), about 21 MB
+per recorded hour — 20 hours of one grandparent's stories is roughly 420 MB.
+Without it, some browsers default to 128 kbps (~60 MB/hour). Text is a few KB per story.
 
 ---
 

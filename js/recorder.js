@@ -83,9 +83,15 @@ export class Recorder {
     const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', '']
       .find(m => m === '' || MediaRecorder.isTypeSupported(m));
 
+    // A fixed speech bitrate keeps files small and predictable (~21 MB per hour)
+    // instead of the browser default, which can be 128 kbps. Opus is clear for
+    // voice well below this; browsers that can't honour it just ignore it.
+    const recOpts = { audioBitsPerSecond: 48000 };
+    if (mimeType) recOpts.mimeType = mimeType;
+
     this._chunks = [];
     try {
-      this._mediaRecorder = new MediaRecorder(this._stream, mimeType ? { mimeType } : {});
+      this._mediaRecorder = new MediaRecorder(this._stream, recOpts);
       this._mediaRecorder.addEventListener('dataavailable', e => {
         if (e.data && e.data.size > 0) this._chunks.push(e.data);
       });
