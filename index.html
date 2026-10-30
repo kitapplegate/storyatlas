@@ -236,6 +236,23 @@
         </div>
       </div>
       <div class="story-list" id="story-list"></div>
+
+      <!-- Backup: stories only live in this browser, so offer a copy to keep elsewhere -->
+      <div class="card" id="backup-card" style="margin-top:24px;padding:16px">
+        <div class="t-label">Keep a safe copy</div>
+        <p class="t-caption" style="margin-top:4px">Stories are saved in this browser only. Download a copy now and then, and keep it somewhere safe. You can restore it on any device.</p>
+        <div class="row gap8" style="margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm" id="backup-download-btn">
+            <svg class="ico sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+            Download all stories
+          </button>
+          <label class="btn btn-secondary btn-sm" for="backup-restore-input" style="cursor:pointer">
+            <svg class="ico sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg>
+            Restore from a copy
+          </label>
+          <input type="file" id="backup-restore-input" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0">
+        </div>
+      </div>
     </div>
 
   </section>
@@ -333,7 +350,10 @@
     <!-- 2c: Review state (shown after recording stops) -->
     <div id="record-state-review" style="display:none">
       <div class="pad" style="margin-top:16px">
-        <div class="t-over" style="color:var(--rust-dark)">Your story</div>
+        <label class="t-over" for="review-title" style="color:var(--rust-dark)">Give this story a name</label>
+        <input id="review-title" type="text" autocomplete="off" maxlength="80"
+          style="width:100%;margin-top:8px;border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:12px 14px;font-family:var(--font-serif);font-size:20px;background:var(--paper)">
+        <div class="t-over" style="color:var(--rust-dark);margin-top:18px">Your story</div>
         <div class="card" style="margin-top:10px;padding:18px 16px">
           <div id="review-transcript" class="t-body" style="line-height:1.7;min-height:80px;white-space:pre-wrap"></div>
           <div id="review-transcribing" style="display:none;margin-top:8px">
@@ -352,6 +372,13 @@
             <svg class="ico sm" viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
             Record again
           </button>
+        </div>
+      </div>
+      <div class="pad" id="review-save-error" role="alert" style="display:none;margin-top:18px">
+        <div class="state-panel state-panel-failed">
+          <div class="status-fail" style="font-weight:700">This story couldn't be saved on this device.</div>
+          <div style="font-size:16px;color:var(--ink-soft);margin-top:4px">The device may be out of space. Download the recording now so it isn't lost, then try Save again.</div>
+          <a class="btn btn-secondary btn-sm" id="review-download-link" href="#" style="margin-top:12px;display:inline-flex">Download this recording</a>
         </div>
       </div>
       <div style="position:sticky;bottom:0;background:var(--paper);padding:16px;border-top:1px solid var(--line);margin-top:24px">
@@ -466,32 +493,14 @@
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLcE=" crossorigin=""></script>
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-<!-- App — v=20261030h forces cache bust after landing page redesign -->
-<script type="module" src="js/app.js?v=20261030h"></script>
+<!-- App — bump v= on every deploy to force a cache bust -->
+<script type="module" src="js/app.js?v=20261030k"></script>
 
-<!-- Wire up back buttons and home record CTA (outside module scope) -->
+<!-- Back buttons and the record CTA are wired in app.js so they go through _showPage -->
 <script>
 window.addEventListener('DOMContentLoaded', () => {
-  // "Back" from record goes to home
-  const recBack = document.getElementById('record-back-btn');
-  if (recBack) recBack.onclick = () => {
-    document.getElementById('page-record').style.display = 'none';
-    document.getElementById('page-home').style.display = '';
-  };
-
-  // "Back" from listen goes to home
-  const lisBack = document.getElementById('listen-back-btn');
-  if (lisBack) lisBack.onclick = () => {
-    document.getElementById('page-listen').style.display = 'none';
-    document.getElementById('page-home').style.display = '';
-  };
-
-  // Home record CTA → record page
-  const cta = document.getElementById('home-record-cta');
-  if (cta) cta.onclick = () => document.getElementById('nav-record').click();
-
   // Seg control (Life order / By place) — cosmetic only for now
   const segLife  = document.getElementById('seg-life');
   const segPlace = document.getElementById('seg-place');
@@ -499,12 +508,6 @@ window.addEventListener('DOMContentLoaded', () => {
     segLife.onclick  = () => { segLife.classList.add('on');  segPlace.classList.remove('on'); };
     segPlace.onclick = () => { segPlace.classList.add('on'); segLife.classList.remove('on'); };
   }
-
-  // Placer step visibility — step1 shows, step2 hidden by default
-  const step1 = document.getElementById('placer-step1');
-  const step2 = document.getElementById('placer-step2');
-  if (step1) step1.style.display = '';
-  if (step2) step2.style.display = 'none';
 });
 </script>
 

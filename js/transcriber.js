@@ -78,7 +78,12 @@ async function transcribeFallback(onStatus) {
  * Split a raw spoken transcript into sentence-like lines.
  * Capitalises first letter, adds full stop if missing.
  */
-function splitIntoLines(text) {
+export function splitIntoLines(text) {
+  if (!text) return [];
+  // Remove filler words first, so the word after "um" gets capitalised
+  text = text.replace(/\b(uh|um|er|hmm|hm),?\s*/gi, '');
+  // Collapse spaces
+  text = text.replace(/\s{2,}/g, ' ').trim();
   if (!text) return [];
   // Capitalise first letter
   text = text.charAt(0).toUpperCase() + text.slice(1);
@@ -86,10 +91,6 @@ function splitIntoLines(text) {
   if (!/[.!?]$/.test(text)) text += '.';
   // Capitalise after sentence-ending punctuation
   text = text.replace(/([.!?]\s+)([a-z])/g, (_, p, c) => p + c.toUpperCase());
-  // Remove filler words
-  text = text.replace(/\b(uh|um|er|hmm|hm),?\s*/gi, '');
-  // Collapse spaces
-  text = text.replace(/\s{2,}/g, ' ').trim();
   // Split at sentence boundaries into lines
   const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
   return sentences.map(s => s.trim()).filter(Boolean);

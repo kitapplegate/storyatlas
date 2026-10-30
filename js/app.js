@@ -5,14 +5,16 @@
 
 import {
   getStoriesSorted, getStoryById, saveStory, deleteStory,
-  getStoryteller, saveStoryteller,
+  getStoryteller, saveStoryteller, migrateAudioToIndexedDB,
   generateId, formatDuration, assignEra,
 } from './storage.js';
+import { putAudio, getAudio, deleteAudio, requestPersistence } from './audiostore.js';
+import { downloadBackup, restoreBackup } from './backup.js';
 
 import { speakQuestion, stopSpeaking } from './interview.js';
 
 import { Recorder, renderWaveform } from './recorder.js';
-import { transcribe, detectPlaces }  from './transcriber.js';
+import { transcribe, detectPlaces, splitIntoLines } from './transcriber.js';
 import { startPlacer, hidePlacer }    from './placer.js';
 import { Player }                     from './player.js';
 import {
@@ -26,7 +28,7 @@ const $ = id => document.getElementById(id);
 let _currentPage    = 'home';
 let _recorder       = null;
 let _timerInterval  = null;
-let _player         = null;
+let _players        = [];     // one per layout (mobile sheet + desktop panel)
 let _currentStory   = null;   // story open in listen view
 let _listenMapReady = false;
 let _currentQuestion = null;
@@ -57,16 +59,25 @@ document.addEventListener('DOMContentLoaded', () => {
   _initLanding();
   _bindNav();
   _bindRecord();
-  // Always start on the landing page
-  history.replaceState({ page: 'landing' }, '', '');
-  _showPage('landing');
+  // Older recordings were base64 in localStorage — move them to IndexedDB
+  migrateAudioToIndexedDB().then(n => { if (n) requestPersistence(); });
+  // Returning storytellers go straight to their stories; first visit sees the landing page
+  const start = _isReturning() ? 'home' : 'landing';
+  history.replaceState({ page: start }, '', '');
+  _showPage(start, false);
 });
 
 // Handle browser back/forward buttons
 window.addEventListener('popstate', (e) => {
-  const page = e.state?.page || 'landing';
+  let page = e.state?.page || 'landing';
+  // The placer wizard can't be resumed from history — land on home instead
+  if (page === 'placer') page = 'home';
   _showPage(page, /* pushState= */ false);
 });
+
+function _isReturning() {
+  return !!getStoryteller().name || getStoriesSorted().length > 0;
+}
 
 function _initLanding() {
   $('landing-start-btn').onclick = () => {
@@ -99,8 +110,42 @@ function _promptForName(afterSave) {
 
 function _bindNav() {
   const navHome = $('nav-home');
-  // Logo always goes back to the landing page
-  if (navHome) navHome.onclick = () => _showPage('landing');
+  if (navHome) {
+    navHome.onclick = () => _showPage(_isReturning() ? 'home' : 'landing');
+    navHome.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navHome.click(); } };
+  }
+  $('record-back-btn').onclick = () => _showPage('home');
+  $('listen-back-btn').onclick = () => _showPage('home');
+  $('home-record-cta').onclick = () => $('nav-record').click();
+
+  $('backup-download-btn').onclick = async () => {
+    const btn = $('backup-download-btn');
+    btn.disabled = true;
+    try {
+      const n = await downloadBackup();
+      _showToast(`Downloaded a copy of ${n} stor${n === 1 ? 'y' : 'ies'}.`);
+    } catch (e) {
+      console.warn('StoryAtlas: backup failed', e);
+      _showToast("Couldn't make the copy. Please try again.");
+    } finally {
+      btn.disabled = false;
+    }
+  };
+  $('backup-restore-input').onchange = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';   // allow picking the same file again
+    if (!file) return;
+    try {
+      const { added, skipped, failed } = await restoreBackup(file);
+      let msg = `Restored ${added} stor${added === 1 ? 'y' : 'ies'}.`;
+      if (skipped) msg += ` ${skipped} already here.`;
+      if (failed)  msg += ` ${failed} couldn't be saved — the device may be full.`;
+      _showToast(msg);
+      _renderHome();
+    } catch (err) {
+      _showToast(err.message);
+    }
+  };
   $('nav-record').onclick  = () => {
     if (!getStoryteller().name) {
       _promptForName(() => _showPage('record'));
@@ -113,6 +158,13 @@ function _bindNav() {
 }
 
 function _showPage(name, push = true) {
+  // Never leave the mic or the audio running on a page the user can't see
+  if (name !== 'record') {
+    if (_recorder && _recorder.isRecording) _recorder.stop();  // the take is kept on the review screen
+    stopSpeaking();
+  }
+  if (name !== 'listen') _destroyPlayers();
+
   ['landing', 'home', 'record', 'listen', 'placer'].forEach(p => {
     const el = $(`page-${p}`);
     if (el) el.style.display = (p === name) ? '' : 'none';
@@ -299,7 +351,9 @@ function _bindRecord() {
   $('custom-q-submit').onclick = () => {
     const val = $('custom-q-input').value.trim();
     if (val) {
+      _currentQuestion = val;
       $('record-question-text').textContent = val;
+      $('record-question-compact').textContent = val;
       $('custom-q-wrap').style.display = 'none';
       $('btn-write-q').style.display = '';
     }
@@ -420,11 +474,14 @@ async function _onRecordingComplete(blob, duration, dataUrl, liveTranscript = ''
   $('record-timer').textContent = '0:00';
   renderWaveform($('waveform'), []);
 
-  const id    = generateId();
-  const title = `Story — ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+  const id = generateId();
 
   // Show review screen immediately with whatever transcript we already have
   _showRecordReview(liveTranscript);
+  const titleInput = $('review-title');
+  titleInput.value = _suggestTitle(liveTranscript);
+  titleInput.dataset.touched = '';
+  titleInput.oninput = () => { titleInput.dataset.touched = '1'; };
 
   // If we didn't get a live transcript, try transcribing now and update the screen
   let finalTranscript = liveTranscript;
@@ -433,6 +490,7 @@ async function _onRecordingComplete(blob, duration, dataUrl, liveTranscript = ''
       finalTranscript = (result.lines || []).map(l => l.text || l).join(' ');
       if ($('record-state-review').style.display !== 'none') {
         $('review-transcript').textContent = finalTranscript;
+        if (!titleInput.dataset.touched) titleInput.value = _suggestTitle(finalTranscript);
         const tr = $('review-transcribing');
         if (tr) tr.style.display = finalTranscript ? 'none' : 'block';
       }
@@ -443,19 +501,25 @@ async function _onRecordingComplete(blob, duration, dataUrl, liveTranscript = ''
   const saveBtn = $('review-save-btn');
   const newSaveBtn = saveBtn.cloneNode(true);
   saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-  newSaveBtn.onclick = () => {
+  newSaveBtn.disabled = false;   // the clone copies "disabled" from the last save
+  $('review-save-error').style.display = 'none';
+  newSaveBtn.onclick = async () => {
+    newSaveBtn.disabled = true;
+    $('review-save-error').style.display = 'none';
     // Use whatever the user has in the review box (they may have edited it)
     const editedText = $('review-edit').style.display !== 'none'
       ? $('review-edit').value
       : $('review-transcript').textContent;
 
-    const transcriptLines = editedText
-      ? [{ text: editedText, start: 0, confidence: 1 }]
-      : [];
+    // Listen view and storage expect plain sentence strings
+    const transcriptLines = splitIntoLines(editedText.trim());
+    const title = $('review-title').value.trim() || _suggestTitle(editedText);
 
     const story = {
       id, title,
-      audioDataUrl:     dataUrl,
+      question:         _currentQuestion,
+      audioDataUrl:     null,
+      hasAudio:         true,
       duration,
       transcriptStatus: transcriptLines.length ? 'done' : 'failed',
       transcriptLines,
@@ -468,23 +532,39 @@ async function _onRecordingComplete(blob, duration, dataUrl, liveTranscript = ''
       uploadStatus:     'local',
     };
 
-    saveStory(story);
+    // Audio goes to IndexedDB. If that's unavailable (some private windows),
+    // fall back to the old base64-in-localStorage way.
+    try {
+      await putAudio(id, blob);
+    } catch (e) {
+      console.warn('StoryAtlas: IndexedDB save failed, falling back', e);
+      story.audioDataUrl = dataUrl;
+      story.hasAudio     = false;
+    }
+    if (!saveStory(story)) {
+      if (story.hasAudio) deleteAudio(id).catch(() => {});
+      newSaveBtn.disabled = false;
+      _showSaveFailed(blob, title);
+      return;
+    }
+    requestPersistence();
 
     // Detect places from the transcript text for the placer wizard
     const detectedPlaces = detectPlaces(editedText || _currentQuestion);
 
+    // Next visit to Record starts fresh
+    _showRecordReady();
+    _nextQuestion();
+
     // Hand off to the placer wizard
-    $('page-placer').style.display = 'block';
-    $('page-record').style.display = 'none';
+    _showPage('placer');
     const step1 = $('placer-step1');
     const step2 = $('placer-step2');
     if (step1) step1.innerHTML = '';
     if (step2) step2.innerHTML = '';
 
     startPlacer(story, detectedPlaces, (updatedStory) => {
-      $('page-placer').style.display = 'none';
       _currentStory = updatedStory;
-      _renderHome();
       _showPage('listen');
       _showToast('Story saved.');
     });
@@ -501,7 +581,7 @@ function _renderListen(story) {
   const st      = getStoryteller();
 
   // Destroy previous player
-  if (_player) { _player.destroy(); _player = null; }
+  _destroyPlayers();
 
   // Build mobile sheet content
   const sheet = $('listen-sheet-content');
@@ -549,7 +629,7 @@ function _renderListen(story) {
 }
 
 function _listenSheetHtml(story, idx, total) {
-  const lines  = (story.transcriptLines || []);
+  const lines  = _transcriptLines(story);
   const er     = story.era || assignEra(story, total) || '';
   const age    = story.ageAtEvent != null ? `Age about ${story.ageAtEvent}` : '';
 
@@ -585,7 +665,7 @@ function _listenSheetHtml(story, idx, total) {
 }
 
 function _listenDesktopHtml(story, idx, total) {
-  const lines = (story.transcriptLines || []);
+  const lines = _transcriptLines(story);
   const er    = story.era || assignEra(story, total) || '';
   const age   = story.ageAtEvent != null ? `Age about ${story.ageAtEvent}` : '';
 
@@ -686,15 +766,47 @@ function _initPlayer(story, key) {
     timeDuration:  $(`time-dur-${key}`),
     playBtn:       $(`play-btn-${key}`),
     transcriptEl:  $(`transcript-${key}`),
-    lines:         story.transcriptLines || [],
+    lines:         _transcriptLines(story),
   });
 
-  if (story.audioDataUrl) player.load(story.audioDataUrl);
+  _loadStoryAudio(story, player);
 
   $(`skip-back-${key}`).onclick = () => player.skip(-15);
   $(`skip-fwd-${key}`).onclick  = () => player.skip(15);
 
-  if (key === 'mobile') _player = player;
+  _players.push(player);
+}
+
+async function _loadStoryAudio(story, player) {
+  let blob = null;
+  try { blob = await getAudio(story.id); } catch { /* fall back below */ }
+  if (player.destroyed) return;
+  if (blob) player.load(URL.createObjectURL(blob));
+  else if (story.audioDataUrl) player.load(story.audioDataUrl);
+}
+
+/** Saving failed — keep the review screen and offer the recording as a file so it isn't lost. */
+function _showSaveFailed(blob, title) {
+  const box = $('review-save-error');
+  box.style.display = '';
+  const ext = (blob.type.split('/')[1] || 'webm').split(';')[0];
+  const link = $('review-download-link');
+  if (link.href.startsWith('blob:')) URL.revokeObjectURL(link.href);
+  link.href = URL.createObjectURL(blob);
+  link.download = `${(title || 'story').replace(/[^\w\s-]/g, '').trim() || 'story'}.${ext}`;
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function _destroyPlayers() {
+  _players.forEach(p => p.destroy());
+  _players = [];
+}
+
+/** Transcript as plain strings — stories saved before 2026-10-30 stored {text} objects. */
+function _transcriptLines(story) {
+  return (story.transcriptLines || [])
+    .map(l => (typeof l === 'string' ? l : l?.text || ''))
+    .filter(Boolean);
 }
 
 function _renderListenEmpty() {
@@ -723,6 +835,19 @@ function _showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/** Working title: first words of the transcript, else the question asked. */
+function _suggestTitle(transcript) {
+  const first = (transcript || '').trim().split(/(?<=[.!?])\s/)[0].replace(/[.!?]+$/, '');
+  const words = first.split(/\s+/).filter(Boolean);
+  let t = words.length
+    ? words.slice(0, 7).join(' ') + (words.length > 7 ? '…' : '')
+    : (_currentQuestion || '')
+        .replace(/^(tell me about|tell me what|what is|what was|what's|what did)\s+/i, '')
+        .split(/[—?.]/)[0].trim();
+  if (!t) t = 'A new story';
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 function _fmtSecs(secs) {

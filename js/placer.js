@@ -7,7 +7,7 @@
  * Renders into #page-placer. Calls back when complete.
  */
 
-import { getStoriesSorted, reorderStory, saveStory } from './storage.js';
+import { getStoriesSorted, getStoryById, reorderStory, saveStory } from './storage.js';
 
 let _story    = null;   // the story being placed
 let _step     = 1;      // 1 or 2
@@ -73,10 +73,16 @@ function _hide() {
   document.getElementById('page-placer').style.display = 'none';
 }
 
+// The new story's slot is somewhere in [_low, _high]: slot i means "just
+// before _sorted[i]", slot _sorted.length means "after everything".
 function _initBinarySearch() {
   _low  = 0;
-  _high = _sorted.length - 1;
+  _high = _sorted.length;
   _mid  = Math.floor((_low + _high) / 2);
+}
+
+function _questionsLeft() {
+  return Math.max(1, Math.ceil(Math.log2(_high - _low + 1)));
 }
 
 function _renderStep1() {
@@ -87,7 +93,6 @@ function _renderStep1() {
   const container = s1;
   if (!container) return;
   const neighbor  = _sorted[_mid];
-  const questionsLeft = Math.ceil(Math.log2(_sorted.length + 1));
 
   container.innerHTML = `
     <header class="appbar">
@@ -151,11 +156,11 @@ function _renderStep1() {
     </div>
   `;
 
-  document.getElementById('placer-back').onclick = () => { _hide(); _onDone && _onDone(_story); };
+  document.getElementById('placer-back').onclick = () => _finish(_story.place ?? null);
   document.getElementById('placer-skip-time').onclick = () => { _step = 2; _renderStep2(); };
 
   container.querySelectorAll('[data-choice]').forEach(btn => {
-    btn.onclick = () => _handleTimeChoice(btn.dataset.choice, neighbor.id);
+    btn.onclick = () => _handleTimeChoice(btn.dataset.choice);
   });
 
   // Age stepper
@@ -175,33 +180,29 @@ function _renderStep1() {
   };
 }
 
-function _handleTimeChoice(relation, refId) {
-  reorderStory(_story.id, refId, relation);
-  // Re-read sorted after reorder
-  _sorted = getStoriesSorted().filter(s => s.id !== _story.id);
-
+function _handleTimeChoice(relation) {
   // Narrow the binary search
-  const refIdx = _sorted.findIndex(s => s.id === refId);
-  if (relation === 'before') {
-    _high = Math.max(0, refIdx - 1);
-  } else {
-    _low  = Math.min(_sorted.length - 1, refIdx + 1);
-  }
+  if (relation === 'before') _high = _mid;
+  else _low = _mid + 1;
 
-  if (_low >= _high || _sorted.length <= 1) {
-    // Enough questions answered — go to step 2
-    _step = 2;
-    _renderStep2();
-  } else {
+  if (_low < _high) {
     _mid = Math.floor((_low + _high) / 2);
     _renderStep1();
+    return;
   }
+
+  // Slot found — move the story there once
+  if (_low < _sorted.length) reorderStory(_story.id, _sorted[_low].id, 'before');
+  else reorderStory(_story.id, _sorted[_sorted.length - 1].id, 'after');
+  _step = 2;
+  _renderStep2();
 }
 
 function _renderMiniTimeline(neighbor) {
-  const left  = _sorted[Math.max(0, _mid - 1)];
-  const right = _sorted[Math.min(_sorted.length - 1, _mid + 1)];
-  const questionsLeft = Math.max(1, Math.ceil(Math.log2(_sorted.length + 1)));
+  // The stories already known to come just before and just after this one
+  const left  = _sorted[_low - 1];
+  const right = _sorted[_high];
+  const questionsLeft = _questionsLeft();
 
   return `
     <div class="card" style="margin-top:18px;padding:14px 16px 10px">
@@ -236,6 +237,9 @@ function _renderStep2() {
   if (s2) s2.style.display = '';
   const container = s2;
   if (!container) return;
+
+  // The old map's element is about to be replaced — drop it so _geocode builds a fresh one
+  if (_map) { _map.remove(); _map = null; _marker = null; }
 
   container.innerHTML = `
     <header class="appbar">
@@ -325,8 +329,8 @@ function _renderStep2() {
   }
 
   document.getElementById('placer2-back').onclick = () => {
-    if (_sorted.length > 0) { _step = 1; _renderStep1(); }
-    else { _hide(); _onDone && _onDone(_story); }
+    if (_sorted.length > 0) { _step = 1; _initBinarySearch(); _renderStep1(); }
+    else _finish(null);
   };
   document.getElementById('place-search-btn').onclick = () => {
     const val = document.getElementById('place-search-input').value.trim();
@@ -423,8 +427,14 @@ async function _geocode(query) {
 }
 
 function _finish(place) {
-  _story.place = place;
-  if (place) _story.placeQuote = _selectedPlace?.quote || null;
+  // Start from the stored copy: reorderStory() changed orderIndex there, and
+  // saving our in-memory copy would put the story back at the end.
+  _story = {
+    ...(getStoryById(_story.id) || _story),
+    place,
+    placeQuote: place ? (_selectedPlace?.quote || null) : null,
+    ageAtEvent: _story.ageAtEvent ?? null,
+  };
   saveStory(_story);
   _hide();
   // Destroy map to avoid Leaflet duplicate

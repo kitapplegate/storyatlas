@@ -42,9 +42,10 @@ export class Player {
     }
   }
 
-  /** Load a data URL and optionally start playing. */
-  load(dataUrl, autoPlay = false) {
-    this._audio.src = dataUrl;
+  /** Load an audio URL (blob: or legacy data:) and optionally start playing. */
+  load(src, autoPlay = false) {
+    this._revokeSrc();
+    this._audio.src = src;
     this._audio.load();
     if (autoPlay) this.play();
   }
@@ -68,12 +69,20 @@ export class Player {
   }
 
   destroy() {
+    this.destroyed = true;
+    this._revokeSrc();
     cancelAnimationFrame(this._rafId);
     this._audio.pause();
-    this._audio.src = '';
+    this._audio.removeAttribute('src');
+    (this._winListeners || []).forEach(([ev, fn]) => window.removeEventListener(ev, fn));
   }
 
   // ── Private ────────────────────────────────────────────────────
+
+  /** Free the memory behind a blob: URL from IndexedDB audio. */
+  _revokeSrc() {
+    if (this._audio.src.startsWith('blob:')) URL.revokeObjectURL(this._audio.src);
+  }
 
   _bindAudio() {
     this._audio.addEventListener('play',  () => {
@@ -113,10 +122,14 @@ export class Player {
     this._scrubWrap.addEventListener('touchstart', e => {
       dragging = true; seek(e.touches[0]);
     }, { passive: true });
-    window.addEventListener('mousemove', e => { if (dragging) seek(e); });
-    window.addEventListener('touchmove', e => { if (dragging) seek(e.touches[0]); }, { passive: true });
-    window.addEventListener('mouseup',  () => { dragging = false; });
-    window.addEventListener('touchend', () => { dragging = false; });
+    // Kept so destroy() can remove them — otherwise every story opened adds four more
+    this._winListeners = [
+      ['mousemove', e => { if (dragging) seek(e); }],
+      ['touchmove', e => { if (dragging) seek(e.touches[0]); }],
+      ['mouseup',   () => { dragging = false; }],
+      ['touchend',  () => { dragging = false; }],
+    ];
+    this._winListeners.forEach(([ev, fn]) => window.addEventListener(ev, fn, { passive: true }));
   }
 
   _tick() {

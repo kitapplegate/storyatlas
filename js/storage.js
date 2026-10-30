@@ -9,7 +9,7 @@
  *   {
  *     id: string,
  *     title: string,
- *     audioDataUrl: string|null,   // base64 data URL of the recording
+ *     audioDataUrl: string|null,   // legacy only — audio now lives in IndexedDB (audiostore.js)
  *     duration: number,            // seconds
  *     transcriptStatus: 'pending'|'transcribing'|'done'|'failed',
  *     transcriptLines: string[],   // sentences from transcription
@@ -23,6 +23,8 @@
  *   }
  */
 
+import { putAudio, deleteAudio } from './audiostore.js';
+
 const STORAGE_KEY = 'storyatlas_v2';
 
 function loadData() {
@@ -33,12 +35,14 @@ function loadData() {
   return { storyteller: { name: '', dob: '' }, stories: [] };
 }
 
+/** Returns false if the browser refused the write (storage full or blocked). */
 function saveData(data) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return true;
   } catch (e) {
-    // localStorage full (likely a large audio blob)
-    console.warn('StoryAtlas: storage quota exceeded', e);
+    console.warn('StoryAtlas: could not save', e);
+    return false;
   }
 }
 
@@ -52,7 +56,7 @@ function getStoryById(id) {
   return loadData().stories.find(s => s.id === id) || null;
 }
 
-/** Upsert a story. New stories get orderIndex = max + 1. */
+/** Upsert a story. New stories get orderIndex = max + 1. Returns false if it didn't save. */
 function saveStory(story) {
   const data = loadData();
   const idx = data.stories.findIndex(s => s.id === story.id);
@@ -63,13 +67,37 @@ function saveStory(story) {
     story.orderIndex = maxOrder + 1;
     data.stories.push(story);
   }
-  saveData(data);
+  return saveData(data);
 }
 
 function deleteStory(id) {
   const data = loadData();
   data.stories = data.stories.filter(s => s.id !== id);
   saveData(data);
+  deleteAudio(id).catch(() => {});
+}
+
+/**
+ * Move recordings saved before 2026-10-30 (base64 in localStorage) into
+ * IndexedDB. A story keeps its audioDataUrl until its blob is safely stored.
+ * Returns how many were moved.
+ */
+async function migrateAudioToIndexedDB() {
+  const legacy = getAllStories().filter(s => s.audioDataUrl);
+  let moved = 0;
+  for (const s of legacy) {
+    try {
+      const blob = await (await fetch(s.audioDataUrl)).blob();
+      await putAudio(s.id, blob);
+      const data  = loadData();
+      const story = data.stories.find(x => x.id === s.id);
+      if (story) { story.audioDataUrl = null; story.hasAudio = true; }
+      if (saveData(data)) moved++;
+    } catch (e) {
+      console.warn('StoryAtlas: could not move audio for', s.id, e);
+    }
+  }
+  return moved;
 }
 
 /** Returns stories sorted by orderIndex ascending. */
@@ -148,7 +176,7 @@ function assignEra(story, totalStories) {
 export {
   loadData, saveData,
   getAllStories, getStoryById, saveStory, deleteStory,
-  getStoriesSorted, reorderStory,
+  getStoriesSorted, reorderStory, migrateAudioToIndexedDB,
   getStoryteller, saveStoryteller,
   generateId, formatDuration, assignEra,
 };

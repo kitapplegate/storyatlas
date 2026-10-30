@@ -84,12 +84,18 @@ export class Recorder {
       .find(m => m === '' || MediaRecorder.isTypeSupported(m));
 
     this._chunks = [];
-    this._mediaRecorder = new MediaRecorder(this._stream, mimeType ? { mimeType } : {});
-    this._mediaRecorder.addEventListener('dataavailable', e => {
-      if (e.data && e.data.size > 0) this._chunks.push(e.data);
-    });
-    this._mediaRecorder.addEventListener('stop', () => this._finalize());
-    this._mediaRecorder.start(250); // collect data every 250ms
+    try {
+      this._mediaRecorder = new MediaRecorder(this._stream, mimeType ? { mimeType } : {});
+      this._mediaRecorder.addEventListener('dataavailable', e => {
+        if (e.data && e.data.size > 0) this._chunks.push(e.data);
+      });
+      this._mediaRecorder.addEventListener('stop', () => this._finalize());
+      this._mediaRecorder.start(250); // collect data every 250ms
+    } catch (err) {
+      this._stream.getTracks().forEach(t => t.stop());
+      this._onError && this._onError(`Could not start recording: ${err.message}`);
+      return;
+    }
 
     this._startTime = Date.now();
     this.isRecording = true;
@@ -126,7 +132,11 @@ export class Recorder {
   }
 
   _finalize() {
-    if (!this._chunks.length) return;
+    if (!this._chunks.length) {
+      // Without this the screen stays on "Recording" forever
+      this._onError && this._onError('Nothing was recorded. Please try again.');
+      return;
+    }
     const mimeType = this._mediaRecorder.mimeType || 'audio/webm';
     const blob = new Blob(this._chunks, { type: mimeType });
     const transcript = this._liveTranscript.trim();
