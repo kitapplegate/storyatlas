@@ -111,7 +111,7 @@ function _promptForName(afterSave) {
 function _bindNav() {
   const navHome = $('nav-home');
   if (navHome) {
-    navHome.onclick = () => _showPage(_isReturning() ? 'home' : 'landing');
+    navHome.onclick = () => _showPage('home');
     navHome.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navHome.click(); } };
   }
   $('record-back-btn').onclick = () => _showPage('home');
