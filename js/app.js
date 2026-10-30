@@ -98,7 +98,13 @@ function _promptForName(afterSave) {
 function _bindNav() {
   const navHome = $('nav-home');
   if (navHome) navHome.onclick = () => _showPage('home');
-  $('nav-record').onclick  = () => _showPage('record');
+  $('nav-record').onclick  = () => {
+    if (!getStoryteller().name) {
+      _promptForName(() => _showPage('record'));
+    } else {
+      _showPage('record');
+    }
+  };
   $('nav-listen').onclick  = () => _showPage('listen');
   $('nav-family').onclick  = () => _showToast('Family sharing coming soon.');
 }
@@ -295,6 +301,27 @@ function _bindRecord() {
 
   $('stop-btn').onclick = () => _stopRecording();
 
+  // Review screen buttons
+  $('review-edit-btn').onclick = () => {
+    const ta = $('review-edit');
+    const shown = ta.style.display !== 'none';
+    if (shown) {
+      // Apply edit back to display
+      $('review-transcript').textContent = ta.value;
+      ta.style.display = 'none';
+      $('review-edit-btn').innerHTML = `<svg class="ico sm" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></svg> Edit`;
+    } else {
+      ta.value = $('review-transcript').textContent;
+      ta.style.display = '';
+      ta.focus();
+      $('review-edit-btn').innerHTML = `<svg class="ico sm" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> Done`;
+    }
+  };
+  $('review-redo-btn').onclick = () => {
+    _showRecordReady();
+    _nextQuestion();
+  };
+
   _nextQuestion();
 }
 
@@ -320,6 +347,18 @@ function _nextQuestion() {
 function _showRecordReady() {
   $('record-state-ready').style.display = '';
   $('record-state-recording').style.display = 'none';
+  $('record-state-review').style.display = 'none';
+}
+
+function _showRecordReview(transcript) {
+  $('record-state-ready').style.display = 'none';
+  $('record-state-recording').style.display = 'none';
+  $('record-state-review').style.display = '';
+  $('review-transcript').textContent = transcript || '';
+  $('review-edit').style.display = 'none';
+  $('review-edit-btn').innerHTML = `<svg class="ico sm" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></svg> Edit`;
+  const transcribing = $('review-transcribing');
+  if (transcribing) transcribing.style.display = transcript ? 'none' : 'block';
 }
 
 function _showRecordRecording() {
@@ -372,70 +411,78 @@ function _stopRecording() {
 }
 
 async function _onRecordingComplete(blob, duration, dataUrl, liveTranscript = '') {
-  _showRecordReady();
   $('record-timer').textContent = '0:00';
   renderWaveform($('waveform'), []);
 
-  const st    = getStoryteller();
   const id    = generateId();
   const title = `Story — ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
 
-  const story = {
-    id, title,
-    audioDataUrl:     dataUrl,
-    duration,
-    transcriptStatus: 'transcribing',
-    transcriptLines:  [],
-    place:            null,
-    placeQuote:       null,
-    era:              null,
-    ageAtEvent:       null,
-    orderIndex:       0,
-    createdAt:        new Date().toISOString(),
-    uploadStatus:     'local',
+  // Show review screen immediately with whatever transcript we already have
+  _showRecordReview(liveTranscript);
+
+  // If we didn't get a live transcript, try transcribing now and update the screen
+  let finalTranscript = liveTranscript;
+  if (!liveTranscript) {
+    transcribe(blob, dataUrl, () => {}, liveTranscript).then(result => {
+      finalTranscript = (result.lines || []).map(l => l.text || l).join(' ');
+      if ($('record-state-review').style.display !== 'none') {
+        $('review-transcript').textContent = finalTranscript;
+        const tr = $('review-transcribing');
+        if (tr) tr.style.display = finalTranscript ? 'none' : 'block';
+      }
+    }).catch(() => {});
+  }
+
+  // Wire Save button — only once (remove old listener by replacing the node)
+  const saveBtn = $('review-save-btn');
+  const newSaveBtn = saveBtn.cloneNode(true);
+  saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+  newSaveBtn.onclick = () => {
+    // Use whatever the user has in the review box (they may have edited it)
+    const editedText = $('review-edit').style.display !== 'none'
+      ? $('review-edit').value
+      : $('review-transcript').textContent;
+
+    const transcriptLines = editedText
+      ? [{ text: editedText, start: 0, confidence: 1 }]
+      : [];
+
+    const story = {
+      id, title,
+      audioDataUrl:     dataUrl,
+      duration,
+      transcriptStatus: transcriptLines.length ? 'done' : 'failed',
+      transcriptLines,
+      place:            null,
+      placeQuote:       null,
+      era:              null,
+      ageAtEvent:       null,
+      orderIndex:       0,
+      createdAt:        new Date().toISOString(),
+      uploadStatus:     'local',
+    };
+
+    saveStory(story);
+
+    // Detect places from the transcript text for the placer wizard
+    const detectedPlaces = detectPlaces(editedText || _currentQuestion);
+
+    // Hand off to the placer wizard
+    $('page-placer').style.display = 'block';
+    $('page-record').style.display = 'none';
+    const step1 = $('placer-step1');
+    const step2 = $('placer-step2');
+    if (step1) step1.innerHTML = '';
+    if (step2) step2.innerHTML = '';
+
+    startPlacer(story, detectedPlaces, (updatedStory) => {
+      $('page-placer').style.display = 'none';
+      _currentStory = updatedStory;
+      _renderHome();
+      _showPage('listen');
+      _showToast('Story saved.');
+    });
   };
-
-  saveStory(story);
-
-  // Start transcription in background — pass live transcript from Recorder
-  transcribe(blob, dataUrl, (status) => {
-    const s = getStoryById(id);
-    if (!s) return;
-    s.transcriptStatus = status;
-    saveStory(s);
-    if (_currentPage === 'home') _renderHome();
-  }, liveTranscript).then(result => {
-    const s = getStoryById(id);
-    if (!s) return;
-    s.transcriptStatus = result.status;
-    s.transcriptLines  = result.lines;
-    saveStory(s);
-    if (_currentPage === 'home') _renderHome();
-  }).catch(() => {
-    const s = getStoryById(id);
-    if (s) { s.transcriptStatus = 'failed'; saveStory(s); }
-    if (_currentPage === 'home') _renderHome();
-  });
-
-  // Detect places in question text (best proxy without real transcript)
-  const detectedPlaces = detectPlaces(_currentQuestion);
-
-  // Show the placer wizard
-  $('page-placer').style.display = 'block';
-  $('page-record').style.display = 'none';
-
-  const step1 = $('placer-step1');
-  const step2 = $('placer-step2');
-  if (step1) step1.innerHTML = '';
-  if (step2) step2.innerHTML = '';
-
-  startPlacer(story, detectedPlaces, (updatedStory) => {
-    $('page-placer').style.display = 'none';
-    _currentStory = updatedStory;
-    _renderHome();
-    _showPage('listen');
-    _showToast('Story saved.');
-  });
 }
 
 // ── Listen page ───────────────────────────────────────────────────
