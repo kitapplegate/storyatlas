@@ -6,6 +6,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <title>Story Atlas</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -19,12 +21,11 @@
   ═══════════════════════════════════════════════════════════ -->
   <header class="appbar">
     <div class="appbar-logo" id="nav-home" role="button" tabindex="0" aria-label="Go to home" style="cursor:pointer">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/>
-        <circle cx="12" cy="9.5" r="2.5"/>
-      </svg>
+      <img src="assets/mark.svg" alt="Story Atlas" width="28" height="28" style="display:block">
     </div>
-    <span class="appbar-wordmark">Story Atlas</span>
+    <span class="appbar-wordmark">
+      <img src="assets/lockup.svg" alt="Story Atlas" height="22" style="display:block">
+    </span>
     <span class="appbar-divider" aria-hidden="true"></span>
     <span class="appbar-name" id="appbar-name"></span>
 
@@ -63,14 +64,11 @@
       <!-- Hero -->
       <div class="landing-hero">
         <div class="landing-logo" aria-hidden="true">
-          <svg viewBox="0 0 48 48" fill="none">
-            <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2"/>
-            <path d="M24 44s-14-12.4-14-23A14 14 0 0 1 38 21C38 31.6 24 44 24 44z" stroke="currentColor" stroke-width="2"/>
-            <circle cx="24" cy="19" r="4" stroke="currentColor" stroke-width="2"/>
-            <path d="M8 28a38 38 0 0 0 32 0" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 3"/>
-          </svg>
+          <img src="assets/mark.svg" alt="" width="80" height="80">
         </div>
-        <h1 class="landing-title">Story Atlas</h1>
+        <div style="margin-top:18px">
+          <img src="assets/lockup.svg" alt="Story Atlas" style="height:36px;max-width:100%">
+        </div>
         <p class="landing-tagline">Every life deserves a map.</p>
       </div>
 
@@ -443,8 +441,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLcE=" crossorigin=""></script>
 
-<!-- App — v=20261030e forces cache bust after landing page -->
-<script type="module" src="js/app.js?v=20261030e"></script>
+<!-- App — v=20261030f forces cache bust after logo integration -->
+<script type="module" src="js/app.js?v=20261030f"></script>
 
 <!-- Wire up back buttons and home record CTA (outside module scope) -->
 <script>
