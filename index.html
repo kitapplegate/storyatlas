@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
   <title>Story Atlas</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -314,8 +316,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLcE=" crossorigin=""></script>
 
-<!-- App -->
-<script type="module" src="js/app.js"></script>
+<!-- App — v=20261030 forces cache bust after welcome-modal fix -->
+<script type="module" src="js/app.js?v=20261030"></script>
 
 <!-- Wire up back buttons and home record CTA (outside module scope) -->
 <script>
