@@ -115,16 +115,23 @@ export function detectPlaces(text) {
   const places = [];
   const seen = new Set();
 
-  // Match prepositions followed by capitalised proper nouns
-  const pattern = /\b(?:in|at|near|outside|around|from|to|by|through|across)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){0,3})/g;
+  // Web Speech API returns lowercase — match case-insensitively, then title-case the result
+  const pattern = /\b(?:in|at|near|outside|around|from|to|by|through|across)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+){0,3})/gi;
+  // Common words that are not place names
+  const stopWords = new Set(['i','we','they','he','she','the','a','an','my','our','his','her','their',
+    'this','that','it','which','what','there','here','some','any','all','just','then','when','very']);
+
   let m;
   while ((m = pattern.exec(text)) !== null) {
-    const name = m[1].trim();
-    if (name.length < 3 || seen.has(name)) continue;
-    // Exclude common false positives
-    if (/^(I|We|They|He|She|The|A|An|My|Our|His|Her|Their)$/.test(name)) continue;
-    seen.add(name);
-    // Extract surrounding quote (up to 60 chars around the match)
+    const raw  = m[1].trim();
+    const words = raw.split(/\s+/);
+    // Skip if every word is a stop word or very short
+    if (words.every(w => stopWords.has(w.toLowerCase()) || w.length < 2)) continue;
+    // Title-case each word for display
+    const name = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    const key  = name.toLowerCase();
+    if (key.length < 3 || seen.has(key)) continue;
+    seen.add(key);
     const start = Math.max(0, m.index - 10);
     const end   = Math.min(text.length, m.index + m[0].length + 20);
     places.push({ name, quote: text.slice(start, end).trim() });

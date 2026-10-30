@@ -313,6 +313,15 @@ function _renderStep2() {
         _geocode(_selectedPlace.name);
       };
     });
+
+    // Auto-select and geocode the first detected place immediately
+    const firstCard = container.querySelector('.place-suggestion');
+    if (firstCard) {
+      firstCard.classList.add('selected');
+      _selectedPlace = _detectedPlaces[0];
+      document.getElementById('place-search-input').value = _selectedPlace.name;
+      _geocode(_selectedPlace.name);
+    }
   }
 
   document.getElementById('placer2-back').onclick = () => {
