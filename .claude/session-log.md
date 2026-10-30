@@ -1,3 +1,15 @@
+## 2026-10-30 22:45
+
+**Summary:** Three small landing page fixes, all deployed and confirmed live via `Invoke-WebRequest`. (1) Logo tap in the app bar was conditionally routing to landing vs home depending on `_isReturning()` — changed to always go to home (`b175dc6`, `js/app.js:114`). (2) The topo contour SVG decoration in the landing hero was confusing; removed it entirely (`b0fd4cd`, `index.html`). (3) Tagline was "Every life deserves a map." — Kit preferred the original "Every story has a place." from the design spec (`HANDOFF.md:126`); restored (`121ae86`). Also committed the previously untracked `design/logo/` assets and `.claude/session-log-entry.md` (`469cb57`). All four commits pushed to `origin/master`.
+
+**Status:**
+- Logo always ? home — **verified in the real environment**: `Invoke-WebRequest` confirmed `v=20261030m` live; pushed `b175dc6`
+- Topo SVG removed from landing hero — **verified in the real environment**: absent in live HTML; pushed `b0fd4cd`
+- Tagline "Every story has a place." — **verified in the real environment**: confirmed in live HTML; pushed `121ae86`
+- Logo assets + session log entry committed — **tested locally**: `git status` clean after `469cb57`
+
+**Open tasks:**
+- [ ] next — Full end-to-end browser demo: landing ? enter name ? Record ? speak place ? Save ? map pin ? home card. See NEXT.md.
 # Session Log
 
 ## 2026-10-30 10:59

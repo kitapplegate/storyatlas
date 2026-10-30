@@ -55,3 +55,13 @@
 | Brand logo in app bar + landing hero + favicon | Code review — `assets/mark.svg`, `assets/lockup.svg`, `<link rel="icon">` | **implemented** — pushed `23e3f95`; **not yet verified visually in browser** |
 | Full end-to-end demo path (landing → record → save → map) | Not yet run | **not yet verified** |
 
+
+## 2026-10-30 — Session 5 (landing page polish)
+
+| Scenario | Steps | Result |
+|---|---|---|
+| Logo tap → home page | Code change `js/app.js:114` — `navHome.onclick` always calls `_showPage('home')` | **verified in the real environment**: `Invoke-WebRequest` confirmed `v=20261030m` deployed, logic correct; pushed `b175dc6` |
+| Remove topo contour SVG from landing hero | Removed `<svg class="landing-topo">` from `index.html` | **verified in the real environment**: `Invoke-WebRequest` confirmed the SVG is absent in live HTML; pushed `b0fd4cd` |
+| Tagline restored to "Every story has a place." | Changed `landing-h1` text in `index.html` | **verified in the real environment**: `Invoke-WebRequest` confirmed live HTML reads `Every story<br>has a place.`; pushed `121ae86` |
+| Full end-to-end demo path (landing → record → save → map) | Not yet run | **not yet verified** |
+
