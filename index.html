@@ -46,116 +46,118 @@
   </header>
 
   <!-- ══════════════════════════════════════════════════════════
-       LANDING PAGE (shown once to first-time visitors)
+       LANDING PAGE
   ═══════════════════════════════════════════════════════════ -->
   <section id="page-landing" style="display:none">
+    <div class="landing-page">
 
-    <!-- Topo decoration -->
-    <svg class="topo-bg" viewBox="0 0 330 300" aria-hidden="true" style="opacity:.6">
-      <path d="M250.3,110.0 L248.9,116.4 L245.0,122.2 L239.7,127.6 L234.8,130.3 L228.8,131.3 L222.8,130.7 L217.4,129.4 L212.3,128.7 L206.5,128.5 L200.0,127.8 L194.1,125.6 L191.8,123.8 L190.1,121.7 L189.2,119.4 L188.8,116.9 L189.3,112.2 L190.5,107.9 L192.1,103.8 L194.6,100.0 L198.4,97.0 L202.6,95.8 L207.4,92.7 L212.4,89.7 L217.0,87.5 L223.3,85.7 L229.9,86.1 L235.4,88.9 L239.2,92.8 L241.9,96.8 L244.6,100.3 L247.6,103.9 L249.9,107.8Z" fill="none" stroke="#cdbf9f" stroke-width="1.3"/>
-      <path d="M278.3,110.0 L275.3,118.0 L271.7,125.7 L266.9,132.9 L259.8,139.1 L250.5,143.4 L240.4,146.1 L230.4,148.4 L220.0,151.0 L208.4,152.8 L196.4,151.7 L186.6,146.6 L183.1,142.9 L180.6,138.8 L177.6,130.8 L174.8,123.7 L172.9,120.5 L168.2,113.7 L164.5,106.0 L163.9,101.8 L165.7,93.5 L170.9,86.0 L178.0,79.3 L186.5,73.2 L196.6,68.7 L208.3,67.1 L220.0,69.1 L229.9,73.4 L238.3,77.7 L246.9,80.5 L257.3,82.7 L268.0,86.5 L276.1,93.0 L279.3,101.4Z" fill="none" stroke="#cdbf9f" stroke-width="1.3"/>
-    </svg>
+      <!-- ── Hero band ── -->
+      <div class="landing-hero-band">
+        <svg class="landing-topo" viewBox="0 0 400 260" aria-hidden="true">
+          <path d="M320,80 C310,95 295,108 278,116 C261,124 242,128 224,130 C206,132 188,130 172,124 C156,118 142,108 134,96 C126,84 124,70 128,58 C132,46 142,36 156,30 C170,24 188,22 206,24 C224,26 242,32 256,42 C270,52 280,66 284,80 C288,94 286,108 280,118" fill="none" stroke="#cdbf9f" stroke-width="1.2"/>
+          <path d="M360,60 C346,82 326,100 302,112 C278,124 250,130 224,130 C198,130 172,124 150,112 C128,100 110,82 100,62 C90,42 88,20 96,2" fill="none" stroke="#cdbf9f" stroke-width="1.2"/>
+          <path d="M280,140 C266,155 248,165 228,170 C208,175 186,174 168,167" fill="none" stroke="#cdbf9f" stroke-width="1"/>
+        </svg>
 
-    <div class="landing-wrap">
-
-      <!-- Hero -->
-      <div class="landing-hero">
-        <img src="assets/mark.svg" alt="" class="landing-hero-mark" aria-hidden="true">
-        <p class="landing-tagline">Every life deserves a map.</p>
-      </div>
-
-      <!-- Mission -->
-      <div class="landing-mission">
-        <p class="landing-mission-text">
-          The stories that matter most — where your grandmother grew up, what your grandfather built, the moment everything changed — live only in memory. When that memory is gone, they're gone forever.
-        </p>
-        <p class="landing-mission-text" style="margin-top:14px">
-          Story Atlas helps families capture those stories, one voice at a time, and pin them to the places where they happened. No writing required. Just speak.
-        </p>
-      </div>
-
-      <!-- Pull quote -->
-      <blockquote class="landing-quote">
-        <p>"I didn't realise how much I didn't know about my father until it was too late to ask."</p>
-        <cite>— What Story Atlas is built to prevent</cite>
-      </blockquote>
-
-      <!-- How it works -->
-      <div class="landing-steps-heading">How it works</div>
-      <div class="landing-steps">
-        <div class="landing-step">
-          <div class="landing-step-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>
-            </svg>
-          </div>
-          <div>
-            <div class="landing-step-title">Speak a memory</div>
-            <div class="landing-step-body">Answer one gentle question at a time. No writing, no setup — just your voice and a memory.</div>
-          </div>
-        </div>
-        <div class="landing-step">
-          <div class="landing-step-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>
-            </svg>
-          </div>
-          <div>
-            <div class="landing-step-title">Pin it to the world</div>
-            <div class="landing-step-body">Stories are placed on a living map — the village in Ireland, the office in Nairobi, the kitchen in Queens.</div>
-          </div>
-        </div>
-        <div class="landing-step">
-          <div class="landing-step-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          </div>
-          <div>
-            <div class="landing-step-title">Keep it in the family</div>
-            <div class="landing-step-body">Stories stay on your device by default. Print a keepsake book, or share with family when you're ready.</div>
-          </div>
+        <div class="landing-hero-inner">
+          <img src="assets/mark.svg" alt="" class="landing-mark" aria-hidden="true">
+          <h1 class="landing-h1">Every life<br>deserves a map.</h1>
+          <p class="landing-sub">Capture a grandparent's stories, one voice at a time,<br>and pin them to the places where they happened.</p>
         </div>
       </div>
 
-      <!-- What you get -->
-      <div class="landing-outcomes">
-        <div class="landing-outcome">
-          <svg class="landing-outcome-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 4L3 6.2v13.8l6-2.2 6 2.2 6-2.2V4l-6 2.2z"/><path d="M9 4v13.8M15 6.2V20"/>
-          </svg>
-          <span>A living map of a life</span>
-        </div>
-        <div class="landing-outcome">
-          <svg class="landing-outcome-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-          </svg>
-          <span>A printable keepsake book</span>
-        </div>
-        <div class="landing-outcome">
-          <svg class="landing-outcome-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
-          </svg>
-          <span>Stories pinned to real places</span>
+      <!-- ── Name CTA ── -->
+      <div class="landing-cta-band">
+        <div class="landing-cta-inner">
+          <label class="landing-cta-label" for="landing-name-input">Whose stories will this be?</label>
+          <div class="landing-cta-row">
+            <input type="text" id="landing-name-input" class="landing-cta-input" placeholder="e.g. Grandma Rose" autocomplete="off">
+            <button class="btn btn-primary" id="landing-start-btn" style="flex:none;height:56px;padding:0 28px;font-size:17px;white-space:nowrap">
+              Begin →
+            </button>
+          </div>
+          <p class="landing-cta-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:13px;height:13px;display:inline;vertical-align:middle;margin-right:3px"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+            Saved on this device only. Nothing leaves without your permission.
+          </p>
         </div>
       </div>
 
-      <!-- CTA -->
-      <div class="landing-cta-wrap">
-        <div class="landing-name-prompt">
-          <label class="t-label" for="landing-name-input" style="font-size:16px">Whose stories will this be?</label>
-          <input type="text" id="landing-name-input" placeholder="e.g. Grandma Rose" autocomplete="off"
-            style="width:100%;margin-top:10px;border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:14px 16px;font-size:18px;background:var(--parchment);font-family:var(--font-sans)">
+      <!-- ── Story cards preview ── -->
+      <div class="landing-preview-band">
+        <p class="landing-section-label">What you'll build</p>
+
+        <div class="landing-preview-card card">
+          <div class="landing-preview-story">
+            <div class="landing-preview-dot" aria-hidden="true"></div>
+            <div class="landing-preview-body">
+              <div class="landing-preview-title">The House on Elm Street</div>
+              <div class="landing-preview-chips">
+                <span class="chip chip-place">
+                  <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                  Lincoln School
+                </span>
+                <span class="chip chip-era">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                  About 1951
+                </span>
+              </div>
+              <p class="landing-preview-quote">"We lived at the end of Elm Street, past the big oak. My father painted the porch green every spring..."</p>
+            </div>
+            <span class="landing-preview-dur">3:08</span>
+          </div>
+          <div class="landing-preview-story" style="border-top:1px solid var(--line)">
+            <div class="landing-preview-dot" aria-hidden="true"></div>
+            <div class="landing-preview-body">
+              <div class="landing-preview-title">The Movie Theater</div>
+              <div class="landing-preview-chips">
+                <span class="chip chip-place">
+                  <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                  Main Street
+                </span>
+                <span class="chip chip-era">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                  Age about 12
+                </span>
+              </div>
+            </div>
+            <span class="landing-preview-dur">4:12</span>
+          </div>
         </div>
-        <button class="btn btn-primary btn-block" id="landing-start-btn" style="margin-top:14px;font-size:19px;height:60px">
-          Start preserving stories →
-        </button>
-        <p class="landing-private-note">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:4px"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-          Stories are saved on this device only. Nothing leaves without your permission.
-        </p>
-        <button id="landing-skip-btn" style="background:none;border:none;cursor:pointer;font-size:15px;color:var(--ink-soft);margin-top:10px;width:100%;padding:6px 0;">
-          Browse first — I'll add a name later
+      </div>
+
+      <!-- ── How it works ── -->
+      <div class="landing-how-band">
+        <p class="landing-section-label">How it works</p>
+        <div class="landing-steps">
+          <div class="landing-step">
+            <div class="landing-step-num">1</div>
+            <div>
+              <div class="landing-step-title">Speak a memory</div>
+              <div class="landing-step-body">The app offers one open question to start. Tap record and speak for as long or short as you like. No typing needed.</div>
+            </div>
+          </div>
+          <div class="landing-step">
+            <div class="landing-step-num">2</div>
+            <div>
+              <div class="landing-step-title">Place it in time and on the map</div>
+              <div class="landing-step-body">One question places the story in the timeline. If you mention a place, it finds it on the map automatically.</div>
+            </div>
+          </div>
+          <div class="landing-step">
+            <div class="landing-step-num">3</div>
+            <div>
+              <div class="landing-step-title">Build the atlas</div>
+              <div class="landing-step-body">Stories stack into a living map and a printable keepsake book — a whole life, pinned to the places it was lived.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Footer skip ── -->
+      <div class="landing-footer-band">
+        <button id="landing-skip-btn" class="landing-skip-btn">
+          Browse first, add a name later
         </button>
       </div>
 
@@ -466,8 +468,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLcE=" crossorigin=""></script>
 
-<!-- App — v=20261030g forces cache bust after landing page redesign -->
-<script type="module" src="js/app.js?v=20261030g"></script>
+<!-- App — v=20261030h forces cache bust after landing page redesign -->
+<script type="module" src="js/app.js?v=20261030h"></script>
 
 <!-- Wire up back buttons and home record CTA (outside module scope) -->
 <script>
