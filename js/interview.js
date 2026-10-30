@@ -139,6 +139,31 @@ class VoiceCapture {
   }
 }
 
+// ── Text-to-speech ────────────────────────────────────────────────────────────
+// Reads a question aloud using the browser's built-in Speech Synthesis API.
+// Works offline, no library needed. Uses a slower rate and slightly lower pitch
+// to be comfortable for older listeners.
+let _activeSpeech = null;
+
+function speakQuestion(text, { onStart, onEnd } = {}) {
+  if (!window.speechSynthesis) return;
+  // Cancel anything currently speaking first
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate  = 0.88;   // slightly slower than default (1.0)
+  utter.pitch = 0.95;   // just a touch warmer
+  utter.lang  = 'en-US';
+  if (onStart) utter.onstart = onStart;
+  if (onEnd)   utter.onend   = onEnd;
+  _activeSpeech = utter;
+  window.speechSynthesis.speak(utter);
+}
+
+function stopSpeaking() {
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  _activeSpeech = null;
+}
+
 export {
   QUESTION_BANK,
   pickNextQuestion,
@@ -146,4 +171,6 @@ export {
   detectPlace,
   buildOrderingQuestion,
   VoiceCapture,
+  speakQuestion,
+  stopSpeaking,
 };

@@ -171,6 +171,14 @@ img { display: block; max-width: 100%; }
 .btn-primary:hover { background: var(--rust-dark); }
 .btn-secondary { background: var(--paper); color: var(--ink); border: 1.5px solid #cdbfa8; }
 .btn-secondary:hover { background: var(--parchment); }
+/* Read-aloud button — ochre/gold accent, pulse animation while speaking */
+.btn-speak { background: var(--paper); color: var(--ochre-text); border: 1.5px solid var(--ochre); }
+.btn-speak:hover { background: var(--ochre-tint); }
+.btn-speak.speaking { background: var(--ochre-tint); color: var(--rust-dark); border-color: var(--rust); animation: speak-pulse 1.4s ease-in-out infinite; }
+@keyframes speak-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(181,137,58,.35); }
+  50%       { box-shadow: 0 0 0 6px rgba(181,137,58,0); }
+}
 .btn-quiet    { background: var(--parchment-deep); color: var(--ink); }
 .btn-quiet:hover { background: var(--line); }
 .btn-ghost    { color: var(--rust-dark); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; font-size: 16px; font-weight: 600; height: auto; padding: 0; }

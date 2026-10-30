@@ -9,6 +9,8 @@ import {
   generateId, formatDuration, assignEra,
 } from './storage.js';
 
+import { speakQuestion, stopSpeaking } from './interview.js';
+
 import { Recorder, renderWaveform } from './recorder.js';
 import { transcribe, detectPlaces }  from './transcriber.js';
 import { startPlacer, hidePlacer }    from './placer.js';
@@ -256,6 +258,26 @@ function _statusHtml(story) {
 
 function _bindRecord() {
   $('record-btn').onclick  = () => _startRecording();
+
+  // Read question aloud — toggle: speaking → click again to stop
+  $('btn-read-aloud').onclick = () => {
+    const btn = $('btn-read-aloud');
+    if (btn.classList.contains('speaking')) {
+      stopSpeaking();
+      btn.classList.remove('speaking');
+      btn.setAttribute('aria-label', 'Read question aloud');
+    } else {
+      btn.classList.add('speaking');
+      btn.setAttribute('aria-label', 'Stop reading');
+      speakQuestion(_currentQuestion, {
+        onEnd: () => {
+          btn.classList.remove('speaking');
+          btn.setAttribute('aria-label', 'Read question aloud');
+        },
+      });
+    }
+  };
+
   $('btn-skip-q').onclick  = () => _nextQuestion();
   $('btn-write-q').onclick = () => {
     $('custom-q-wrap').style.display = 'block';
@@ -277,6 +299,14 @@ function _bindRecord() {
 }
 
 function _nextQuestion() {
+  // Stop any in-progress speech from the previous question
+  stopSpeaking();
+  const readBtn = $('btn-read-aloud');
+  if (readBtn) {
+    readBtn.classList.remove('speaking');
+    readBtn.setAttribute('aria-label', 'Read question aloud');
+  }
+
   if (_usedQIndices.length >= QUESTIONS.length) _usedQIndices = [];
   let idx;
   do { idx = Math.floor(Math.random() * QUESTIONS.length); }
@@ -308,6 +338,10 @@ async function _startRecording() {
 
   _recorder = new Recorder({
     onStart: () => {
+      // Stop reading the question aloud once recording begins
+      stopSpeaking();
+      const readBtn = $('btn-read-aloud');
+      if (readBtn) readBtn.classList.remove('speaking');
       _showRecordRecording();
     },
     onTick: (secs) => {
