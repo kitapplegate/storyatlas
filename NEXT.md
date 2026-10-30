@@ -1,7 +1,7 @@
 # Next
 
-**Action:** Migrate storage from localStorage to Firebase (Firestore + Auth) for real multi-device use.
-**Why now:** App is going beyond hackathon — Kit confirmed intent to ship as a real app; localStorage is a dead end for multi-device families.
-**Start here:** Create a Firebase project at console.firebase.google.com, enable Firestore + Google Auth, then swap `loadData()`/`saveData()` in `js/storage.js` with Firestore reads/writes.
-**Verify with:** Sign in on two different browsers/devices — stories saved on one appear on the other.
-**Watch out for:** Firebase config keys go in a `.env` or a `js/firebase-config.js` that is git-ignored — never commit API keys.
+**Action:** Open https://kitapplegate.github.io/storyatlas in Chrome, do a hard-refresh (Ctrl+Shift+R), confirm the home page loads without the name modal, then press Record and verify the name prompt appears at that point instead.
+**Why now:** The modal fix was pushed (`8ecdfba`) but not yet verified in the real environment — the user reported it was still showing before the cache-bust commit landed.
+**Start here:** `https://kitapplegate.github.io/storyatlas` — Ctrl+Shift+R to force reload
+**Verify with:** Home loads freely → press Record → modal appears → enter name → recording screen opens → speak → transcript appears after stopping.
+**Watch out for:** GitHub Pages can take 2–5 minutes to deploy after a push. If still broken, try opening in a private/incognito window to bypass local cache entirely.

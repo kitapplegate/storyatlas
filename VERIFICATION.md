@@ -30,3 +30,13 @@
 |---|---|---|
 | Repo pushed to GitHub | `git push -u origin master` | **verified** — https://github.com/kitapplegate/storyatlas |
 | GitHub Pages live | Settings → Pages → master / root | **verified** — https://kitapplegate.github.io/storyatlas/ (Kit confirmed) |
+
+## 2026-10-30 — Transcription fix + modal UX
+
+| Scenario | Steps | Result |
+|---|---|---|
+| Live transcript wired (recorder.js + transcriber.js) | Brace check `node -e "..."` on all 3 files | All OK — **tested locally** |
+| Pushed to GitHub Pages | `git push origin master` → `804d028..8ecdfba` | **verified in real environment** — HTTP 200 confirmed |
+| Welcome modal no longer blocks home on load | JS code change `_initWelcome()` replaces `_checkWelcome()` | **implemented** — pushed `804d028` |
+| Modal still showing on live site (user report) | User tested https://kitapplegate.github.io/storyatlas | **failed** — cache serving old code |
+| Cache-bust fix pushed | `index.html` no-cache meta + `?v=20261030` query string, commit `8ecdfba` | **verified in real environment** — push confirmed; browser test **not yet verified** |

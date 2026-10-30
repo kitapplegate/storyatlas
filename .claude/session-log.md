@@ -1,5 +1,19 @@
 # Session Log
 
+## 2026-10-30 05:00
+
+**Summary:** Fixed the two blocking gaps before the live demo. (1) Transcription was broken — `recorder.js` captured audio via `MediaRecorder` but `transcriber.js` returned empty lines because you can't replay a blob through browser Speech Recognition. Fixed by running `SpeechRecognition` in parallel with `MediaRecorder` from the moment recording starts; the live transcript travels alongside the blob into `_onRecordingComplete()` via a new `liveTranscript` parameter (`dfbbc1f`). (2) The welcome modal blocked the home page on first visit. Fixed by moving the open call from load-time `_checkWelcome()` to a `_promptForName()` guard inside `_startRecording()` only (`804d028`). User reported modal still showing — diagnosed as GitHub Pages cache; resolved with no-cache meta + `?v=20261030` cache-bust on `app.js` (`8ecdfba`). All three commits pushed to `origin/master`. Browser verification of the modal fix not yet confirmed.
+
+**Status:**
+- Live transcript (recorder.js + transcriber.js) — **tested locally**: brace checks passed, push confirmed
+- Modal deferred to Record action — **implemented**: pushed `804d028`, browser result not yet verified
+- Cache-bust for modal fix — **verified in real environment**: push `8ecdfba` landed, browser test pending
+
+**Open tasks:**
+- [ ] next — Hard-refresh https://kitapplegate.github.io/storyatlas in Chrome, confirm home loads freely, Record triggers modal, transcript appears after speaking. See NEXT.md.
+
+---
+
 ## 2026-10-06 (session 2)
 
 **Summary:** Added story editing — an Edit button now appears on every card in the Stories page; clicking it opens a modal pre-filled with the story title and full text, lets the user fix transcription errors or tidy wording, and saves via the existing `saveChunk()` in `storage.js` without touching ordering, map pins, or era. Commit `7e08f77`. Also pushed the repo to GitHub (`kitapplegate/storyatlas`) and enabled GitHub Pages — live at https://kitapplegate.github.io/storyatlas/ (HTTPS, so mic works for judges). Discussed Firebase migration: Kit confirmed intent to build this as a real app beyond the hackathon; localStorage is confirmed insufficient; next slice is Firestore + Google Auth swap.
