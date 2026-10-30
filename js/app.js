@@ -57,7 +57,15 @@ document.addEventListener('DOMContentLoaded', () => {
   _initWelcome();
   _bindNav();
   _bindRecord();
+  // Seed history so the browser back button has somewhere to go
+  history.replaceState({ page: 'home' }, '', '');
   _showPage('home');
+});
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', (e) => {
+  const page = e.state?.page || 'home';
+  _showPage(page, /* pushState= */ false);
 });
 
 function _initWelcome() {
@@ -109,12 +117,15 @@ function _bindNav() {
   $('nav-family').onclick  = () => _showToast('Family sharing coming soon.');
 }
 
-function _showPage(name) {
+function _showPage(name, push = true) {
   ['home', 'record', 'listen', 'placer'].forEach(p => {
-    const el = $(  `page-${p}`);
+    const el = $(`page-${p}`);
     if (el) el.style.display = (p === name) ? '' : 'none';
   });
   _currentPage = name;
+
+  // Push a history entry so the browser back button works within the app
+  if (push) history.pushState({ page: name }, '', '');
 
   // Update nav active state
   ['home','record','listen'].forEach(p => {
