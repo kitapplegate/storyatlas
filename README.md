@@ -151,7 +151,7 @@ In [`interview.js`](js/interview.js), replace `pickNextQuestion()` with a call t
 - **Voice-first.** The mic is the primary input; typing is always a fallback, never a requirement.
 - **One ordering question per session, never mid-story.**
 - **Human agency.** The AI never declares a story finished. `complete: false` by default — only a family member can set it to `true`.
-- **Data stays local by default.** Everything lives in `localStorage`. No network calls except geocoding (OpenStreetMap, opt-in).
+- **Data stays local for the hackathon.** Story text lives in `localStorage` and audio in IndexedDB, on the device that recorded it. Families keep an off-device copy with "Download all stories". Cloud sync and family sharing are the production plan — see [`ROADMAP.md`](ROADMAP.md).
 
 ---
 
@@ -159,7 +159,7 @@ In [`interview.js`](js/interview.js), replace `pickNextQuestion()` with a call t
 
 - Speech recognition accuracy depends on the browser's model (Chrome is best).
 - Place detection is heuristic (capitalised proper nouns after prepositions). watsonx NER will be more accurate.
-- No user authentication or multi-device sync in MVP (by design — local-first).
+- No user authentication or multi-device sync in MVP (by design — local-first). The production plan (local-first with cloud sync) is in [`ROADMAP.md`](ROADMAP.md).
 - Photo attachments are stored as base64 in localStorage; large photos may hit storage limits.
 
 ---
