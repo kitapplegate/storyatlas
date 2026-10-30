@@ -21,11 +21,8 @@
   ═══════════════════════════════════════════════════════════ -->
   <header class="appbar">
     <div class="appbar-logo" id="nav-home" role="button" tabindex="0" aria-label="Go to home" style="cursor:pointer">
-      <img src="assets/mark.svg" alt="Story Atlas" width="28" height="28" style="display:block">
+      <img src="assets/lockup.svg" alt="Story Atlas" height="24" style="display:block">
     </div>
-    <span class="appbar-wordmark">
-      <img src="assets/lockup.svg" alt="Story Atlas" height="22" style="display:block">
-    </span>
     <span class="appbar-divider" aria-hidden="true"></span>
     <span class="appbar-name" id="appbar-name"></span>
 
@@ -63,26 +60,28 @@
 
       <!-- Hero -->
       <div class="landing-hero">
-        <div class="landing-logo" aria-hidden="true">
-          <img src="assets/mark.svg" alt="" width="80" height="80">
-        </div>
-        <div style="margin-top:18px">
-          <img src="assets/lockup.svg" alt="Story Atlas" style="height:36px;max-width:100%">
-        </div>
+        <img src="assets/mark.svg" alt="" class="landing-hero-mark" aria-hidden="true">
         <p class="landing-tagline">Every life deserves a map.</p>
       </div>
 
       <!-- Mission -->
       <div class="landing-mission">
         <p class="landing-mission-text">
-          The stories that matter most — where your grandmother grew up, what your grandfather built, the moment everything changed — live only in memory. When that memory is gone, they're gone.
+          The stories that matter most — where your grandmother grew up, what your grandfather built, the moment everything changed — live only in memory. When that memory is gone, they're gone forever.
         </p>
         <p class="landing-mission-text" style="margin-top:14px">
           Story Atlas helps families capture those stories, one voice at a time, and pin them to the places where they happened. No writing required. Just speak.
         </p>
       </div>
 
+      <!-- Pull quote -->
+      <blockquote class="landing-quote">
+        <p>"I didn't realise how much I didn't know about my father until it was too late to ask."</p>
+        <cite>— What Story Atlas is built to prevent</cite>
+      </blockquote>
+
       <!-- How it works -->
+      <div class="landing-steps-heading">How it works</div>
       <div class="landing-steps">
         <div class="landing-step">
           <div class="landing-step-icon">
@@ -119,6 +118,28 @@
         </div>
       </div>
 
+      <!-- What you get -->
+      <div class="landing-outcomes">
+        <div class="landing-outcome">
+          <svg class="landing-outcome-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 4L3 6.2v13.8l6-2.2 6 2.2 6-2.2V4l-6 2.2z"/><path d="M9 4v13.8M15 6.2V20"/>
+          </svg>
+          <span>A living map of a life</span>
+        </div>
+        <div class="landing-outcome">
+          <svg class="landing-outcome-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          <span>A printable keepsake book</span>
+        </div>
+        <div class="landing-outcome">
+          <svg class="landing-outcome-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
+          </svg>
+          <span>Stories pinned to real places</span>
+        </div>
+      </div>
+
       <!-- CTA -->
       <div class="landing-cta-wrap">
         <div class="landing-name-prompt">
@@ -129,7 +150,11 @@
         <button class="btn btn-primary btn-block" id="landing-start-btn" style="margin-top:14px;font-size:19px;height:60px">
           Start preserving stories →
         </button>
-        <button id="landing-skip-btn" style="background:none;border:none;cursor:pointer;font-size:15px;color:var(--ink-soft);margin-top:14px;width:100%;padding:6px 0;">
+        <p class="landing-private-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:4px"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          Stories are saved on this device only. Nothing leaves without your permission.
+        </p>
+        <button id="landing-skip-btn" style="background:none;border:none;cursor:pointer;font-size:15px;color:var(--ink-soft);margin-top:10px;width:100%;padding:6px 0;">
           Browse first — I'll add a name later
         </button>
       </div>
@@ -441,8 +466,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLcE=" crossorigin=""></script>
 
-<!-- App — v=20261030f forces cache bust after logo integration -->
-<script type="module" src="js/app.js?v=20261030f"></script>
+<!-- App — v=20261030g forces cache bust after landing page redesign -->
+<script type="module" src="js/app.js?v=20261030g"></script>
 
 <!-- Wire up back buttons and home record CTA (outside module scope) -->
 <script>
