@@ -48,6 +48,98 @@
   </header>
 
   <!-- ══════════════════════════════════════════════════════════
+       LANDING PAGE (shown once to first-time visitors)
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="page-landing" style="display:none">
+
+    <!-- Topo decoration -->
+    <svg class="topo-bg" viewBox="0 0 330 300" aria-hidden="true" style="opacity:.6">
+      <path d="M250.3,110.0 L248.9,116.4 L245.0,122.2 L239.7,127.6 L234.8,130.3 L228.8,131.3 L222.8,130.7 L217.4,129.4 L212.3,128.7 L206.5,128.5 L200.0,127.8 L194.1,125.6 L191.8,123.8 L190.1,121.7 L189.2,119.4 L188.8,116.9 L189.3,112.2 L190.5,107.9 L192.1,103.8 L194.6,100.0 L198.4,97.0 L202.6,95.8 L207.4,92.7 L212.4,89.7 L217.0,87.5 L223.3,85.7 L229.9,86.1 L235.4,88.9 L239.2,92.8 L241.9,96.8 L244.6,100.3 L247.6,103.9 L249.9,107.8Z" fill="none" stroke="#cdbf9f" stroke-width="1.3"/>
+      <path d="M278.3,110.0 L275.3,118.0 L271.7,125.7 L266.9,132.9 L259.8,139.1 L250.5,143.4 L240.4,146.1 L230.4,148.4 L220.0,151.0 L208.4,152.8 L196.4,151.7 L186.6,146.6 L183.1,142.9 L180.6,138.8 L177.6,130.8 L174.8,123.7 L172.9,120.5 L168.2,113.7 L164.5,106.0 L163.9,101.8 L165.7,93.5 L170.9,86.0 L178.0,79.3 L186.5,73.2 L196.6,68.7 L208.3,67.1 L220.0,69.1 L229.9,73.4 L238.3,77.7 L246.9,80.5 L257.3,82.7 L268.0,86.5 L276.1,93.0 L279.3,101.4Z" fill="none" stroke="#cdbf9f" stroke-width="1.3"/>
+    </svg>
+
+    <div class="landing-wrap">
+
+      <!-- Hero -->
+      <div class="landing-hero">
+        <div class="landing-logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2"/>
+            <path d="M24 44s-14-12.4-14-23A14 14 0 0 1 38 21C38 31.6 24 44 24 44z" stroke="currentColor" stroke-width="2"/>
+            <circle cx="24" cy="19" r="4" stroke="currentColor" stroke-width="2"/>
+            <path d="M8 28a38 38 0 0 0 32 0" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 3"/>
+          </svg>
+        </div>
+        <h1 class="landing-title">Story Atlas</h1>
+        <p class="landing-tagline">Every life deserves a map.</p>
+      </div>
+
+      <!-- Mission -->
+      <div class="landing-mission">
+        <p class="landing-mission-text">
+          The stories that matter most — where your grandmother grew up, what your grandfather built, the moment everything changed — live only in memory. When that memory is gone, they're gone.
+        </p>
+        <p class="landing-mission-text" style="margin-top:14px">
+          Story Atlas helps families capture those stories, one voice at a time, and pin them to the places where they happened. No writing required. Just speak.
+        </p>
+      </div>
+
+      <!-- How it works -->
+      <div class="landing-steps">
+        <div class="landing-step">
+          <div class="landing-step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>
+            </svg>
+          </div>
+          <div>
+            <div class="landing-step-title">Speak a memory</div>
+            <div class="landing-step-body">Answer one gentle question at a time. No writing, no setup — just your voice and a memory.</div>
+          </div>
+        </div>
+        <div class="landing-step">
+          <div class="landing-step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>
+            </svg>
+          </div>
+          <div>
+            <div class="landing-step-title">Pin it to the world</div>
+            <div class="landing-step-body">Stories are placed on a living map — the village in Ireland, the office in Nairobi, the kitchen in Queens.</div>
+          </div>
+        </div>
+        <div class="landing-step">
+          <div class="landing-step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div>
+            <div class="landing-step-title">Keep it in the family</div>
+            <div class="landing-step-body">Stories stay on your device by default. Print a keepsake book, or share with family when you're ready.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="landing-cta-wrap">
+        <div class="landing-name-prompt">
+          <label class="t-label" for="landing-name-input" style="font-size:16px">Whose stories will this be?</label>
+          <input type="text" id="landing-name-input" placeholder="e.g. Grandma Rose" autocomplete="off"
+            style="width:100%;margin-top:10px;border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:14px 16px;font-size:18px;background:var(--parchment);font-family:var(--font-sans)">
+        </div>
+        <button class="btn btn-primary btn-block" id="landing-start-btn" style="margin-top:14px;font-size:19px;height:60px">
+          Start preserving stories →
+        </button>
+        <button id="landing-skip-btn" style="background:none;border:none;cursor:pointer;font-size:15px;color:var(--ink-soft);margin-top:14px;width:100%;padding:6px 0;">
+          Browse first — I'll add a name later
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
        HOME PAGE
   ═══════════════════════════════════════════════════════════ -->
   <section id="page-home" style="display:none">
@@ -351,8 +443,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLcE=" crossorigin=""></script>
 
-<!-- App — v=20261030d forces cache bust after browser back-button fix -->
-<script type="module" src="js/app.js?v=20261030d"></script>
+<!-- App — v=20261030e forces cache bust after landing page -->
+<script type="module" src="js/app.js?v=20261030e"></script>
 
 <!-- Wire up back buttons and home record CTA (outside module scope) -->
 <script>

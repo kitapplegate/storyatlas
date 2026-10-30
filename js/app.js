@@ -54,36 +54,30 @@ let _usedQIndices = [];
 // ── Init ─────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  _initWelcome();
+  _initLanding();
   _bindNav();
   _bindRecord();
-  // Seed history so the browser back button has somewhere to go
-  history.replaceState({ page: 'home' }, '', '');
-  _showPage('home');
+  // Always start on the landing page
+  history.replaceState({ page: 'landing' }, '', '');
+  _showPage('landing');
 });
 
 // Handle browser back/forward buttons
 window.addEventListener('popstate', (e) => {
-  const page = e.state?.page || 'home';
+  const page = e.state?.page || 'landing';
   _showPage(page, /* pushState= */ false);
 });
 
-function _initWelcome() {
-  // Wire the save button once — modal is shown on demand, not on load
-  $('welcome-save-btn').onclick = () => {
-    const name = $('welcome-name-input').value.trim();
-    if (!name) return;
-    saveStoryteller({ name });
-    $('welcome-modal-overlay').classList.remove('open');
-    _refreshAll();
+function _initLanding() {
+  $('landing-start-btn').onclick = () => {
+    const name = $('landing-name-input').value.trim();
+    if (name) saveStoryteller({ name });
+    _showPage('home');
   };
-  $('welcome-name-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') $('welcome-save-btn').click();
+  $('landing-name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('landing-start-btn').click();
   });
-  // "Browse first" link dismisses without saving
-  $('welcome-skip-btn').onclick = () => {
-    $('welcome-modal-overlay').classList.remove('open');
-  };
+  $('landing-skip-btn').onclick = () => _showPage('home');
 }
 
 /** Show the name modal — called when the user tries to record without a name set */
@@ -105,7 +99,8 @@ function _promptForName(afterSave) {
 
 function _bindNav() {
   const navHome = $('nav-home');
-  if (navHome) navHome.onclick = () => _showPage('home');
+  // Logo always goes back to the landing page
+  if (navHome) navHome.onclick = () => _showPage('landing');
   $('nav-record').onclick  = () => {
     if (!getStoryteller().name) {
       _promptForName(() => _showPage('record'));
@@ -118,7 +113,7 @@ function _bindNav() {
 }
 
 function _showPage(name, push = true) {
-  ['home', 'record', 'listen', 'placer'].forEach(p => {
+  ['landing', 'home', 'record', 'listen', 'placer'].forEach(p => {
     const el = $(`page-${p}`);
     if (el) el.style.display = (p === name) ? '' : 'none';
   });
