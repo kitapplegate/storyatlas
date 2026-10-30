@@ -1,5 +1,24 @@
 # Session Log
 
+## 2026-10-30 10:59
+
+**Summary:** Long session fixing the core user flow and adding meaningful UX. Started with live testing that revealed three blocking bugs: (1) the name modal never fired because `nav-record` called `_showPage('record')` directly, bypassing `_startRecording()`'s guard — fixed by gating `_bindNav()` on `getStoryteller().name`; (2) after stopping a recording `_onRecordingComplete` jumped straight to the placer wizard — no transcript shown, no Save button — fixed by adding a `record-state-review` screen; (3) `detectPlaces()` required capital letters but Web Speech API returns lowercase — fixed with a case-insensitive regex and stop-word list. Also added: read-aloud for questions (Web Speech Synthesis, rate 0.88, gold pulse button, `59809f5`); browser back-button support via `history.pushState` in `_showPage()`; a permanent landing page (hero + CTA card + story preview + numbered steps, `83d9ddf`→`40dfef3` after two redesign rounds based on the design spec PNG); brand logo from `design/logo/` integrated into app bar, landing hero, and favicon (`23e3f95`). Nine commits pushed to `origin/master`; landing page approved by Kit. Full end-to-end browser run not yet done.
+
+**Status:**
+- Read-aloud button (interview.js + index.html + app.js) — **implemented**: pushed `59809f5`
+- Name modal, review screen, Save button — **implemented**: Kit confirmed Edit button visible in browser after `b0e79f7`
+- Place detection + auto-geocode — **implemented**: pushed `e0f93c1`; not yet browser-verified
+- Browser back button (history API) — **implemented**: pushed `4733c37`; not yet browser-verified
+- Landing page + logo — **implemented**: Kit confirmed "much better" after `40dfef3`
+
+**Open tasks:**
+- [ ] next — Full end-to-end demo path in Chrome incognito (landing → name → record → place mention → stop → transcript → save → map pin → home story card). See NEXT.md.
+- [ ] not-yet-verified — Browser back button, logo rendering, place auto-geocode all code-only
+
+**Deferred:** Firebase/Firestore migration (post-hackathon, decision already made)
+
+---
+
 ## 2026-10-30 05:00
 
 **Summary:** Fixed the two blocking gaps before the live demo. (1) Transcription was broken — `recorder.js` captured audio via `MediaRecorder` but `transcriber.js` returned empty lines because you can't replay a blob through browser Speech Recognition. Fixed by running `SpeechRecognition` in parallel with `MediaRecorder` from the moment recording starts; the live transcript travels alongside the blob into `_onRecordingComplete()` via a new `liveTranscript` parameter (`dfbbc1f`). (2) The welcome modal blocked the home page on first visit. Fixed by moving the open call from load-time `_checkWelcome()` to a `_promptForName()` guard inside `_startRecording()` only (`804d028`). User reported modal still showing — diagnosed as GitHub Pages cache; resolved with no-cache meta + `?v=20261030` cache-bust on `app.js` (`8ecdfba`). All three commits pushed to `origin/master`. Browser verification of the modal fix not yet confirmed.

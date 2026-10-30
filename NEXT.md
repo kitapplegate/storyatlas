@@ -1,7 +1,7 @@
 # Next
 
-**Action:** Open https://kitapplegate.github.io/storyatlas in Chrome, do a hard-refresh (Ctrl+Shift+R), confirm the home page loads without the name modal, then press Record and verify the name prompt appears at that point instead.
-**Why now:** The modal fix was pushed (`8ecdfba`) but not yet verified in the real environment — the user reported it was still showing before the cache-bust commit landed.
-**Start here:** `https://kitapplegate.github.io/storyatlas` — Ctrl+Shift+R to force reload
-**Verify with:** Home loads freely → press Record → modal appears → enter name → recording screen opens → speak → transcript appears after stopping.
-**Watch out for:** GitHub Pages can take 2–5 minutes to deploy after a push. If still broken, try opening in a private/incognito window to bypass local cache entirely.
+**Action:** Open https://kitapplegate.github.io/storyatlas in Chrome incognito, run the full demo path end-to-end: landing page → enter name → Record → speak a story mentioning a place → Stop → review transcript → Save → confirm place on map → browse home page with story card visible.
+**Why now:** Every fix this session was code-only. The full flow has never been verified in a real browser from landing page to saved story.
+**Start here:** https://kitapplegate.github.io/storyatlas (incognito, Ctrl+Shift+R to force fresh load)
+**Verify with:** Landing page renders with mark logo, name input, story preview cards. Enter name → dashboard loads. Record → speak "I grew up in Chicago" → Stop → transcript appears → Save → map shows Chicago pin → story card on home page.
+**Watch out for:** GitHub Pages may still be deploying commit 40dfef3 — wait 2 min if the landing page doesn't look right. Speech recognition only works in Chrome/Edge, not Safari.

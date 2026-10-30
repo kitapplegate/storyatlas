@@ -40,3 +40,18 @@
 | Welcome modal no longer blocks home on load | JS code change `_initWelcome()` replaces `_checkWelcome()` | **implemented** — pushed `804d028` |
 | Modal still showing on live site (user report) | User tested https://kitapplegate.github.io/storyatlas | **failed** — cache serving old code |
 | Cache-bust fix pushed | `index.html` no-cache meta + `?v=20261030` query string, commit `8ecdfba` | **verified in real environment** — push confirmed; browser test **not yet verified** |
+
+## 2026-10-30 — Session 4 (read-aloud, review screen, place detection, navigation, landing page, logo)
+
+| Scenario | Steps | Result |
+|---|---|---|
+| Read-aloud button (Web Speech Synthesis) | Code review — `speakQuestion()` in `js/interview.js`, `#btn-read-aloud` in `index.html` | **implemented** — pushed `59809f5` |
+| Name modal fires on nav-record click | Code review — `_bindNav()` guard in `js/app.js` | **implemented** — pushed `b0e79f7` |
+| Review screen + Save button after recording | Code review — `record-state-review` HTML, `_showRecordReview()`, `_onRecordingComplete()` | **implemented** — pushed `b0e79f7`; Kit confirmed Edit button appeared |
+| Place detection for lowercase speech output | Code review — `detectPlaces()` regex now case-insensitive in `js/transcriber.js` | **implemented** — pushed `e0f93c1` |
+| Auto-geocode first detected place | Code review — `placer.js` auto-selects first suggestion and calls `_geocode()` | **implemented** — pushed `e0f93c1` |
+| Browser back button navigates within app | Code review — `history.pushState` in `_showPage()`, `popstate` listener | **implemented** — pushed `4733c37`; **not yet verified in browser** |
+| Landing page | Code review — `page-landing` section, `_initLanding()`, CSS bands | **implemented** — Kit confirmed it looked "much better" after `40dfef3` |
+| Brand logo in app bar + landing hero + favicon | Code review — `assets/mark.svg`, `assets/lockup.svg`, `<link rel="icon">` | **implemented** — pushed `23e3f95`; **not yet verified visually in browser** |
+| Full end-to-end demo path (landing → record → save → map) | Not yet run | **not yet verified** |
+
