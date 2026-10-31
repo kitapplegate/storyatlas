@@ -1,7 +1,7 @@
 # Next
 
-**Action:** Open https://kitapplegate.github.io/storyatlas in Chrome incognito, run the full demo path: landing page → enter name → Record → speak a story mentioning a place → Stop → review transcript → Save → confirm place on map → browse home page with story card visible.
-**Why now:** All landing page polish is done and deployed. The full flow has never been verified end-to-end in a real browser.
-**Start here:** https://kitapplegate.github.io/storyatlas (incognito, Ctrl+Shift+R)
-**Verify with:** Landing shows "Every story has a place." with no topo swirls. Logo tap goes to home. Enter name → dashboard loads. Record → speak "I grew up in Chicago" → Stop → transcript appears → Save → map shows Chicago pin → story card on home page.
-**Watch out for:** GitHub Pages may lag 1–2 min after a push. Speech recognition only works in Chrome/Edge, not Safari.
+**Action:** On your phone (Chrome), run the full demo on https://kitapplegate.github.io/storyatlas: enter a name → Record → say "I grew up in Chicago…" for ~30 s → Stop → Save → place it → play it back → home → "Download all stories".
+**Why now:** Every change since Oct 30 was tested with a fake mic in desktop Chrome; real voice, speech-to-text, and phone downloads have never been observed.
+**Start here:** https://kitapplegate.github.io/storyatlas (check page source shows `app.js?v=20261030o` or later)
+**Verify with:** Transcript appears on review; Chicago pin on the map; playback sounds clear at 48 kbps; the backup `.json` lands in phone Downloads. Note results in VERIFICATION.md.
+**Watch out for:** Speech recognition needs Chrome/Edge (not Safari). Data is per-browser — a new phone or cleared site data starts empty unless restored from a backup.

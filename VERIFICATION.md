@@ -65,3 +65,20 @@
 | Tagline restored to "Every story has a place." | Changed `landing-h1` text in `index.html` | **verified in the real environment**: `Invoke-WebRequest` confirmed live HTML reads `Every story<br>has a place.`; pushed `121ae86` |
 | Full end-to-end demo path (landing → record → save → map) | Not yet run | **not yet verified** |
 
+## 2026-10-30 — Audit fixes + storage (Claude Code)
+
+Local runs: `node serve.mjs` static server on :8093, Chrome via Claude in Chrome, fake mic (AudioContext oscillator/noise → `getUserMedia` stub, `SpeechRecognition` disabled).
+
+| Scenario | Steps | Result |
+|---|---|---|
+| Maps load (Leaflet SRI hash) | Hash recomputed from unpkg + jsdelivr; placer and listen maps opened | **verified in the real environment**: live `index.html` serves `…lvTlZBo=`; tiles load locally; pushed `94dea4f` |
+| Life-order placement | Saved 4 stories; after/after, after/before, before×3 | **tested locally**: each landed in the chosen slot (old bug put NEW between wrong stories) |
+| Transcript lines, title, question saved | Record → review → Save → Listen | **tested locally**: strings, no `[object Object]`; title editable |
+| Back mid-recording stops mic | Back during recording | **tested locally**: track ended, take shown on review |
+| Audio in IndexedDB + migration | Seeded 5 legacy base64 stories, reload | **tested locally**: localStorage 43,371 → 579 chars; blobs play |
+| Save failure handling | Forced `localStorage.setItem` to throw | **tested locally**: stays on review, error + download link, no orphan audio, retry saves |
+| Backup / restore | Download all → wipe → restore → restore again → bad file | **tested locally**: 5/5 back in order with audio; 2nd restore "5 already here"; bad file rejected |
+| 48 kbps recording | Same 10 s noise through app Recorder vs default MediaRecorder | **tested locally**: 55,611 vs 161,045 bytes; live `recorder.js` has 48000 (`6b1d2a5`) |
+| Real voice / speech-to-text on a phone | Not run (automation can't drive speech recognition) | **not yet verified** |
+| Safari / iPhone (IndexedDB, MediaRecorder mp4) | Not run | **not yet verified** |
+

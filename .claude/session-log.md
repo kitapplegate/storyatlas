@@ -1,3 +1,20 @@
+## 2026-10-31 02:21
+
+**Summary:** Claude Code audit of the Bob-built app, then fixes in priority order. Root causes: a wrong Leaflet SRI hash in `index.html` blocked Leaflet, so no map loaded on the live site; `placer.js` `_finish` saved a stale `orderIndex`, putting stories in the wrong life-order slot; transcripts were saved as objects but rendered as strings (`[object Object]`); audio was base64 in localStorage (~5 MB cap, ~15 min of stories) and a failed save still said "Story saved". Fixed in `94dea4f`: binary-search placement, new `js/audiostore.js` (IndexedDB blobs, auto-migration, persist request), save-failure box with a download of the take, new `js/backup.js` (download/restore all stories). `c887a2e` adds `ROADMAP.md` (production = local-first + cloud sync) and `AGENTS.md` telling Bob the hackathon stays local. `6b1d2a5` records at 48 kbps (~20 MB/hr vs ~58). All pushed and live. Kit's later commits (`b175dc6`..`c44d3f4`) left intact.
+
+**Status:**
+- Maps / SRI fix -- **verified in the real environment**: live index.html serves the correct hash
+- Ordering, transcripts, back-stops-mic, titles -- **tested locally**: Chrome + fake mic on :8093
+- IndexedDB audio, migration, save failure, backup/restore -- **tested locally**: see VERIFICATION.md 2026-10-30 Claude Code table
+- 48 kbps recording -- **tested locally**: 55,611 vs 161,045 bytes per 10 s; live recorder.js confirmed
+
+**Open tasks:**
+- [ ] next -- Real phone demo: record a voice story, check transcript, map pin, playback, and backup download. See NEXT.md.
+- [ ] not-yet-verified -- Safari/iPhone recording and IndexedDB.
+- [ ] next -- Fix made-up era labels (`assignEra` from list position) and landing privacy copy (Chrome speech goes to Google).
+
+**Deferred:** By-place toggle, story-card keyboard access, OSM attribution, dead code (keepsake.js, grammar.js), README/BOB_USAGE overclaims.
+
 ## 2026-10-30 22:45
 
 **Summary:** Three small landing page fixes, all deployed and confirmed live via `Invoke-WebRequest`. (1) Logo tap in the app bar was conditionally routing to landing vs home depending on `_isReturning()` — changed to always go to home (`b175dc6`, `js/app.js:114`). (2) The topo contour SVG decoration in the landing hero was confusing; removed it entirely (`b0fd4cd`, `index.html`). (3) Tagline was "Every life deserves a map." — Kit preferred the original "Every story has a place." from the design spec (`HANDOFF.md:126`); restored (`121ae86`). Also committed the previously untracked `design/logo/` assets and `.claude/session-log-entry.md` (`469cb57`). All four commits pushed to `origin/master`.
