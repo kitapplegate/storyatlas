@@ -116,26 +116,39 @@ export function detectPlaces(text) {
   const places = [];
   const seen = new Set();
 
-  // Web Speech API returns lowercase — match case-insensitively, then title-case the result
-  const pattern = /\b(?:in|at|near|outside|around|from|to|by|through|across)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+){0,3})/gi;
   // Common words that are not place names
   const stopWords = new Set(['i','we','they','he','she','the','a','an','my','our','his','her','their',
     'this','that','it','which','what','there','here','some','any','all','just','then','when','very']);
 
-  let m;
-  while ((m = pattern.exec(text)) !== null) {
-    const raw  = m[1].trim();
-    const words = raw.split(/\s+/);
-    // Skip if every word is a stop word or very short
-    if (words.every(w => stopWords.has(w.toLowerCase()) || w.length < 2)) continue;
-    // Title-case each word for display
-    const name = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  function addMatch(raw, contextStart, contextEnd) {
+    const words = raw.trim().split(/\s+/);
+    if (words.every(w => stopWords.has(w.toLowerCase()) || w.length < 2)) return;
+    // Title-case each word for display (preserve digits)
+    const name = words.map(w => /^\d/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
     const key  = name.toLowerCase();
-    if (key.length < 3 || seen.has(key)) continue;
+    if (key.length < 3 || seen.has(key)) return;
     seen.add(key);
-    const start = Math.max(0, m.index - 10);
-    const end   = Math.min(text.length, m.index + m[0].length + 20);
+    const start = Math.max(0, contextStart - 10);
+    const end   = Math.min(text.length, contextEnd + 20);
     places.push({ name, quote: text.slice(start, end).trim() });
+  }
+
+  // Pattern 1: preposition + word-only place name (e.g. "in Chicago", "from Springfield")
+  // Web Speech API returns lowercase — match case-insensitively
+  const wordPattern = /\b(?:in|at|near|outside|around|from|to|by|through|across)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+){0,3})/gi;
+  let m;
+  while ((m = wordPattern.exec(text)) !== null) {
+    addMatch(m[1], m.index, m.index + m[0].length);
+  }
+
+  // Pattern 2: preposition + street address (e.g. "at 123 main street", "on 45 oak avenue")
+  const streetSuffixes = 'street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|way|place|pl|court|ct|circle|cir|highway|hwy';
+  const addrPattern = new RegExp(
+    `\\b(?:at|on|from|near)\\s+(\\d+\\s+[a-zA-Z]+(?:\\s+[a-zA-Z]+){0,2}\\s+(?:${streetSuffixes})(?:[,.]?\\s+[a-zA-Z]+(?:\\s+[a-zA-Z]+){0,2})?)`,
+    'gi'
+  );
+  while ((m = addrPattern.exec(text)) !== null) {
+    addMatch(m[1], m.index, m.index + m[0].length);
   }
 
   return places;
