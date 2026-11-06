@@ -30,7 +30,14 @@ function makePinIcon(active = false) {
 
 export function initHomeMap(containerId) {
   const el = document.getElementById(containerId);
-  if (!el || _atlasMap) return;
+  if (!el) return;
+
+  // If the map already exists for this container, just invalidate size (needed
+  // after display:none → display:'') and re-pin with whatever stories are current.
+  if (_atlasMap) {
+    _atlasMap.invalidateSize();
+    return;
+  }
 
   _atlasMap = L.map(containerId, {
     zoomControl: false, attributionControl: false,
@@ -39,22 +46,34 @@ export function initHomeMap(containerId) {
   }).setView([20, 0], 2);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_atlasMap);
-  refreshHomePins();
 }
 
-export function refreshHomePins() {
+/**
+ * Refresh pins on the home mini-map.
+ * @param {Array} stories - the full story list to pin (may include demo stories)
+ */
+export function refreshHomePins(stories) {
   if (!_atlasMap) return;
-  const stories = getStoriesSorted().filter(s => s.place);
-  if (!stories.length) return;
 
-  stories.forEach(s => {
-    if (!_pins[s.id + '_home']) {
-      const m = L.marker([s.place.lat, s.place.lng], { icon: makePinIcon(false) }).addTo(_atlasMap);
-      _pins[s.id + '_home'] = m;
-    }
+  // Accept an explicit list, or fall back to real storage (legacy callers)
+  const list = (stories || getStoriesSorted()).filter(
+    s => s.place && s.place.lat != null && s.place.lng != null
+  );
+
+  // Remove all existing home pins before re-adding
+  Object.keys(_pins).filter(k => k.endsWith('_home')).forEach(k => {
+    _atlasMap.removeLayer(_pins[k]);
+    delete _pins[k];
   });
 
-  const lls = stories.map(s => [s.place.lat, s.place.lng]);
+  if (!list.length) return;
+
+  list.forEach(s => {
+    const m = L.marker([s.place.lat, s.place.lng], { icon: makePinIcon(false) }).addTo(_atlasMap);
+    _pins[s.id + '_home'] = m;
+  });
+
+  const lls = list.map(s => [s.place.lat, s.place.lng]);
   if (lls.length === 1) _atlasMap.setView(lls[0], 12);
   else _atlasMap.fitBounds(lls, { padding: [16, 16] });
 }

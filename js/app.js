@@ -42,12 +42,12 @@ const _signOut    = ()  => { localStorage.removeItem(AUTH_KEY); _demoMode = fals
 
 // Demo sample data
 const DEMO_STORIES = [
-  { id:'demo-1', title:'First Day of School',      duration:188, place:{ label:'Lincoln School, Springfield' }, era:'Childhood', transcriptLines:['My mother walked me to the gate and wouldn\'t let go of my hand.'], transcriptStatus:'done',    createdAt:'2024-01-01T10:00:00Z' },
-  { id:'demo-2', title:'The House on Elm Street',  duration:222, place:{ label:'Elm Street, Springfield' },     era:'Childhood', transcriptLines:['We lived at the end of Elm Street, past the big oak. My father painted the porch green every spring.'], transcriptStatus:'done', createdAt:'2024-01-02T10:00:00Z' },
-  { id:'demo-3', title:'The Movie Theater',        duration:252, place:{ label:'Main Street, Springfield' },    era:'Youth',     transcriptLines:['Ten cents got you a cartoon, the newsreel, and two pictures if you sat through.'],    transcriptStatus:'pending', createdAt:'2024-01-03T10:00:00Z' },
-  { id:'demo-4', title:'Learning to Drive',        duration:196, place:{ label:'Route 66, Missouri' },          era:'Youth',     transcriptLines:['Dad took me out on a Sunday. He said just feel the road.'],                           transcriptStatus:'done',    createdAt:'2024-01-04T10:00:00Z' },
-  { id:'demo-5', title:'The Summer at the Lake',   duration:340, place:{ label:'Lake Springfield' },            era:'Family',    transcriptLines:['Every July we rented the same cabin. The kids caught frogs in the shallows.'],        transcriptStatus:'done',    createdAt:'2024-01-05T10:00:00Z' },
-  { id:'demo-6', title:'Retiring from the Mill',   duration:274, place:{ label:'Springfield Mills' },           era:'Later',     transcriptLines:['Forty-two years. They gave me a clock and a handshake.'],                            transcriptStatus:'done',    createdAt:'2024-01-06T10:00:00Z' },
+  { id:'demo-1', title:'First Day of School',      duration:188, place:{ label:'Lincoln School, Springfield, IL', lat:39.7817,  lng:-89.6501 }, era:'Childhood', transcriptLines:['My mother walked me to the gate and wouldn\'t let go of my hand.'], transcriptStatus:'done',    createdAt:'2024-01-01T10:00:00Z' },
+  { id:'demo-2', title:'The House on Elm Street',  duration:222, place:{ label:'Elm Street, Springfield, IL',     lat:39.7984,  lng:-89.6540 }, era:'Childhood', transcriptLines:['We lived at the end of Elm Street, past the big oak. My father painted the porch green every spring.'], transcriptStatus:'done', createdAt:'2024-01-02T10:00:00Z' },
+  { id:'demo-3', title:'The Movie Theater',        duration:252, place:{ label:'Main Street, Springfield, IL',    lat:39.7990,  lng:-89.6440 }, era:'Youth',     transcriptLines:['Ten cents got you a cartoon, the newsreel, and two pictures if you sat through.'],    transcriptStatus:'pending', createdAt:'2024-01-03T10:00:00Z' },
+  { id:'demo-4', title:'Learning to Drive',        duration:196, place:{ label:'Route 66, Missouri',              lat:37.2090,  lng:-93.2923 }, era:'Youth',     transcriptLines:['Dad took me out on a Sunday. He said just feel the road.'],                           transcriptStatus:'done',    createdAt:'2024-01-04T10:00:00Z' },
+  { id:'demo-5', title:'The Summer at the Lake',   duration:340, place:{ label:'Lake Springfield, IL',            lat:39.7445,  lng:-89.5840 }, era:'Family',    transcriptLines:['Every July we rented the same cabin. The kids caught frogs in the shallows.'],        transcriptStatus:'done',    createdAt:'2024-01-05T10:00:00Z' },
+  { id:'demo-6', title:'Retiring from the Mill',   duration:274, place:{ label:'Springfield, IL',                 lat:39.7817,  lng:-89.6501 }, era:'Later',     transcriptLines:['Forty-two years. They gave me a clock and a handshake.'],                            transcriptStatus:'done',    createdAt:'2024-01-06T10:00:00Z' },
 ];
 const DEMO_STORYTELLER = { name: 'Grandpa Joe' };
 
@@ -372,10 +372,13 @@ function _renderHome() {
   _renderHomeTimeline(stories);
 
   // Map placeholder vs real Leaflet
+  const storiesWithPlace = stories.filter(s => s.place && s.place.lat != null);
   const placeholder = $('home-map-placeholder');
-  const leafletDiv  = $('home-leaflet');
-  if (placeholder) placeholder.style.display = stories.filter(s => s.place).length ? 'none' : '';
-  if (leafletDiv)  { setTimeout(() => initHomeMap('home-leaflet'), 50); refreshHomePins(); }
+  if (placeholder) placeholder.style.display = storiesWithPlace.length ? 'none' : '';
+  setTimeout(() => {
+    initHomeMap('home-leaflet');
+    refreshHomePins(stories);
+  }, 50);
 
   // Story list (3 most recent)
   _renderStoryList(stories.slice(0, 3));
