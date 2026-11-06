@@ -25,13 +25,34 @@ import {
 // ── State ────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-let _currentPage    = 'home';
-let _recorder       = null;
-let _timerInterval  = null;
-let _players        = [];     // one per layout (mobile sheet + desktop panel)
-let _currentStory   = null;   // story open in listen view
-let _listenMapReady = false;
+let _currentPage     = 'signin';
+let _recorder        = null;
+let _timerInterval   = null;
+let _players         = [];
+let _currentStory    = null;
+let _listenMapReady  = false;
 let _currentQuestion = null;
+let _demoMode        = false;   // true when exploring the sample atlas
+
+// Auth helpers (placeholder — no real accounts yet)
+const AUTH_KEY = 'sa_signed_in';
+const _isSignedIn = () => !!localStorage.getItem(AUTH_KEY);
+const _signIn     = ()  => localStorage.setItem(AUTH_KEY, '1');
+const _signOut    = ()  => { localStorage.removeItem(AUTH_KEY); _demoMode = false; };
+
+// Demo sample data
+const DEMO_STORIES = [
+  { id:'demo-1', title:'First Day of School',      duration:188, place:{ label:'Lincoln School, Springfield' }, era:'Childhood', transcriptLines:['My mother walked me to the gate and wouldn\'t let go of my hand.'], transcriptStatus:'done',    createdAt:'2024-01-01T10:00:00Z' },
+  { id:'demo-2', title:'The House on Elm Street',  duration:222, place:{ label:'Elm Street, Springfield' },     era:'Childhood', transcriptLines:['We lived at the end of Elm Street, past the big oak. My father painted the porch green every spring.'], transcriptStatus:'done', createdAt:'2024-01-02T10:00:00Z' },
+  { id:'demo-3', title:'The Movie Theater',        duration:252, place:{ label:'Main Street, Springfield' },    era:'Youth',     transcriptLines:['Ten cents got you a cartoon, the newsreel, and two pictures if you sat through.'],    transcriptStatus:'pending', createdAt:'2024-01-03T10:00:00Z' },
+  { id:'demo-4', title:'Learning to Drive',        duration:196, place:{ label:'Route 66, Missouri' },          era:'Youth',     transcriptLines:['Dad took me out on a Sunday. He said just feel the road.'],                           transcriptStatus:'done',    createdAt:'2024-01-04T10:00:00Z' },
+  { id:'demo-5', title:'The Summer at the Lake',   duration:340, place:{ label:'Lake Springfield' },            era:'Family',    transcriptLines:['Every July we rented the same cabin. The kids caught frogs in the shallows.'],        transcriptStatus:'done',    createdAt:'2024-01-05T10:00:00Z' },
+  { id:'demo-6', title:'Retiring from the Mill',   duration:274, place:{ label:'Springfield Mills' },           era:'Later',     transcriptLines:['Forty-two years. They gave me a clock and a handshake.'],                            transcriptStatus:'done',    createdAt:'2024-01-06T10:00:00Z' },
+];
+const DEMO_STORYTELLER = { name: 'Grandpa Joe' };
+
+function _getStories()     { return _demoMode ? DEMO_STORIES    : getStoriesSorted(); }
+function _getStoryteller() { return _demoMode ? DEMO_STORYTELLER : getStoryteller(); }
 
 // Question bank (15 open-ended prompts)
 const QUESTIONS = [
@@ -56,37 +77,75 @@ let _usedQIndices = [];
 // ── Init ─────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  _initHome();
+  _bindSignIn();
   _bindNav();
   _bindRecord();
   migrateAudioToIndexedDB().then(n => { if (n) requestPersistence(); });
-  history.replaceState({ page: 'home' }, '', '');
-  _showPage('home', false);
+  const start = _isSignedIn() ? 'home' : 'signin';
+  history.replaceState({ page: start }, '', '');
+  _showPage(start, false);
 });
 
 window.addEventListener('popstate', (e) => {
-  let page = e.state?.page || 'home';
-  if (page === 'placer' || page === 'landing') page = 'home';
+  let page = e.state?.page || 'signin';
+  // Guard: never land on inner pages without being signed in
+  if (!_isSignedIn() && !_demoMode) page = 'signin';
+  if (page === 'placer' || page === 'landing' || page === 'account') page = 'home';
   _showPage(page, false);
 });
 
-function _isReturning() {
-  return !!getStoryteller().name || getStoriesSorted().length > 0;
-}
+// Close avatar menu on outside click
+document.addEventListener('click', (e) => {
+  const menu = $('avatar-menu');
+  const btn  = $('topbar-avatar');
+  if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
 
-function _initHome() {
-  $('landing-start-btn').onclick = () => {
-    const name = $('landing-name-input').value.trim();
+function _bindSignIn() {
+  // Sign in button
+  $('signin-btn').onclick = () => {
+    _signIn();
+    _showPage('home');
+  };
+  // Create account button (same placeholder behaviour)
+  $('create-account-btn').onclick = () => {
+    _signIn();
+    _showPage('home');
+  };
+  // Try the demo
+  $('demo-btn').onclick = () => {
+    _demoMode = true;
+    _showPage('home');
+  };
+  // Avatar → toggle menu
+  $('topbar-avatar').onclick = (e) => {
+    e.stopPropagation();
+    const menu = $('avatar-menu');
+    menu.style.display = menu.style.display === 'none' ? '' : 'none';
+  };
+  // Sign out
+  $('avatar-menu-signout').onclick = () => {
+    _signOut();
+    $('avatar-menu').style.display = 'none';
+    _showPage('signin');
+  };
+  // Exit demo banner
+  $('exit-demo-btn').onclick = () => {
+    _demoMode = false;
+    if (_isSignedIn()) _showPage('home');
+    else _showPage('signin');
+  };
+  // Home name input (no-name state)
+  $('home-name-btn').onclick = () => {
+    const name = $('home-name-input').value.trim();
     if (name) saveStoryteller({ name });
     _renderHome();
   };
-  $('landing-name-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') $('landing-start-btn').click();
+  $('home-name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('home-name-btn').click();
   });
-  const browseLink = $('appbar-browse-link');
-  if (browseLink) browseLink.onclick = () => {
-    _renderHome();
-  };
 }
 
 /** Show the name modal — called when the user tries to record without a name set */
@@ -107,21 +166,39 @@ function _promptForName(afterSave) {
 // ── Navigation ───────────────────────────────────────────────────
 
 function _bindNav() {
-  const navHome = $('nav-home');
-  if (navHome) {
-    navHome.onclick = () => _showPage('home');
-    navHome.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navHome.click(); } };
-  }
-  $('record-back-btn').onclick = () => _showPage('home');
-  $('listen-back-btn').onclick = () => _showPage('home');
-  $('home-record-cta').onclick = () => _navRecord();
+  $('nav-home').onclick    = () => (_isSignedIn() || _demoMode) ? _showPage('home') : _showPage('signin');
+  $('record-back-btn').onclick  = () => _showPage('home');
+  $('listen-back-btn').onclick  = () => _showPage('home');
+  $('stories-back-btn').onclick = () => _showPage('home');
+  $('home-record-cta').onclick  = (e) => { e.preventDefault(); _navRecord(); };
 
-  // Bottom tab bar
-  $('btn-nav-home').onclick    = () => _showPage('home');
-  $('btn-nav-record').onclick  = () => _navRecord();
-  $('btn-nav-atlas').onclick   = () => _showPage('listen');
-  $('btn-nav-account').onclick = () => _showPage('account');
+  // Desktop nav
+  $('nav-btn-home').onclick     = () => _showPage('home');
+  $('nav-btn-map').onclick      = () => _showPage('listen');
+  $('nav-btn-stories').onclick  = () => _showPage('stories');
+  $('nav-btn-keepsake').onclick = () => _showToast('Keepsake book coming soon.');
 
+  // Home hub: atlas "Open atlas" button and side cards
+  $('home-open-atlas-btn').onclick  = (e) => { e.preventDefault(); _showPage('listen'); };
+  $('nav-btn-map-card').onclick     = () => _showPage('listen');
+  $('nav-btn-stories-card').onclick = () => _showPage('stories');
+  $('nav-btn-keepsake-card').onclick= () => _showToast('Keepsake book coming soon.');
+  $('home-see-all-btn').onclick     = () => _showPage('stories');
+  $('home-switch-btn').onclick      = () => _openSwitchMenu();
+
+  // Bottom tab bar (5 tabs)
+  $('tab-home').onclick     = () => _showPage('home');
+  $('tab-map').onclick      = () => _showPage('listen');
+  $('tab-record').onclick   = () => _navRecord();
+  $('tab-stories').onclick  = () => _showPage('stories');
+  $('tab-keepsake').onclick = () => _showToast('Keepsake book coming soon.');
+
+  // Switch-storyteller menu
+  $('switch-menu-close').onclick = () => { $('switch-menu-overlay').style.display = 'none'; };
+  $('switch-menu-overlay').onclick = (e) => { if (e.target === $('switch-menu-overlay')) $('switch-menu-overlay').style.display = 'none'; };
+  $('switch-add-btn').onclick = () => { $('switch-menu-overlay').style.display = 'none'; _showToast('Multiple storytellers coming in the next update.'); };
+
+  // Backup
   $('backup-download-btn').onclick = async () => {
     const btn = $('backup-download-btn');
     btn.disabled = true;
@@ -129,121 +206,198 @@ function _bindNav() {
       const n = await downloadBackup();
       _showToast(`Downloaded a copy of ${n} stor${n === 1 ? 'y' : 'ies'}.`);
     } catch (e) {
-      console.warn('StoryAtlas: backup failed', e);
       _showToast("Couldn't make the copy. Please try again.");
-    } finally {
-      btn.disabled = false;
-    }
+    } finally { btn.disabled = false; }
   };
   $('backup-restore-input').onchange = async (e) => {
-    const file = e.target.files[0];
-    e.target.value = '';   // allow picking the same file again
+    const file = e.target.files[0]; e.target.value = '';
     if (!file) return;
     try {
       const { added, skipped, failed } = await restoreBackup(file);
       let msg = `Restored ${added} stor${added === 1 ? 'y' : 'ies'}.`;
       if (skipped) msg += ` ${skipped} already here.`;
-      if (failed)  msg += ` ${failed} couldn't be saved — the device may be full.`;
+      if (failed)  msg += ` ${failed} couldn't be saved.`;
       _showToast(msg);
       _renderHome();
-    } catch (err) {
-      _showToast(err.message);
-    }
+    } catch (err) { _showToast(err.message); }
   };
 }
 
 function _navRecord() {
-  if (!getStoryteller().name) {
-    _promptForName(() => _showPage('record'));
-  } else {
-    _showPage('record');
-  }
+  if (_demoMode) { _showToast('Exit the demo to record your own stories.'); return; }
+  if (!getStoryteller().name) { _promptForName(() => _showPage('record')); }
+  else { _showPage('record'); }
+}
+
+function _openSwitchMenu() {
+  const overlay = $('switch-menu-overlay');
+  const list    = $('switch-menu-list');
+  const st = _getStoryteller();
+  list.innerHTML = st.name
+    ? `<div class="v2-menu-item" style="cursor:default;color:var(--ink)">
+         <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+         ${_esc(st.name)}
+       </div>`
+    : '';
+  overlay.style.display = '';
 }
 
 function _showPage(name, push = true) {
+  // Auth guard — only signin is reachable when logged out
+  if (name !== 'signin' && !_isSignedIn() && !_demoMode) {
+    name = 'signin';
+  }
+
   if (name !== 'record') {
     if (_recorder && _recorder.isRecording) _recorder.stop();
     stopSpeaking();
   }
   if (name !== 'listen') _destroyPlayers();
 
-  ['home', 'record', 'listen', 'placer', 'account'].forEach(p => {
+  const ALL_PAGES = ['signin', 'home', 'record', 'listen', 'placer', 'stories'];
+  ALL_PAGES.forEach(p => {
     const el = $(`page-${p}`);
     if (el) el.style.display = (p === name) ? '' : 'none';
   });
   _currentPage = name;
 
-  // Bottom nav: hidden on home, visible on inner pages
-  const bottomNav = $('bottom-nav');
-  if (bottomNav) bottomNav.style.display = name === 'home' ? 'none' : '';
+  // Top bar: show Sign-in link on signin screen, avatar on hub pages
+  const onSignIn = name === 'signin';
+  const onHub    = !onSignIn;
+  const signinLink = $('topbar-signin-link');
+  const avatar     = $('topbar-avatar');
+  const nav        = $('main-nav');
+  if (signinLink) signinLink.style.display = onSignIn ? '' : 'none';
+  if (avatar)     avatar.style.display     = onHub     ? '' : 'none';
+  if (nav)        nav.style.display        = (onHub && name === 'home') ? '' : 'none';
 
-  // Appbar: show browse link on home, show name/divider on inner pages
-  const appbar = $('main-appbar');
-  const browseLink = $('appbar-browse-link');
-  const divider = appbar && appbar.querySelector('.appbar-divider-inner');
-  const nameEl  = $('appbar-name');
-  if (name === 'home') {
-    if (browseLink) browseLink.style.display = !getStoryteller().name ? '' : 'none';
-    if (divider) divider.style.display = 'none';
-    if (nameEl)  nameEl.style.display  = 'none';
-  } else {
-    if (browseLink) browseLink.style.display = 'none';
-    if (divider) divider.style.display = '';
-    if (nameEl) { nameEl.style.display = ''; nameEl.textContent = getStoryteller().name || 'Story Atlas'; }
+  // Update avatar initials
+  if (onHub) {
+    const st = _getStoryteller();
+    const name2 = st.name || '';
+    const initials = name2.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0,2) || '?';
+    const avatarName = $('topbar-avatar-name');
+    const avatarDot  = $('topbar-avatar-dot');
+    if (avatarName) avatarName.textContent = name2 || 'You';
+    if (avatarDot)  avatarDot.textContent  = initials;
   }
+
+  // Tab bar: shown on hub pages, hidden on signin
+  const tabbar = $('v2-tabbar');
+  if (tabbar) tabbar.style.display = onHub ? '' : 'none';
+
+  // body class for safe bottom padding on phone
+  document.body.classList.toggle('has-tabs', onHub);
+
+  // Tab bar active state
+  const tabMap = { home:'tab-home', listen:'tab-map', record:'tab-record', stories:'tab-stories' };
+  Object.entries(tabMap).forEach(([page, id]) => {
+    const t = $(id);
+    if (t) t.classList.toggle('on', page === name);
+  });
+
+  // Desktop nav active state
+  const navBtnMap = { home:'nav-btn-home', listen:'nav-btn-map', stories:'nav-btn-stories' };
+  Object.entries(navBtnMap).forEach(([page, id]) => {
+    const b = $(id);
+    if (b) b.setAttribute('aria-current', page === name ? 'page' : 'false');
+  });
 
   if (push) history.pushState({ page: name }, '', '');
 
-  // Update bottom nav active state
-  const navMap = { record: 'btn-nav-record', listen: 'btn-nav-atlas', account: 'btn-nav-account' };
-  Object.entries(navMap).forEach(([page, id]) => {
-    const btn = $(id);
-    if (btn) btn.classList.toggle('on', page === name);
-  });
-
-  if (name === 'home') _renderHome();
+  if (name === 'home')    _renderHome();
+  if (name === 'stories') _renderStoriesPage();
   if (name === 'listen' && _currentStory)  _renderListen(_currentStory);
   if (name === 'listen' && !_currentStory) {
-    const stories = getStoriesSorted();
+    const stories = _getStories();
     if (stories.length) _renderListen(stories[0]);
     else _renderListenEmpty();
   }
 }
 
-// ── Home page ────────────────────────────────────────────────────
+// ── Home hub ─────────────────────────────────────────────────────
 
 function _renderHome() {
-  const st      = getStoryteller();
-  const stories = getStoriesSorted();
+  const st      = _getStoryteller();
+  const stories = _getStories();
   const hasName = !!st.name;
 
-  // Toggle new-user vs returning-user CTA in hero
-  const ctaWrap    = $('lp-cta-wrap');
-  const recordWrap = $('lp-record-wrap');
-  if (ctaWrap)    ctaWrap.style.display    = hasName ? 'none' : '';
-  if (recordWrap) recordWrap.style.display = hasName ? ''     : 'none';
+  // Demo banner
+  const banner = $('demo-banner');
+  if (banner) banner.style.display = _demoMode ? '' : 'none';
 
-  // Browse link in appbar only for new users
-  const browseLink = $('appbar-browse-link');
-  if (browseLink) browseLink.style.display = hasName ? 'none' : '';
+  // Name / no-name toggle
+  $('home-no-name').style.display       = (hasName || _demoMode) ? 'none' : '';
+  $('home-storyteller-h1').style.display = (hasName || _demoMode) ? ''    : 'none';
+  const nameEl = $('home-storyteller-name');
+  if (nameEl) nameEl.textContent = st.name || '';
 
-  // Stories label
-  const label = $('lp-stories-label');
-  if (label) label.textContent = stories.length ? `${st.name ? st.name + "'s" : 'Your'} stories` : 'What you\'ll build';
+  // Meta line: N stories · N places · lock Family only
+  const places = stories.filter(s => s.place).length;
+  const metaEl = $('home-meta');
+  if (metaEl) metaEl.innerHTML =
+    `${stories.length} stor${stories.length === 1 ? 'y' : 'ies'} <span style="opacity:.5">·</span> ${places} place${places === 1 ? '' : 's'} <span style="opacity:.5">·</span> <svg style="width:15px;height:15px;display:inline;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-lock"/></svg> Family only`;
 
-  // Backup section
-  const backupSection = $('backup-section');
-  if (backupSection) backupSection.style.display = stories.length ? '' : 'none';
+  // "Continue where you left off" — most recent story
+  const continueCard = $('home-continue-card');
+  const latest = stories[0];
+  if (continueCard) {
+    if (latest) {
+      continueCard.style.display = '';
+      $('home-continue-title').textContent = latest.title || 'Untitled';
+      $('home-continue-dur').textContent   = formatDuration(latest.duration);
+      $('home-continue-btn').onclick = () => {
+        _currentStory = _demoMode ? latest : getStoryById(latest.id);
+        _showPage('listen');
+      };
+    } else {
+      continueCard.style.display = 'none';
+    }
+  }
 
-  // Render story list
-  _renderStoryList(stories);
+  // Side card labels
+  const mapLabel = $('home-map-places-label');
+  if (mapLabel) mapLabel.textContent = places ? `Walk through ${places} place${places === 1 ? '' : 's'}` : 'Walk through the places';
+  const storiesLabel = $('home-stories-count-label');
+  if (storiesLabel) storiesLabel.textContent = stories.length ? `${stories.length} stories in life order` : 'In life order';
+
+  // Atlas foot: latest story name
+  const atlasLatest = $('home-atlas-latest');
+  if (atlasLatest && latest) {
+    const era = latest.era || '';
+    atlasLatest.textContent = `Latest: ${latest.title || 'Untitled'}${era ? ' · ' + era : ''}`;
+  }
+
+  // Timeline
+  _renderHomeTimeline(stories);
+
+  // Map placeholder vs real Leaflet
+  const placeholder = $('home-map-placeholder');
+  const leafletDiv  = $('home-leaflet');
+  if (placeholder) placeholder.style.display = stories.filter(s => s.place).length ? 'none' : '';
+  if (leafletDiv)  { setTimeout(() => initHomeMap('home-leaflet'), 50); refreshHomePins(); }
+
+  // Story list (3 most recent)
+  _renderStoryList(stories.slice(0, 3));
+
+  // "See all" link
+  const seeAllWrap  = $('home-see-all-wrap');
+  const seeAllCount = $('home-see-all-count');
+  if (seeAllWrap)  seeAllWrap.style.display  = stories.length > 3 ? '' : 'none';
+  if (seeAllCount) seeAllCount.textContent   = stories.length;
 }
 
 function _renderHomeTimeline(stories) {
-  // No-op — timeline strip removed from new design
+  const track = $('home-tl-track');
+  if (!track) return;
   const total = stories.length;
-  void total; // suppress lint
-  tl.innerHTML = html;
+  let html = '';
+  stories.forEach((s, i) => {
+    const pct = total < 2 ? 50 : Math.round((i / (total - 1)) * 92 + 4);
+    const isLatest = i === 0;
+    html += `<i class="tl-dot${isLatest ? ' tl-dot-now' : ''}" style="left:${pct}%" title="${_esc(s.title || '')}"></i>`;
+  });
+  track.innerHTML = html;
 }
 
 function _renderStoryList(stories) {
@@ -251,57 +405,80 @@ function _renderStoryList(stories) {
   if (!container) return;
 
   if (!stories.length) {
-    // Sample stories for new users (no interaction)
-    container.innerHTML = [
-      { title: 'The House on Elm Street', meta: 'Lincoln School · About 1951', quote: '"We lived at the end of Elm Street, past the big oak. My father painted the porch green every spring..."', dur: '3:08' },
-      { title: 'The Movie Theater', meta: 'Main Street · Age about 12', quote: '', dur: '4:12' },
-    ].map(s => `
-      <div class="lp-story-row sample">
-        <div class="lp-story-main">
-          <div class="lp-story-title">${_esc(s.title)}</div>
-          <div class="lp-story-meta">${_esc(s.meta)}</div>
-          ${s.quote ? `<div class="lp-story-quote">${_esc(s.quote)}</div>` : ''}
+    container.innerHTML = `
+      <div class="empty-state" style="padding:32px 0;text-align:center">
+        <div class="empty-map" style="height:160px;border-radius:18px;border:1px solid var(--line);position:relative;overflow:hidden;background:var(--parchment-deep);margin-bottom:20px">
+          <div id="empty-leaflet"></div>
+          ${_emptyPinSvg()}
         </div>
-        <div class="lp-story-actions"><span class="lp-story-dur">${s.dur}</span></div>
-      </div>`).join('');
+        <p class="t-h2">No stories yet.</p>
+        <p class="t-body soft" style="margin-top:4px">Tap Record to tell the first one.</p>
+      </div>`;
+    setTimeout(() => {
+      const el = $('empty-leaflet');
+      if (el && !el._mapInit) {
+        const m = L.map('empty-leaflet', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false }).setView([20,0],2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
+        el._mapInit = true;
+      }
+    }, 50);
     return;
   }
 
-  container.innerHTML = stories.map(s => _storyCardHtml(s, stories.length)).join('');
-  container.querySelectorAll('.lp-story-row[data-id]').forEach(row => {
-    row.onclick = () => {
-      _currentStory = getStoryById(row.dataset.id);
+  container.innerHTML = stories.map((s, i) => _storyCardHtml(s, i)).join('');
+  container.querySelectorAll('.v2-story[data-id]').forEach(card => {
+    card.onclick = () => {
+      if (_demoMode) {
+        _currentStory = DEMO_STORIES.find(s => s.id === card.dataset.id) || null;
+      } else {
+        _currentStory = getStoryById(card.dataset.id);
+      }
       _showPage('listen');
-    };
-  });
-  container.querySelectorAll('.lp-story-edit').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      _openEditModal(btn.dataset.id);
     };
   });
 }
 
-function _storyCardHtml(story, total) {
+function _renderStoriesPage() {
+  const stories = _getStories();
+  const container = $('stories-page-list');
+  if (!container) return;
+  if (!stories.length) { container.innerHTML = '<p style="padding:24px;color:var(--ink-soft)">No stories yet.</p>'; return; }
+  container.innerHTML = stories.map((s, i) => _storyCardHtml(s, i)).join('');
+  container.querySelectorAll('.v2-story[data-id]').forEach(card => {
+    card.onclick = () => {
+      _currentStory = _demoMode ? DEMO_STORIES.find(s => s.id === card.dataset.id) : getStoryById(card.dataset.id);
+      _showPage('listen');
+    };
+  });
+}
+
+function _storyCardHtml(story, idx) {
+  const total = _getStories().length;
   const era  = story.era || assignEra(story, total);
   const dur  = formatDuration(story.duration);
   const place = story.place ? story.place.label.split(',')[0] : '';
-  const meta = [place, era, story.ageAtEvent != null ? `Age about ${story.ageAtEvent}` : ''].filter(Boolean).join(' · ');
   const firstLine = (story.transcriptLines || [])[0] || '';
-  const quote = firstLine ? `<div class="lp-story-quote">"${_esc(firstLine)}"</div>` : '';
+  const quote = firstLine ? `<q class="v2-story-quote">"${_esc(firstLine)}"</q>` : '';
+  const placeChip = place ? `<span class="v2-chip v2-chip-place"><svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-pin"/></svg>${_esc(place)}</span>` : '';
+  const eraChip   = era   ? `<span class="v2-chip v2-chip-era"><svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-clock"/></svg>${_esc(era)}</span>` : '';
+  const ageChip   = story.ageAtEvent != null ? `<span class="v2-chip v2-chip-age">Age about ${story.ageAtEvent}</span>` : '';
+  const statusDone    = story.transcriptStatus === 'done';
+  const statusPending = story.transcriptStatus === 'pending' || !story.transcriptStatus;
+  const statusHtml = statusDone
+    ? `<span class="v2-story-status"><svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-check"/></svg>Written down</span>`
+    : `<span class="v2-story-status pending"><svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-device"/></svg>Kept safe on this device</span>`;
 
   return `
-    <div class="lp-story-row" data-id="${story.id}">
-      <div class="lp-story-main">
-        <div class="lp-story-title">${_esc(story.title || 'Untitled')}</div>
-        ${meta ? `<div class="lp-story-meta">${_esc(meta)}</div>` : ''}
-        ${quote}
+    <button class="v2-story" data-id="${story.id}">
+      <span class="v2-story-num" style="position:absolute;top:-10px;left:18px;font:700 12px var(--font-sans);letter-spacing:.08em;background:var(--parchment);padding:0 8px;color:var(--ink-soft)">${idx + 1}</span>
+      <div class="v2-story-top">
+        <h3 class="v2-story-title">${_esc(story.title || 'Untitled')}</h3>
+        <span class="v2-story-dur">${dur}</span>
       </div>
-      <div class="lp-story-actions">
-        <button class="lp-story-edit" data-id="${story.id}">Edit</button>
-        <span class="lp-story-dur">${dur}</span>
-      </div>
-    </div>`;
+      ${(placeChip || eraChip || ageChip) ? `<div class="v2-chips">${placeChip}${eraChip}${ageChip}</div>` : ''}
+      ${quote}
+      ${statusHtml}
+    </button>`;
 }
 
 function _statusHtml(story) {
