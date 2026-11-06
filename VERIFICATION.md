@@ -82,3 +82,14 @@ Local runs: `node serve.mjs` static server on :8093, Chrome via Claude in Chrome
 | Real voice / speech-to-text on a phone | Not run (automation can't drive speech recognition) | **not yet verified** |
 | Safari / iPhone (IndexedDB, MediaRecorder mp4) | Not run | **not yet verified** |
 
+
+## 2026-11-05 — Full phone demo + address detection fix
+
+Real device: Android, Chrome browser, live site https://kitapplegate.github.io/storyatlas.
+
+| Scenario | Steps | Result |
+|---|---|---|
+| Full end-to-end phone demo | Enter name → Record → speak ~30 s → Stop → Save → Place → Play → Home → Download | **verified in the real environment**: Kit completed all steps; transcript appeared, audio played, download landed |
+| Address detection (street number) | Said home address ("at [number] [street]") | **failed**: `detectPlaces()` pattern was letters-only, skipped digits; no chip appeared |
+| Address detection fix | Extended `detectPlaces()` with a second regex for `\d+ street-name suffix` (`e384967`, `js/transcriber.js:131`) | **not yet verified on device**: committed and pushed; phone re-test not yet done |
+

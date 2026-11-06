@@ -1,3 +1,16 @@
+## 2026-11-05 22:05
+
+**Summary:** First real-device session. Kit ran the full end-to-end demo on Android Chrome (live site) â€” transcript appeared, audio played, download landed. The one failure: place detection didn't fire when Kit said a street address because `detectPlaces()` in `js/transcriber.js` used a letters-only regex (`[a-zA-Z]+`) that silently skips house numbers. Fixed by adding a second regex pattern matching `preposition + \d+ + street-name + street-suffix` (street/avenue/road/drive/lane/boulevard etc.), optionally followed by a city. Also pushed the unpushed `f6b1979` chore commit at session start. All changes in `e384967`, pushed to `origin/master`, cache-bust bumped to `v=20261105a`. Address fix not yet re-verified on device.
+
+**Status:**
+- Full phone demo (transcript, audio, download) â€” **verified in the real environment**: Kit confirmed all steps on Android Chrome
+- Address detection failed on real speech â€” **verified in the real environment**: no chip appeared for street address
+- Address detection fix (`js/transcriber.js:131`, `e384967`) â€” **not yet verified on device**: code-only, pushed
+
+**Open tasks:**
+- [ ] next â€” Record on phone, say a street address, confirm chip appears and map pins it. See NEXT.md.
+
+
 ## 2026-10-31 02:21
 
 **Summary:** Claude Code audit of the Bob-built app, then fixes in priority order. Root causes: a wrong Leaflet SRI hash in `index.html` blocked Leaflet, so no map loaded on the live site; `placer.js` `_finish` saved a stale `orderIndex`, putting stories in the wrong life-order slot; transcripts were saved as objects but rendered as strings (`[object Object]`); audio was base64 in localStorage (~5 MB cap, ~15 min of stories) and a failed save still said "Story saved". Fixed in `94dea4f`: binary-search placement, new `js/audiostore.js` (IndexedDB blobs, auto-migration, persist request), save-failure box with a download of the take, new `js/backup.js` (download/restore all stories). `c887a2e` adds `ROADMAP.md` (production = local-first + cloud sync) and `AGENTS.md` telling Bob the hackathon stays local. `6b1d2a5` records at 48 kbps (~20 MB/hr vs ~58). All pushed and live. Kit's later commits (`b175dc6`..`c44d3f4`) left intact.
@@ -17,16 +30,16 @@
 
 ## 2026-10-30 22:45
 
-**Summary:** Three small landing page fixes, all deployed and confirmed live via `Invoke-WebRequest`. (1) Logo tap in the app bar was conditionally routing to landing vs home depending on `_isReturning()` — changed to always go to home (`b175dc6`, `js/app.js:114`). (2) The topo contour SVG decoration in the landing hero was confusing; removed it entirely (`b0fd4cd`, `index.html`). (3) Tagline was "Every life deserves a map." — Kit preferred the original "Every story has a place." from the design spec (`HANDOFF.md:126`); restored (`121ae86`). Also committed the previously untracked `design/logo/` assets and `.claude/session-log-entry.md` (`469cb57`). All four commits pushed to `origin/master`.
+**Summary:** Three small landing page fixes, all deployed and confirmed live via `Invoke-WebRequest`. (1) Logo tap in the app bar was conditionally routing to landing vs home depending on `_isReturning()` ï¿½ changed to always go to home (`b175dc6`, `js/app.js:114`). (2) The topo contour SVG decoration in the landing hero was confusing; removed it entirely (`b0fd4cd`, `index.html`). (3) Tagline was "Every life deserves a map." ï¿½ Kit preferred the original "Every story has a place." from the design spec (`HANDOFF.md:126`); restored (`121ae86`). Also committed the previously untracked `design/logo/` assets and `.claude/session-log-entry.md` (`469cb57`). All four commits pushed to `origin/master`.
 
 **Status:**
-- Logo always ? home — **verified in the real environment**: `Invoke-WebRequest` confirmed `v=20261030m` live; pushed `b175dc6`
-- Topo SVG removed from landing hero — **verified in the real environment**: absent in live HTML; pushed `b0fd4cd`
-- Tagline "Every story has a place." — **verified in the real environment**: confirmed in live HTML; pushed `121ae86`
-- Logo assets + session log entry committed — **tested locally**: `git status` clean after `469cb57`
+- Logo always ? home ï¿½ **verified in the real environment**: `Invoke-WebRequest` confirmed `v=20261030m` live; pushed `b175dc6`
+- Topo SVG removed from landing hero ï¿½ **verified in the real environment**: absent in live HTML; pushed `b0fd4cd`
+- Tagline "Every story has a place." ï¿½ **verified in the real environment**: confirmed in live HTML; pushed `121ae86`
+- Logo assets + session log entry committed ï¿½ **tested locally**: `git status` clean after `469cb57`
 
 **Open tasks:**
-- [ ] next — Full end-to-end browser demo: landing ? enter name ? Record ? speak place ? Save ? map pin ? home card. See NEXT.md.
+- [ ] next ï¿½ Full end-to-end browser demo: landing ? enter name ? Record ? speak place ? Save ? map pin ? home card. See NEXT.md.
 # Session Log
 
 ## 2026-10-30 10:59

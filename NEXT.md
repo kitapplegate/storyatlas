@@ -1,7 +1,7 @@
 # Next
 
-**Action:** On your phone (Chrome), run the full demo on https://kitapplegate.github.io/storyatlas: enter a name → Record → say "I grew up in Chicago…" for ~30 s → Stop → Save → place it → play it back → home → "Download all stories".
-**Why now:** Every change since Oct 30 was tested with a fake mic in desktop Chrome; real voice, speech-to-text, and phone downloads have never been observed.
-**Start here:** https://kitapplegate.github.io/storyatlas (check page source shows `app.js?v=20261030o` or later)
-**Verify with:** Transcript appears on review; Chicago pin on the map; playback sounds clear at 48 kbps; the backup `.json` lands in phone Downloads. Note results in VERIFICATION.md.
-**Watch out for:** Speech recognition needs Chrome/Edge (not Safari). Data is per-browser — a new phone or cleared site data starts empty unless restored from a backup.
+**Action:** On your phone (Chrome), record a new story and mention your address ("I lived at 123 Oak Street, Springfield") — confirm the address chip appears in the Place step and the map pin drops on the correct street.
+**Why now:** The address-detection fix (`e384967`) is live but has not been observed on a real device. This is the one unverified item.
+**Start here:** https://kitapplegate.github.io/storyatlas (page source should show `app.js?v=20261105a`)
+**Verify with:** Address chip appears with the street name; map centers on or near the address; pin is droppable.
+**Watch out for:** Nominatim may not find very short or rural street addresses — if the chip appears but the geocode fails, the manual Search box is pre-filled and the user can tap Search.
