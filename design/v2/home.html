@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Story Atlas · Home</title>
+<link rel="icon" href="../../assets/favicon-32.png">
+<link rel="stylesheet" href="v2.css">
+</head>
+<body class="has-tabs">
+<!-- Static design reference for IBM Bob. Signed-in home hub. Sample data throughout. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="pin" viewBox="0 0 30 40"><path d="M15 39C15 39 2 25 2 14a13 13 0 0 1 26 0c0 11-13 25-13 25z" fill="currentColor" stroke="#fbf8f1" stroke-width="2"/><circle cx="15" cy="14" r="5" fill="#fbf8f1"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M19 19v2H6"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></symbol>
+  <symbol id="i-device" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></symbol>
+</svg>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="home.html"><img src="../../assets/mark.svg" alt="">Story Atlas</a>
+    <nav class="nav" aria-label="Main">
+      <a href="home.html" aria-current="page">Home</a>
+      <a href="#">Map</a>
+      <a href="#">Stories</a>
+      <a href="#">Keepsake</a>
+    </nav>
+    <span class="grow"></span>
+    <button class="avatar" aria-label="Account menu"><b>Kit</b><span class="dot">K</span></button>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- Greeting + main action -->
+  <section class="hello">
+    <div class="who">
+      <p class="overline">Stories of</p>
+      <h1>Grandma Rose
+        <button class="switch" aria-label="Switch storyteller">Switch <svg class="ico sm"><use href="#i-down"/></svg></button>
+      </h1>
+      <p class="meta">12 stories <span class="sep">·</span> 5 places <span class="sep">·</span>
+        <svg class="ico sm"><use href="#i-lock"/></svg> Family only</p>
+    </div>
+    <a class="record-cta" href="#">
+      <span class="mic"><svg class="ico"><use href="#i-mic"/></svg></span>
+      <span><b>Record a story</b><small>We'll offer a question to start</small></span>
+    </a>
+  </section>
+
+  <!-- Atlas preview + quick links -->
+  <section class="grid-top">
+    <article class="card atlas-card">
+      <div class="map">
+        <svg class="trail" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M14 76 L33 42 L52 58 L70 34 L88 60" fill="none" stroke="#a4502c" stroke-dasharray="5 5" vector-effect="non-scaling-stroke" style="stroke-width:2.5px"/>
+        </svg>
+        <svg class="pin" style="left:14%;top:76%;color:var(--slate)"><use href="#pin"/></svg>
+        <svg class="pin focus" style="left:33%;top:42%;color:var(--rust)"><use href="#pin"/></svg>
+        <div class="pin-label" style="left:33%;top:42%">Elm Street house<small>2 stories here</small></div>
+        <svg class="pin" style="left:52%;top:58%;color:var(--slate)"><use href="#pin"/></svg>
+        <svg class="pin" style="left:70%;top:34%;color:var(--slate)"><use href="#pin"/></svg>
+        <svg class="pin" style="left:88%;top:60%;color:var(--slate)"><use href="#pin"/></svg>
+        <a class="map-btn" href="#"><svg class="ico sm"><use href="#i-map"/></svg>Open atlas</a>
+      </div>
+      <div class="atlas-foot">
+        <div class="row"><b>A life in stories</b><span>Latest: The House on Elm Street · About 1952</span></div>
+        <div class="timeline">
+          <div class="tl-track">
+            <i class="tl-dot" style="left:3%"></i><i class="tl-dot" style="left:9%"></i><i class="tl-dot" style="left:15%"></i>
+            <i class="tl-dot now" style="left:24%"></i><i class="tl-dot" style="left:33%"></i><i class="tl-dot" style="left:41%"></i>
+            <i class="tl-dot" style="left:52%"></i><i class="tl-dot" style="left:60%"></i><i class="tl-dot" style="left:71%"></i>
+            <i class="tl-dot" style="left:79%"></i><i class="tl-dot" style="left:89%"></i><i class="tl-dot" style="left:97%"></i>
+          </div>
+          <div class="tl-eras"><span>Childhood</span><span>Youth</span><span>Work</span><span>Family</span><span>Later</span></div>
+        </div>
+      </div>
+    </article>
+
+    <div class="side">
+      <div class="card continue">
+        <p class="overline">Pick up where you left off</p>
+        <h3>The Movie Theater</h3>
+        <a class="btn btn-secondary btn-sm" href="#"><svg class="ico sm"><use href="#i-play"/></svg>Listen · 4:12</a>
+      </div>
+      <a class="card go" href="#">
+        <span class="tile slate"><svg class="ico"><use href="#i-map"/></svg></span>
+        <span><h3>The map</h3><p>Walk through 5 places</p></span>
+        <svg class="ico chev"><use href="#i-chev"/></svg>
+      </a>
+      <a class="card go" href="#">
+        <span class="tile ochre"><svg class="ico"><use href="#i-list"/></svg></span>
+        <span><h3>All stories</h3><p>12 stories in life order</p></span>
+        <svg class="ico chev"><use href="#i-chev"/></svg>
+      </a>
+      <a class="card go" href="#">
+        <span class="tile sage"><svg class="ico"><use href="#i-book"/></svg></span>
+        <span><h3>Keepsake book</h3><p>Print it or save a PDF</p></span>
+        <svg class="ico chev"><use href="#i-chev"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- Recent stories -->
+  <div class="section-head">
+    <h2>Recent stories</h2>
+    <div class="seg" role="group" aria-label="Sort stories">
+      <button aria-pressed="true">Life order</button>
+      <button aria-pressed="false">By place</button>
+    </div>
+  </div>
+
+  <section class="stories">
+    <a class="card story" href="#">
+      <div class="top"><h3>First Day of School</h3><span class="dur">3:08</span></div>
+      <div class="chips">
+        <span class="chip place"><svg class="ico sm"><use href="#i-pin"/></svg>Lincoln School</span>
+        <span class="chip era"><svg class="ico sm"><use href="#i-clock"/></svg>About 1951</span>
+      </div>
+      <q>My mother walked me to the gate and wouldn't let go of my hand.</q>
+      <span class="status"><svg class="ico sm"><use href="#i-check"/></svg>Written down</span>
+    </a>
+    <a class="card story" href="#">
+      <div class="top"><h3>The House on Elm Street</h3><span class="dur">3:42</span></div>
+      <div class="chips">
+        <span class="chip place"><svg class="ico sm"><use href="#i-pin"/></svg>Elm Street</span>
+        <span class="chip era"><svg class="ico sm"><use href="#i-clock"/></svg>About 1952</span>
+      </div>
+      <q>We lived at the end of Elm Street, past the big oak. My father painted the porch green every spring.</q>
+      <span class="status"><svg class="ico sm"><use href="#i-check"/></svg>Written down</span>
+    </a>
+    <a class="card story" href="#">
+      <div class="top"><h3>The Movie Theater</h3><span class="dur">4:12</span></div>
+      <div class="chips">
+        <span class="chip place"><svg class="ico sm"><use href="#i-pin"/></svg>Main Street</span>
+        <span class="chip age">Age about 12</span>
+      </div>
+      <q>Ten cents got you a cartoon, the newsreel, and two pictures if you sat through.</q>
+      <span class="status pending"><svg class="ico sm"><use href="#i-device"/></svg>Kept safe on this device</span>
+    </a>
+  </section>
+
+  <p style="margin-top:20px;text-align:center"><a class="link" href="#">See all 12 stories</a></p>
+
+  <!-- Safe copy -->
+  <section class="card safe">
+    <span class="tile"><svg class="ico"><use href="#i-shield"/></svg></span>
+    <div><b>Keep a safe copy</b><p>Download every story and recording. Restore it on any device.</p></div>
+    <div class="actions">
+      <button class="btn btn-secondary btn-sm"><svg class="ico sm"><use href="#i-dl"/></svg>Download all</button>
+      <button class="btn btn-secondary btn-sm"><svg class="ico sm"><use href="#i-up"/></svg>Restore</button>
+    </div>
+  </section>
+</main>
+
+<!-- Phone: bottom tabs replace the top nav -->
+<nav class="tabbar" aria-label="Main">
+  <a href="home.html" aria-current="page"><svg class="ico"><use href="#i-home"/></svg>Home</a>
+  <a href="#"><svg class="ico"><use href="#i-map"/></svg>Map</a>
+  <a href="#"><svg class="ico"><use href="#i-mic"/></svg>Record</a>
+  <a href="#"><svg class="ico"><use href="#i-list"/></svg>Stories</a>
+  <a href="#"><svg class="ico"><use href="#i-book"/></svg>Keepsake</a>
+</nav>
+</body>
+</html>

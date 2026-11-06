@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Story Atlas · Sign in</title>
+<link rel="icon" href="../../assets/favicon-32.png">
+<link rel="stylesheet" href="v2.css">
+</head>
+<body>
+<!-- Static design reference for IBM Bob. Visual shell only: the form does not submit. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="pin" viewBox="0 0 30 40"><path d="M15 39C15 39 2 25 2 14a13 13 0 0 1 26 0c0 11-13 25-13 25z" fill="currentColor" stroke="#fbf8f1" stroke-width="2"/><circle cx="15" cy="14" r="5" fill="#fbf8f1"/></symbol>
+</svg>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="signin.html"><img src="../../assets/mark.svg" alt="">Story Atlas</a>
+    <span class="grow"></span>
+    <a class="link" href="#signin" style="font-size:16px">Sign in</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="signin">
+    <!-- Left: pitch + auth -->
+    <div>
+      <p class="overline" style="color:var(--rust-dark)">A family keepsake, told out loud</p>
+      <h1 style="margin-top:14px">Every story<br>has a <em>place.</em></h1>
+      <p class="lede">Record a grandparent's memories one at a time. Story Atlas writes them down, puts them in life order, and pins each one to the map where it happened.</p>
+
+      <form class="auth" id="signin" onsubmit="return false">
+        <h2>Welcome back</h2>
+        <label class="field"><span>Email</span><input type="email" autocomplete="email" placeholder="you@example.com"></label>
+        <label class="field"><span>Password</span><input type="password" autocomplete="current-password"></label>
+        <a class="btn btn-primary" href="home.html">Sign in</a>
+        <div class="auth-alt">
+          <a class="link" href="#">Create an account</a>
+          <a class="link" href="#" style="color:var(--ink-soft);font-weight:500">Forgot password?</a>
+        </div>
+      </form>
+
+      <a class="demo" href="home.html">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M5 4l14 8-14 8z"/></svg>
+        <span><b>Try the demo</b><small>Explore a sample atlas. No account needed.</small></span>
+      </a>
+
+      <p class="trust">
+        <svg class="ico sm" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        Private to your family. Only people you invite can listen.
+      </p>
+    </div>
+
+    <!-- Right: collage that shows the product -->
+    <div class="collage" aria-hidden="true">
+      <div class="map">
+        <svg class="trail" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M18 26 L40 46 L62 64 L86 48" fill="none" stroke="#a4502c" stroke-width=".6" stroke-dasharray="1.4 1.4" vector-effect="non-scaling-stroke" style="stroke-width:2.5px"/>
+        </svg>
+        <svg class="pin" style="left:18%;top:26%;color:var(--slate)"><use href="#pin"/></svg>
+        <svg class="pin focus" style="left:40%;top:46%;color:var(--rust)"><use href="#pin"/></svg>
+        <svg class="pin" style="left:62%;top:64%;color:var(--slate)"><use href="#pin"/></svg>
+        <svg class="pin" style="left:86%;top:48%;color:var(--slate)"><use href="#pin"/></svg>
+      </div>
+
+      <div class="story-float">
+        <p class="overline">Story 4 of 12</p>
+        <h3>The House on Elm Street</h3>
+        <div class="chips">
+          <span class="chip place"><svg class="ico sm" viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Elm Street</span>
+          <span class="chip era"><svg class="ico sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>About 1952</span>
+        </div>
+        <q>My father painted the porch green every spring.</q>
+      </div>
+
+      <div class="tl-float">
+        <div class="row">A life in stories <span>Life order</span></div>
+        <div class="timeline">
+          <div class="tl-track">
+            <i class="tl-dot" style="left:4%"></i><i class="tl-dot" style="left:14%"></i>
+            <i class="tl-dot now" style="left:27%"></i><i class="tl-dot" style="left:40%"></i>
+            <i class="tl-dot" style="left:55%"></i><i class="tl-dot" style="left:70%"></i>
+            <i class="tl-dot" style="left:84%"></i><i class="tl-dot" style="left:96%"></i>
+          </div>
+          <div class="tl-eras"><span>Childhood</span><span>Work</span><span>Later</span></div>
+        </div>
+      </div>
+
+      <figure class="polaroid">
+        <img src="illustration.png" alt="">
+        <p>Grandma Rose, telling it her way</p>
+      </figure>
+    </div>
+  </section>
+</main>
+</body>
+</html>

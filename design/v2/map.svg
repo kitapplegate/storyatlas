@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" preserveAspectRatio="xMidYMid slice">
+  <rect width="800" height="480" fill="#ece4d3"/>
+  <!-- topo contours -->
+  <g fill="none" stroke="#cbbd9f" stroke-width="1.2" opacity=".7">
+    <path d="M520 40 C600 10 720 30 740 90 C760 150 690 180 620 170 C550 160 470 90 520 40Z"/>
+    <path d="M545 62 C605 40 690 55 705 98 C718 140 665 155 615 148 C565 140 515 92 545 62Z"/>
+    <path d="M572 82 C615 70 660 80 668 104 C675 126 645 133 615 128 C585 122 555 98 572 82Z"/>
+    <path d="M-20 400 C80 360 160 420 260 470"/>
+    <path d="M-20 430 C70 400 140 450 210 490"/>
+  </g>
+  <!-- parks -->
+  <path d="M40 40 C120 20 190 60 170 130 C150 190 60 180 30 140Z" fill="#e2e7d6"/>
+  <path d="M560 360 C640 330 760 350 780 420 L780 480 L540 480 C520 430 520 380 560 360Z" fill="#e2e7d6"/>
+  <!-- river + lake -->
+  <path d="M-10 250 C120 230 200 310 330 300 C460 290 520 220 640 230 C700 236 740 260 760 270" fill="none" stroke="#c9d3d8" stroke-width="22" stroke-linecap="round"/>
+  <path d="M-10 250 C120 230 200 310 330 300 C460 290 520 220 640 230 C700 236 740 260 760 270" fill="none" stroke="#dde4e8" stroke-width="16" stroke-linecap="round"/>
+  <path d="M740 220 C790 200 830 240 820 300 C810 350 760 340 745 300 C735 270 715 235 740 220Z" fill="#dde4e8" stroke="#c9d3d8" stroke-width="3"/>
+  <!-- city blocks -->
+  <g fill="#e3d8c3">
+    <rect x="232" y="128" width="46" height="34" rx="4" transform="rotate(-8 255 145)"/>
+    <rect x="372" y="150" width="50" height="36" rx="4" transform="rotate(-8 397 168)"/>
+    <rect x="300" y="350" width="52" height="38" rx="4" transform="rotate(-8 326 369)"/>
+    <rect x="450" y="330" width="44" height="34" rx="4" transform="rotate(-8 472 347)"/>
+    <rect x="160" y="320" width="44" height="34" rx="4" transform="rotate(-8 182 337)"/>
+  </g>
+  <!-- road grid -->
+  <g transform="rotate(-8 400 240)" stroke-linecap="round">
+    <g stroke="#d9cbb0" stroke-width="10">
+      <path d="M120 60 V470M210 40 V470M300 40 V470M390 40 V470M480 40 V470M570 70 V470"/>
+      <path d="M60 110 H640M60 200 H660M60 380 H660M60 460 H640"/>
+    </g>
+    <g stroke="#fbf8f1" stroke-width="7">
+      <path d="M120 60 V470M210 40 V470M300 40 V470M390 40 V470M480 40 V470M570 70 V470"/>
+      <path d="M60 110 H640M60 200 H660M60 380 H660M60 460 H640"/>
+    </g>
+    <!-- main street -->
+    <path d="M20 300 H780" stroke="#d9cbb0" stroke-width="16"/>
+    <path d="M20 300 H780" stroke="#f6eedd" stroke-width="12"/>
+  </g>
+  <g font-family="Fraunces, Georgia, serif" font-style="italic" font-size="17" fill="#8a7f73">
+    <text x="140" y="196" transform="rotate(-8 140 196)">Elm St</text>
+    <text x="520" y="250" transform="rotate(-8 520 250)">Main St</text>
+    <text x="610" y="118" font-size="14">Pine Hill</text>
+  </g>
+</svg>
