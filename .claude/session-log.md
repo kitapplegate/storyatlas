@@ -1,3 +1,19 @@
+## 2026-11-06 22:36
+
+**Summary:** Large Bob-driven design v2 session. Replaced the old landing/home page with a full sign-in screen (design/v2/signin.html) and a new home hub (design/v2/home.html), wiring them into index.html without touching recorder.js, audiostore.js, transcriber.js, placer.js, or the storage layer. Added placeholder auth (localStorage flag), demo mode (Grandpa Joe, 6 sample stories with lat/lng), and a 5-tab bottom bar (Home/Map/Record/Stories/Keepsake). Fixed the transcribing-spinner-stuck bug (35310f0: spinner was conditioned on non-empty transcript). Fixed home Leaflet map ignoring demo stories by refactoring refreshHomePins(stories) to accept an explicit list (827f24e). Rerouted Home tab to sign-in screen as login/switch-user surface, with "Back to my atlas" button shown when already signed in (75cb7c1). AGENTS.md updated to allow accounts (30f04c8). All 11 commits pushed; no device verification done this session.
+
+**Status:**
+- Transcribing spinner stuck on empty transcript ??? **tested locally**: root cause identified, fix in 35310f0
+- Design v2 sign-in + home hub + placeholder auth + demo mode ??? **implemented**: commits 3d9cac2-75cb7c1, pushed to origin/master
+- Home map demo pins ??? **implemented**: 827f24e; demo stories have lat/lng, refreshHomePins accepts explicit list
+- Home tab = sign-in/switch screen ??? **implemented**: 75cb7c1
+
+**Open tasks:**
+- [ ] next ??? Verify Stage 1 on phone (sign-in, demo, hub, Home tab, Back to my atlas). See NEXT.md.
+- [ ] not-yet-verified ??? Address detection fix from 2026-11-05 (e384967) still not re-tested on device
+
+**Deferred:** Stage 2 real auth (Firebase/email) ??? waiting on Kit's phone confirmation of Stage 1 first.
+
 ## 2026-11-06 16:37
 
 **Summary:** Claude Code design session alongside Bob's Stage 1 wiring. Built static v2 mockups in `design/v2/` (sign-in, home hub, `v2.css`, `map.svg`, cropped illustration, `HANDOFF.md`; `3feadb1`) and gave Kit a Bob prompt to wire them. Found `assets/illustration.png` (`fce589c`) was a screenshot of the whole old page, not the drawing. Fixed type spacing on the live site (`2b3e7e2`): v2 reused old absolutely-positioned `.tl-*` class names, so v2 timeline rules are now scoped under `.v2-timeline`. Fixed the Listen page (`3c9f18e`): desktop stacked in a column pushing the panel off screen (now a row), and demo showed "Story 0 of 0" because Listen read real storage instead of `_getStories()`. Shrunk the desktop Listen map into a framed card that fits above the 72px tab bar (`d02b176`). Map tiles stay grey in headless Edge; not checked in a real browser. Bob's own handoff entry (below) was stranded in `.claude/_entry.tmp` and is prepended here.
