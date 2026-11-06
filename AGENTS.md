@@ -1,12 +1,11 @@
 # Instructions for AI coding agents (IBM Bob, Claude Code, others)
 
-## Hackathon scope: data stays on the device
+## Hackathon scope
 
-Until the IBM Explore AI for Good submission (December 2, 2026), Story Atlas is
-**local only**. Do not add:
+Accounts and sign-in are **allowed** — Kit is approving accounts before the Dec 2
+submission. Story audio still stays on the device until cloud sync is built. Do not add:
 
 - a backend, database server, or upload endpoint
-- accounts, sign-in, or user tracking
 - cloud storage for audio or story text
 - analytics, or any network call that sends story text or audio off the device
 
