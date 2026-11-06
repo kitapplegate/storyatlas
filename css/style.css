@@ -668,85 +668,86 @@ body.page-landing .bottom-nav { display: none; }
 }
 
 
-/* ── Landing page ────────────────────────────────────────────── */
-#page-landing { overflow-x: hidden; }
-.landing-page { display: flex; flex-direction: column; }
+/* ── Appbar extras ───────────────────────────────────────────── */
+.appbar-divider-inner { display: none; }
+.appbar-name-inner    { display: none; }
+.appbar-browse-link {
+  font-size: 15px;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 0;
+  white-space: nowrap;
+}
+/* Show name divider on inner pages */
+.appbar-inner .appbar-divider-inner,
+.appbar-inner .appbar-name-inner { display: inline-flex; }
 
-/* Shared band layout */
-.landing-hero-band,
-.landing-cta-band,
-.landing-preview-band,
-.landing-how-band,
-.landing-footer-band {
+/* ── Home page (new design) ──────────────────────────────────── */
+#page-home { overflow-x: hidden; padding-bottom: 96px; }
+.lp-page {
+  max-width: 1080px;
+  margin: 0 auto;
   padding: 0 24px;
-  max-width: 560px;
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
 }
 
-/* Hero band */
-.landing-hero-band {
-  position: relative;
-  padding-top: 48px;
-  padding-bottom: 40px;
-  overflow: hidden;
-  text-align: center;
+/* ── Hero ────────────────────────────────────────────────────── */
+.lp-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 48px;
+  padding: 56px 0 48px;
+  border-bottom: 1px solid var(--line);
 }
-.landing-topo {
-  position: absolute;
-  right: -40px; top: -20px;
-  width: 320px; height: 210px;
-  opacity: .5;
-  pointer-events: none;
-}
-.landing-hero-inner { position: relative; }
-.landing-mark {
-  width: 72px; height: 72px;
-  margin: 0 auto 20px;
-  display: block;
-}
-.landing-h1 {
+.lp-hero-text { flex: 1; min-width: 0; }
+.lp-h1 {
   font-family: var(--font-serif);
-  font-size: 38px;
-  line-height: 1.1;
+  font-size: clamp(38px, 5vw, 58px);
+  line-height: 1.05;
   font-weight: 500;
   letter-spacing: -.02em;
   color: var(--ink);
+  margin-bottom: 16px;
 }
-.landing-sub {
+.lp-sub {
   font-size: 17px;
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--ink-soft);
-  margin-top: 14px;
+  margin-bottom: 28px;
+  max-width: 480px;
+}
+.lp-hero-img {
+  flex: none;
+  width: 340px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--parchment-deep);
+}
+.lp-hero-img img {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
-/* CTA band */
-.landing-cta-band {
-  padding-top: 0;
-  padding-bottom: 36px;
-  border-bottom: 1px solid var(--line);
-}
-.landing-cta-inner {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
-  padding: 24px 20px 20px;
-  box-shadow: var(--shadow-card);
-}
-.landing-cta-label {
+/* Name/CTA form */
+.lp-cta-label {
   display: block;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--ink);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
-.landing-cta-row {
+.lp-cta-row {
   display: flex;
   gap: 10px;
   align-items: stretch;
+  max-width: 440px;
 }
-.landing-cta-input {
+.lp-cta-input {
   flex: 1;
   height: 56px;
   border: 1.5px solid var(--line);
@@ -757,129 +758,143 @@ body.page-landing .bottom-nav { display: none; }
   color: var(--ink);
   min-width: 0;
 }
-.landing-cta-input:focus { outline: none; border-color: var(--rust); background: #fff; }
-.landing-cta-note {
+.lp-cta-input:focus { outline: none; border-color: var(--rust); background: #fff; }
+.lp-cta-note {
   font-size: 13px;
   color: var(--ink-faint);
-  margin-top: 12px;
+  margin-top: 10px;
   line-height: 1.5;
 }
 
-/* Preview band */
-.landing-preview-band {
-  padding-top: 32px;
-  padding-bottom: 8px;
+/* ── Sections ────────────────────────────────────────────────── */
+.lp-section {
+  padding: 40px 0;
+  border-bottom: 1px solid var(--line);
 }
-.landing-section-label {
-  font-size: 13px;
+.lp-section-label {
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: .09em;
+  letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
-.landing-preview-card { overflow: hidden; }
-.landing-preview-story {
+
+/* ── Story list (new design) ─────────────────────────────────── */
+.lp-story-list { display: flex; flex-direction: column; }
+.lp-story-row {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 16px 16px 14px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
 }
-.landing-preview-dot {
-  flex: none;
-  width: 12px; height: 12px;
-  border-radius: 999px;
-  background: var(--paper);
-  border: 2.5px solid var(--slate);
-  margin-top: 6px;
-}
-.landing-preview-body { flex: 1; min-width: 0; }
-.landing-preview-title {
+.lp-story-row:last-child { border-bottom: none; }
+.lp-story-row:hover .lp-story-title { color: var(--rust); }
+.lp-story-main { flex: 1; min-width: 0; }
+.lp-story-title {
   font-family: var(--font-serif);
-  font-size: 20px;
-  line-height: 26px;
+  font-size: 22px;
+  line-height: 1.2;
   font-weight: 500;
   color: var(--ink);
+  transition: color .12s;
 }
-.landing-preview-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
+.lp-story-meta {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-top: 4px;
 }
-.landing-preview-quote {
+.lp-story-quote {
   font-family: var(--font-serif);
   font-size: 16px;
   font-style: italic;
   line-height: 1.6;
   color: var(--ink-soft);
-  margin-top: 10px;
+  margin-top: 8px;
 }
-.landing-preview-dur {
+.lp-story-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+.lp-story-dur {
   font-size: 15px;
   font-weight: 600;
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
-  flex: none;
-  margin-top: 4px;
+  white-space: nowrap;
 }
-
-/* How it works band */
-.landing-how-band {
-  padding-top: 32px;
-  padding-bottom: 36px;
-  border-bottom: 1px solid var(--line);
-}
-.landing-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-.landing-step {
-  display: flex;
-  gap: 18px;
-  align-items: flex-start;
-}
-.landing-step-num {
-  flex: none;
-  width: 32px; height: 32px;
-  border-radius: 999px;
-  background: var(--rust);
-  color: #fff8ef;
-  font-size: 15px;
-  font-weight: 700;
-  display: grid; place-items: center;
-  margin-top: 1px;
-}
-.landing-step-title {
-  font-family: var(--font-serif);
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--ink);
-  margin-bottom: 4px;
-}
-.landing-step-body {
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--ink-soft);
-}
-
-/* Footer band */
-.landing-footer-band {
-  padding-top: 24px;
-  padding-bottom: 48px;
-  text-align: center;
-}
-.landing-skip-btn {
-  font-size: 15px;
-  color: var(--ink-soft);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1px;
+.lp-story-edit {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rust-dark);
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px 16px;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity .12s;
+}
+.lp-story-row:hover .lp-story-edit { opacity: 1; }
+
+/* ── Sample stories (first-visit placeholders) ───────────────── */
+.lp-story-row.sample { cursor: default; }
+.lp-story-row.sample:hover .lp-story-title { color: var(--ink); }
+
+/* ── How it works ────────────────────────────────────────────── */
+.lp-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+.lp-step-num {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.lp-step-title {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.lp-step-body {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* ── Backup card ─────────────────────────────────────────────── */
+.lp-backup-card {
+  padding: 20px 0;
+}
+
+/* ── Mobile: stack hero, single-col steps ───────────────────── */
+@media (max-width: 680px) {
+  .lp-hero {
+    flex-direction: column;
+    gap: 28px;
+    padding: 36px 0 36px;
+  }
+  .lp-hero-img {
+    width: 100%;
+  }
+  .lp-steps {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .lp-story-edit { opacity: 1; }
 }
 
 

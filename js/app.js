@@ -56,39 +56,37 @@ let _usedQIndices = [];
 // ── Init ─────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  _initLanding();
+  _initHome();
   _bindNav();
   _bindRecord();
-  // Older recordings were base64 in localStorage — move them to IndexedDB
   migrateAudioToIndexedDB().then(n => { if (n) requestPersistence(); });
-  // Returning storytellers go straight to their stories; first visit sees the landing page
-  const start = _isReturning() ? 'home' : 'landing';
-  history.replaceState({ page: start }, '', '');
-  _showPage(start, false);
+  history.replaceState({ page: 'home' }, '', '');
+  _showPage('home', false);
 });
 
-// Handle browser back/forward buttons
 window.addEventListener('popstate', (e) => {
-  let page = e.state?.page || 'landing';
-  // The placer wizard can't be resumed from history — land on home instead
-  if (page === 'placer') page = 'home';
-  _showPage(page, /* pushState= */ false);
+  let page = e.state?.page || 'home';
+  if (page === 'placer' || page === 'landing') page = 'home';
+  _showPage(page, false);
 });
 
 function _isReturning() {
   return !!getStoryteller().name || getStoriesSorted().length > 0;
 }
 
-function _initLanding() {
+function _initHome() {
   $('landing-start-btn').onclick = () => {
     const name = $('landing-name-input').value.trim();
     if (name) saveStoryteller({ name });
-    _showPage('home');
+    _renderHome();
   };
   $('landing-name-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') $('landing-start-btn').click();
   });
-  $('landing-skip-btn').onclick = () => _showPage('home');
+  const browseLink = $('appbar-browse-link');
+  if (browseLink) browseLink.onclick = () => {
+    _renderHome();
+  };
 }
 
 /** Show the name modal — called when the user tries to record without a name set */
@@ -163,40 +161,48 @@ function _navRecord() {
 }
 
 function _showPage(name, push = true) {
-  // Never leave the mic or the audio running on a page the user can't see
   if (name !== 'record') {
-    if (_recorder && _recorder.isRecording) _recorder.stop();  // the take is kept on the review screen
+    if (_recorder && _recorder.isRecording) _recorder.stop();
     stopSpeaking();
   }
   if (name !== 'listen') _destroyPlayers();
 
-  ['landing', 'home', 'record', 'listen', 'placer', 'account'].forEach(p => {
+  ['home', 'record', 'listen', 'placer', 'account'].forEach(p => {
     const el = $(`page-${p}`);
     if (el) el.style.display = (p === name) ? '' : 'none';
   });
   _currentPage = name;
 
-  // Hide bottom nav on landing page; show on all others
+  // Bottom nav: hidden on home, visible on inner pages
   const bottomNav = $('bottom-nav');
-  if (bottomNav) bottomNav.style.display = name === 'landing' ? 'none' : '';
+  if (bottomNav) bottomNav.style.display = name === 'home' ? 'none' : '';
 
-  // Push a history entry so the browser back button works within the app
+  // Appbar: show browse link on home, show name/divider on inner pages
+  const appbar = $('main-appbar');
+  const browseLink = $('appbar-browse-link');
+  const divider = appbar && appbar.querySelector('.appbar-divider-inner');
+  const nameEl  = $('appbar-name');
+  if (name === 'home') {
+    if (browseLink) browseLink.style.display = !getStoryteller().name ? '' : 'none';
+    if (divider) divider.style.display = 'none';
+    if (nameEl)  nameEl.style.display  = 'none';
+  } else {
+    if (browseLink) browseLink.style.display = 'none';
+    if (divider) divider.style.display = '';
+    if (nameEl) { nameEl.style.display = ''; nameEl.textContent = getStoryteller().name || 'Story Atlas'; }
+  }
+
   if (push) history.pushState({ page: name }, '', '');
 
   // Update bottom nav active state
-  const navMap = { home: 'btn-nav-home', record: 'btn-nav-record', listen: 'btn-nav-atlas', account: 'btn-nav-account' };
+  const navMap = { record: 'btn-nav-record', listen: 'btn-nav-atlas', account: 'btn-nav-account' };
   Object.entries(navMap).forEach(([page, id]) => {
     const btn = $(id);
     if (btn) btn.classList.toggle('on', page === name);
   });
 
-  if (name === 'home') {
-    _renderHome();
-    setTimeout(() => initHomeMap('home-leaflet'), 50);
-  }
-  if (name === 'listen' && _currentStory) {
-    _renderListen(_currentStory);
-  }
+  if (name === 'home') _renderHome();
+  if (name === 'listen' && _currentStory)  _renderListen(_currentStory);
   if (name === 'listen' && !_currentStory) {
     const stories = getStoriesSorted();
     if (stories.length) _renderListen(stories[0]);
@@ -207,39 +213,36 @@ function _showPage(name, push = true) {
 // ── Home page ────────────────────────────────────────────────────
 
 function _renderHome() {
-  const st     = getStoryteller();
+  const st      = getStoryteller();
   const stories = getStoriesSorted();
+  const hasName = !!st.name;
 
-  // Appbar
-  $('appbar-name').textContent = st.name || 'Story Atlas';
+  // Toggle new-user vs returning-user CTA in hero
+  const ctaWrap    = $('lp-cta-wrap');
+  const recordWrap = $('lp-record-wrap');
+  if (ctaWrap)    ctaWrap.style.display    = hasName ? 'none' : '';
+  if (recordWrap) recordWrap.style.display = hasName ? ''     : 'none';
 
-  // Hero
-  $('home-storyteller-name').textContent = st.name || 'Stories';
-  const places = stories.filter(s => s.place).length;
-  $('home-meta').textContent = `${stories.length} stor${stories.length === 1 ? 'y' : 'ies'} · ${places} place${places === 1 ? '' : 's'} · Family only`;
+  // Browse link in appbar only for new users
+  const browseLink = $('appbar-browse-link');
+  if (browseLink) browseLink.style.display = hasName ? 'none' : '';
 
-  // Timeline strip in atlas card
-  _renderHomeTimeline(stories);
+  // Stories label
+  const label = $('lp-stories-label');
+  if (label) label.textContent = stories.length ? `${st.name ? st.name + "'s" : 'Your'} stories` : 'What you\'ll build';
 
-  // Stories list
+  // Backup section
+  const backupSection = $('backup-section');
+  if (backupSection) backupSection.style.display = stories.length ? '' : 'none';
+
+  // Render story list
   _renderStoryList(stories);
-
-  // Refresh map pins
-  refreshHomePins();
 }
 
 function _renderHomeTimeline(stories) {
-  const tl = $('home-timeline');
-  if (!tl) return;
+  // No-op — timeline strip removed from new design
   const total = stories.length;
-  const ERAS  = ['Childhood', 'Youth', 'Work', 'Family', 'Later'];
-
-  let html = '<div class="tl-track"></div>';
-  stories.forEach((s, i) => {
-    const pct = total < 2 ? 50 : Math.round((i / (total - 1)) * 92 + 4);
-    html += `<i class="tl-dot" style="left:${pct}%" title="${_esc(s.title || '')}"></i>`;
-  });
-  html += `<div class="tl-eras">${ERAS.map(e => `<span>${e}</span>`).join('')}</div>`;
+  void total; // suppress lint
   tl.innerHTML = html;
 }
 
@@ -248,37 +251,30 @@ function _renderStoryList(stories) {
   if (!container) return;
 
   if (!stories.length) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-map">
-          <div id="empty-leaflet"></div>
-          ${_emptyPinSvg()}
+    // Sample stories for new users (no interaction)
+    container.innerHTML = [
+      { title: 'The House on Elm Street', meta: 'Lincoln School · About 1951', quote: '"We lived at the end of Elm Street, past the big oak. My father painted the porch green every spring..."', dur: '3:08' },
+      { title: 'The Movie Theater', meta: 'Main Street · Age about 12', quote: '', dur: '4:12' },
+    ].map(s => `
+      <div class="lp-story-row sample">
+        <div class="lp-story-main">
+          <div class="lp-story-title">${_esc(s.title)}</div>
+          <div class="lp-story-meta">${_esc(s.meta)}</div>
+          ${s.quote ? `<div class="lp-story-quote">${_esc(s.quote)}</div>` : ''}
         </div>
-        <p class="t-h2" style="margin-top:22px">No stories yet.</p>
-        <p class="t-body soft" style="margin-top:4px">Press Record to tell the first one.</p>
-        <button class="btn btn-primary btn-block" style="margin-top:20px;height:64px;font-size:20px" onclick="document.getElementById('btn-nav-record').click()">
-          ${_micSvg()} Record a story
-        </button>
-      </div>`;
-    // Small empty map
-    setTimeout(() => {
-      if ($('empty-leaflet') && !$('empty-leaflet')._mapInit) {
-        const m = L.map('empty-leaflet', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false }).setView([20,0],2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
-        $('empty-leaflet')._mapInit = true;
-      }
-    }, 50);
+        <div class="lp-story-actions"><span class="lp-story-dur">${s.dur}</span></div>
+      </div>`).join('');
     return;
   }
 
   container.innerHTML = stories.map(s => _storyCardHtml(s, stories.length)).join('');
-  container.querySelectorAll('.story-card-body').forEach(card => {
-    card.onclick = () => {
-      _currentStory = getStoryById(card.dataset.id);
+  container.querySelectorAll('.lp-story-row[data-id]').forEach(row => {
+    row.onclick = () => {
+      _currentStory = getStoryById(row.dataset.id);
       _showPage('listen');
     };
   });
-  container.querySelectorAll('.story-edit-btn').forEach(btn => {
+  container.querySelectorAll('.lp-story-edit').forEach(btn => {
     btn.onclick = (e) => {
       e.stopPropagation();
       _openEditModal(btn.dataset.id);
@@ -287,33 +283,23 @@ function _renderStoryList(stories) {
 }
 
 function _storyCardHtml(story, total) {
-  const era    = story.era || assignEra(story, total);
-  const dur    = formatDuration(story.duration);
-  const status = _statusHtml(story);
-  const place  = story.place
-    ? `<span class="chip chip-place">${_pinSvg()}${_esc(story.place.label.split(',')[0])}</span>` : '';
-  const eraChip = era
-    ? `<span class="chip chip-era">${_clockSvg()}${_esc(era)}</span>` : '';
-  const ageChip = story.ageAtEvent != null
-    ? `<span class="chip chip-age">Age about ${story.ageAtEvent}</span>` : '';
+  const era  = story.era || assignEra(story, total);
+  const dur  = formatDuration(story.duration);
+  const place = story.place ? story.place.label.split(',')[0] : '';
+  const meta = [place, era, story.ageAtEvent != null ? `Age about ${story.ageAtEvent}` : ''].filter(Boolean).join(' · ');
+  const firstLine = (story.transcriptLines || [])[0] || '';
+  const quote = firstLine ? `<div class="lp-story-quote">"${_esc(firstLine)}"</div>` : '';
 
   return `
-    <div class="story-row">
-      <div class="story-spine"><i></i></div>
-      <div class="card" style="flex:1;overflow:hidden">
-        <div class="story-card-body" data-id="${story.id}" style="padding:16px 16px 14px;cursor:pointer">
-          <div class="story-card-header">
-            <h3 class="story-card-title">${_esc(story.title || 'Untitled')}</h3>
-            <span class="story-dur">${dur}</span>
-          </div>
-          <div class="story-chips">${place}${eraChip}${ageChip}</div>
-          ${status}
-        </div>
-        <div style="border-top:1px solid var(--line);padding:10px 16px">
-          <button class="story-edit-btn btn-ghost" data-id="${story.id}" style="font-size:15px;height:auto;padding:4px 0;display:inline-flex;align-items:center;gap:6px">
-            ${_penSvg()} Edit
-          </button>
-        </div>
+    <div class="lp-story-row" data-id="${story.id}">
+      <div class="lp-story-main">
+        <div class="lp-story-title">${_esc(story.title || 'Untitled')}</div>
+        ${meta ? `<div class="lp-story-meta">${_esc(meta)}</div>` : ''}
+        ${quote}
+      </div>
+      <div class="lp-story-actions">
+        <button class="lp-story-edit" data-id="${story.id}">Edit</button>
+        <span class="lp-story-dur">${dur}</span>
       </div>
     </div>`;
 }
