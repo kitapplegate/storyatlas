@@ -116,7 +116,13 @@ function _bindNav() {
   }
   $('record-back-btn').onclick = () => _showPage('home');
   $('listen-back-btn').onclick = () => _showPage('home');
-  $('home-record-cta').onclick = () => $('nav-record').click();
+  $('home-record-cta').onclick = () => _navRecord();
+
+  // Bottom tab bar
+  $('btn-nav-home').onclick    = () => _showPage('home');
+  $('btn-nav-record').onclick  = () => _navRecord();
+  $('btn-nav-atlas').onclick   = () => _showPage('listen');
+  $('btn-nav-account').onclick = () => _showPage('account');
 
   $('backup-download-btn').onclick = async () => {
     const btn = $('backup-download-btn');
@@ -146,15 +152,14 @@ function _bindNav() {
       _showToast(err.message);
     }
   };
-  $('nav-record').onclick  = () => {
-    if (!getStoryteller().name) {
-      _promptForName(() => _showPage('record'));
-    } else {
-      _showPage('record');
-    }
-  };
-  $('nav-listen').onclick  = () => _showPage('listen');
-  $('nav-family').onclick  = () => _showToast('Family sharing coming soon.');
+}
+
+function _navRecord() {
+  if (!getStoryteller().name) {
+    _promptForName(() => _showPage('record'));
+  } else {
+    _showPage('record');
+  }
 }
 
 function _showPage(name, push = true) {
@@ -165,19 +170,24 @@ function _showPage(name, push = true) {
   }
   if (name !== 'listen') _destroyPlayers();
 
-  ['landing', 'home', 'record', 'listen', 'placer'].forEach(p => {
+  ['landing', 'home', 'record', 'listen', 'placer', 'account'].forEach(p => {
     const el = $(`page-${p}`);
     if (el) el.style.display = (p === name) ? '' : 'none';
   });
   _currentPage = name;
 
+  // Hide bottom nav on landing page; show on all others
+  const bottomNav = $('bottom-nav');
+  if (bottomNav) bottomNav.style.display = name === 'landing' ? 'none' : '';
+
   // Push a history entry so the browser back button works within the app
   if (push) history.pushState({ page: name }, '', '');
 
-  // Update nav active state
-  ['home','record','listen'].forEach(p => {
-    const btn = $(`nav-${p}`);
-    if (btn) btn.classList.toggle('on', p === name);
+  // Update bottom nav active state
+  const navMap = { home: 'btn-nav-home', record: 'btn-nav-record', listen: 'btn-nav-atlas', account: 'btn-nav-account' };
+  Object.entries(navMap).forEach(([page, id]) => {
+    const btn = $(id);
+    if (btn) btn.classList.toggle('on', page === name);
   });
 
   if (name === 'home') {
@@ -246,7 +256,7 @@ function _renderStoryList(stories) {
         </div>
         <p class="t-h2" style="margin-top:22px">No stories yet.</p>
         <p class="t-body soft" style="margin-top:4px">Press Record to tell the first one.</p>
-        <button class="btn btn-primary btn-block" style="margin-top:20px;height:64px;font-size:20px" onclick="document.getElementById('nav-record').click()">
+        <button class="btn btn-primary btn-block" style="margin-top:20px;height:64px;font-size:20px" onclick="document.getElementById('btn-nav-record').click()">
           ${_micSvg()} Record a story
         </button>
       </div>`;
@@ -262,10 +272,16 @@ function _renderStoryList(stories) {
   }
 
   container.innerHTML = stories.map(s => _storyCardHtml(s, stories.length)).join('');
-  container.querySelectorAll('.story-card').forEach(card => {
+  container.querySelectorAll('.story-card-body').forEach(card => {
     card.onclick = () => {
       _currentStory = getStoryById(card.dataset.id);
       _showPage('listen');
+    };
+  });
+  container.querySelectorAll('.story-edit-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      _openEditModal(btn.dataset.id);
     };
   });
 }
@@ -284,13 +300,20 @@ function _storyCardHtml(story, total) {
   return `
     <div class="story-row">
       <div class="story-spine"><i></i></div>
-      <div class="card story-card" data-id="${story.id}">
-        <div class="story-card-header">
-          <h3 class="story-card-title">${_esc(story.title || 'Untitled')}</h3>
-          <span class="story-dur">${dur}</span>
+      <div class="card" style="flex:1;overflow:hidden">
+        <div class="story-card-body" data-id="${story.id}" style="padding:16px 16px 14px;cursor:pointer">
+          <div class="story-card-header">
+            <h3 class="story-card-title">${_esc(story.title || 'Untitled')}</h3>
+            <span class="story-dur">${dur}</span>
+          </div>
+          <div class="story-chips">${place}${eraChip}${ageChip}</div>
+          ${status}
         </div>
-        <div class="story-chips">${place}${eraChip}${ageChip}</div>
-        ${status}
+        <div style="border-top:1px solid var(--line);padding:10px 16px">
+          <button class="story-edit-btn btn-ghost" data-id="${story.id}" style="font-size:15px;height:auto;padding:4px 0;display:inline-flex;align-items:center;gap:6px">
+            ${_penSvg()} Edit
+          </button>
+        </div>
       </div>
     </div>`;
 }
@@ -316,6 +339,42 @@ function _statusHtml(story) {
           </div>
         </div>`;
   }
+}
+
+// ── Edit story modal ──────────────────────────────────────────────
+
+function _openEditModal(id) {
+  const story = getStoryById(id);
+  if (!story) return;
+  const overlay = $('edit-story-modal-overlay');
+  const titleInput = $('edit-story-title');
+  const transcriptInput = $('edit-story-transcript');
+  titleInput.value = story.title || '';
+  transcriptInput.value = (story.transcriptLines || []).join('\n');
+  overlay.classList.add('open');
+
+  const close = () => overlay.classList.remove('open');
+
+  $('edit-story-cancel').onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+
+  $('edit-story-save').onclick = () => {
+    const newTitle = titleInput.value.trim();
+    const newTranscript = transcriptInput.value.trim();
+    const updatedStory = {
+      ...story,
+      title: newTitle || story.title,
+      transcriptLines: splitIntoLines(newTranscript),
+      transcriptStatus: newTranscript ? 'done' : story.transcriptStatus,
+    };
+    if (saveStory(updatedStory)) {
+      close();
+      _renderHome();
+      _showToast('Story updated.');
+    } else {
+      _showToast('Could not save — device may be full.');
+    }
+  };
 }
 
 // ── Record page ───────────────────────────────────────────────────

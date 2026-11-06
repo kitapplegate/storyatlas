@@ -492,8 +492,59 @@ img { display: block; max-width: 100%; }
 @keyframes shimmer { from { background-position: 200%; } to { background-position: -200%; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; background: #e9e0cf; } }
 
+/* ── Bottom navigation ───────────────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 64px;
+  display: flex;
+  background: rgba(251,248,241,.96);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--line);
+  z-index: 110;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+/* Hide bottom-nav on landing page */
+body.page-landing .bottom-nav { display: none; }
+
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .03em;
+  position: relative;
+  transition: color .12s;
+}
+.bottom-nav-btn svg { width: 22px; height: 22px; stroke-width: 1.8; }
+.bottom-nav-btn.on { color: var(--rust); }
+.bottom-nav-btn.on svg { stroke-width: 2.3; }
+
+/* Pulsing dot on Record button */
+.bottom-nav-record-dot {
+  position: absolute;
+  top: 8px; right: calc(50% - 22px);
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  background: var(--rust);
+  opacity: 0;
+}
+.bottom-nav-btn.on .bottom-nav-record-dot { opacity: 1; animation: nav-pulse 2s ease-in-out infinite; }
+@keyframes nav-pulse {
+  0%, 100% { opacity: .9; transform: scale(1); }
+  50%       { opacity: .4; transform: scale(.7); }
+}
+
+/* ── Account page ────────────────────────────────────────────── */
+#page-account { padding-bottom: 96px; }
+
 /* ── Home page ───────────────────────────────────────────────── */
-#page-home { padding-bottom: 48px; }
+#page-home { padding-bottom: 96px; }
 .home-atlas-card { overflow: hidden; }
 .home-map { height: 124px; position: relative; overflow: hidden; background: var(--parchment-deep); }
 .home-map #home-leaflet { height: 100%; }
@@ -501,7 +552,7 @@ img { display: block; max-width: 100%; }
 .story-list { display: flex; flex-direction: column; gap: 12px; }
 
 /* ── Record page ─────────────────────────────────────────────── */
-#page-record { min-height: 100vh; padding-bottom: 80px; }
+#page-record { min-height: 100vh; padding-bottom: 96px; }
 .record-center { display: grid; place-items: center; }
 .record-footer {
   position: fixed; left: 0; right: 0; bottom: 0;
@@ -513,7 +564,7 @@ img { display: block; max-width: 100%; }
 .record-footer svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ── Placer (steps) page ─────────────────────────────────────── */
-#page-placer { min-height: 100vh; padding-bottom: 96px; }
+#page-placer { min-height: 100vh; padding-bottom: 112px; }
 .placer-story-chip { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: rgba(251,248,241,.75); border: 1px solid var(--line); }
 .placer-story-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--rust-tint); color: var(--rust); display: grid; place-items: center; flex: none; }
 .placer-story-icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -526,7 +577,7 @@ img { display: block; max-width: 100%; }
   position: absolute; top: 288px; left: 0; right: 0; bottom: 0;
   border-radius: 24px 24px 0 0;
   box-shadow: 0 -6px 20px rgba(43,38,34,.08);
-  padding-bottom: 80px;
+  padding-bottom: 96px;
   overflow-y: auto;
   min-height: calc(100vh - 288px);
 }
@@ -561,7 +612,7 @@ img { display: block; max-width: 100%; }
 
 /* ── Toast ───────────────────────────────────────────────────── */
 #toast {
-  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
   background: var(--ink); color: var(--paper);
   padding: 12px 20px; border-radius: var(--radius-md);
   font-size: 15px; font-weight: 600;
