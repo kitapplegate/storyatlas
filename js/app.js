@@ -492,7 +492,7 @@ async function _onRecordingComplete(blob, duration, dataUrl, liveTranscript = ''
         $('review-transcript').textContent = finalTranscript;
         if (!titleInput.dataset.touched) titleInput.value = _suggestTitle(finalTranscript);
         const tr = $('review-transcribing');
-        if (tr) tr.style.display = finalTranscript ? 'none' : 'block';
+        if (tr) tr.style.display = 'none';
       }
     }).catch(() => {});
   }
