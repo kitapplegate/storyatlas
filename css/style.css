@@ -1234,3 +1234,14 @@ body.page-landing .bottom-nav { display: none; }
   .v2-timeline .tl-eras { font-size: 13px; }
 }
 .si-tl-float { width: 250px; }
+
+/* ── Listen desktop layout fix (Claude, 2026-11-06) ──────────
+   Map on the left, story panel on the right, both fitting under the
+   72px v2 top bar. "Up next" sits inside the right panel. */
+@media (min-width: 900px) {
+  #page-listen { flex-direction: row; height: calc(100vh - 72px); }
+  .listen-map-area { flex: 1; height: 100%; min-width: 0; }
+  .listen-desktop { flex: none; height: 100%; padding-bottom: 120px; }
+  .listen-desktop-upnext { left: auto; right: 36px; width: 448px; }
+}
+.listen-sheet .tl { margin-bottom: 14px; }

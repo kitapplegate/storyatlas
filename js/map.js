@@ -96,6 +96,7 @@ export function initListenMap(containerId) {
 /** Place all story pins on the listen map. */
 export function renderListenPins(stories, activeId, onPinClick) {
   if (!_listenMap) return;
+  _listenMap.invalidateSize();
 
   // Clear old pins
   Object.values(_pins).forEach(m => {
@@ -128,6 +129,7 @@ export function addListenPin(story, onPinClick) {
 /** Fit the listen map to show all pins. */
 export function fitAllListenPins() {
   if (!_listenMap) return;
+  _listenMap.invalidateSize();
   const lls = Object.values(_pins)
     .filter(m => m._map === _listenMap)
     .map(m => m.getLatLng());

@@ -800,10 +800,10 @@ async function _onRecordingComplete(blob, duration, dataUrl, liveTranscript = ''
 
 function _renderListen(story) {
   _currentStory = story;
-  const stories = getStoriesSorted();
+  const stories = _getStories();
   const idx     = stories.findIndex(s => s.id === story.id);
   const total   = stories.length;
-  const st      = getStoryteller();
+  const st      = _getStoryteller();
 
   // Destroy previous player
   _destroyPlayers();
@@ -867,8 +867,8 @@ function _listenSheetHtml(story, idx, total) {
         ${er  ? `<span class="chip chip-era">${_clockSvg()}${_esc(er)}</span>` : ''}
         ${age ? `<span class="chip chip-age">${_esc(age)}</span>` : ''}
       </div>
-      ${_timelineStripHtml(getStoriesSorted(), story.id)}
-      ${_scrubberHtml('mobile')}
+      ${_timelineStripHtml(_getStories(), story.id)}
+      ${_scrubberHtml('mobile', story)}
       ${_audioControlsHtml('mobile')}
       <div class="listen-transcript" id="transcript-mobile">
         ${lines.map(l => `<p class="transcript-line">${_esc(l)}</p>`).join('')}
@@ -903,7 +903,7 @@ function _listenDesktopHtml(story, idx, total) {
       ${age ? `<span class="chip chip-age">${_esc(age)}</span>` : ''}
     </div>
     <div class="card" style="margin-top:20px;padding:16px 18px 18px">
-      ${_scrubberHtml('desktop')}
+      ${_scrubberHtml('desktop', story)}
       ${_audioControlsHtml('desktop')}
     </div>
     <div class="t-over" style="margin-top:22px;display:flex;align-items:center;gap:10px">
@@ -949,7 +949,7 @@ function _timelineStripHtml(stories, activeId) {
     </div>`;
 }
 
-function _scrubberHtml(key) {
+function _scrubberHtml(key, story) {
   return `
     <div class="scrubber-wrap" id="scrubber-${key}">
       <div class="scrubber-track"></div>
@@ -958,7 +958,7 @@ function _scrubberHtml(key) {
     </div>
     <div class="scrubber-times">
       <span id="time-elapsed-${key}">0:00</span>
-      <span id="time-dur-${key}">0:00</span>
+      <span id="time-dur-${key}">${(story && story.duration) ? formatDuration(story.duration) : "0:00"}</span>
     </div>`;
 }
 
