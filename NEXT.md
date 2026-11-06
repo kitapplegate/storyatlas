@@ -1,7 +1,7 @@
 # Next
 
-**Action:** On your phone (Chrome), record a new story and mention your address ("I lived at 123 Oak Street, Springfield") — confirm the address chip appears in the Place step and the map pin drops on the correct street.
-**Why now:** The address-detection fix (`e384967`) is live but has not been observed on a real device. This is the one unverified item.
-**Start here:** https://kitapplegate.github.io/storyatlas (page source should show `app.js?v=20261105a`)
-**Verify with:** Address chip appears with the street name; map centers on or near the address; pin is droppable.
-**Watch out for:** Nominatim may not find very short or rural street addresses — if the chip appears but the geocode fails, the manual Search box is pre-filled and the user can tap Search.
+**Action:** Verify Stage 1 on phone: sign-in screen loads, "Try the demo" shows Grandpa Joe's atlas with pins on the map, signing in reaches the hub with real stories, Home tab returns to the sign-in screen, "Back to my atlas" button returns to the hub.
+**Why now:** Stage 1 was just deployed (75cb7c1) but has not been observed on a real device. Kit must confirm before Stage 2 (real auth) begins.
+**Start here:** https://kitapplegate.github.io/storyatlas — hard-refresh (Ctrl+Shift+R on Android Chrome)
+**Verify with:** Sign-in screen first; demo shows 6 stories with pins zoomed to central IL; your real stories load on sign-in; Home tab goes back to sign-in; "Back to my atlas" returns to hub.
+**Watch out for:** GitHub Pages may lag 2–3 min after push. If old page loads, check `app.js?v=20261106h` in DevTools → Sources.

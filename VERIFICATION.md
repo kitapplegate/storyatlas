@@ -93,3 +93,21 @@ Real device: Android, Chrome browser, live site https://kitapplegate.github.io/s
 | Address detection (street number) | Said home address ("at [number] [street]") | **failed**: `detectPlaces()` pattern was letters-only, skipped digits; no chip appeared |
 | Address detection fix | Extended `detectPlaces()` with a second regex for `\d+ street-name suffix` (`e384967`, `js/transcriber.js:131`) | **not yet verified on device**: committed and pushed; phone re-test not yet done |
 
+
+## 2026-11-06 — Design v2: sign-in, home hub, nav redesign
+
+All work deployed to https://kitapplegate.github.io/storyatlas (`app.js?v=20261106h`, commits `30f04c8`–`75cb7c1`).
+
+| Scenario | Steps | Result |
+|---|---|---|
+| Transcribing spinner stuck forever (empty transcript) | Identified bug: `if (tr) tr.style.display = finalTranscript ? 'none' : 'block'` never hid spinner on empty result | **tested locally** (code review); fix committed `35310f0` |
+| New bottom tab bar (Home/Map/Record/Stories/Keepsake) | Replaced old scattered nav with `v2-tabbar` | **implemented**: pushed, not device-verified this session |
+| Sign-in screen (placeholder auth) | `signin-btn` / `create-account-btn` set `localStorage.sa_signed_in`; go to hub | **implemented**: pushed, not device-verified |
+| Demo mode (Grandpa Joe) | "Try the demo" loads 6 sample stories with lat/lng coordinates in Springfield IL | **implemented**: pushed, not device-verified |
+| Home map with demo pins | `refreshHomePins(stories)` now accepts explicit list; demo stories have lat/lng; pins cleared on re-render | **implemented**: pushed, not device-verified |
+| Home tab = sign-in/switcher; "Back to my atlas" when signed in | `tab-home` → `signin`; `signin-back-to-atlas` shown when `_isSignedIn()` | **implemented**: pushed, not device-verified |
+
+| v2 type/spacing on sign-in + home (Claude Code) | Scoped v2 timeline rules under `.v2-timeline` so old absolute `.tl-*` rules stop colliding; chips/story gaps; seg pressed state (`2b3e7e2`) | **tested locally**: headless Edge screenshots at 1440px and 390px iframe; live site served new CSS |
+| Listen page layout + demo data (Claude Code) | Desktop row layout; `_getStories()`/`_getStoryteller()` in Listen so demo no longer shows "Story 0 of 0"; real duration in scrubber; `invalidateSize()` on map (`3c9f18e`) | **tested locally**: headless Edge + `--dump-dom` size measurements, no overflow |
+| Smaller framed Listen map on desktop (Claude Code) | Map as inset rounded card, panel `min(640px,46%)`, page height `calc(100vh - 144px)` above tab bar (`d02b176`) | **tested locally**: headless screenshot; deploy confirmed serving `v=20261106g` |
+| Map tiles render | Leaflet OSM tiles on Listen + home maps | **not yet verified**: tiles grey in headless Edge; needs a look in real Chrome |
