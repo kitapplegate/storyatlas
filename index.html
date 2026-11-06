@@ -110,6 +110,13 @@
             <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none" viewBox="0 0 24 24"><use href="#i-lock"/></svg>
             Your recordings stay on this device. Only people you invite can listen.
           </p>
+
+          <!-- Shown when already signed in — lets user return to their atlas -->
+          <p style="margin-top:20px;display:none" id="signin-back-to-atlas">
+            <button class="btn btn-secondary" style="width:100%;max-width:420px">
+              ← Back to my atlas
+            </button>
+          </p>
         </div>
 
         <!-- Right: product collage -->
@@ -567,7 +574,7 @@
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <!-- App — bump v= on every deploy to force a cache bust -->
-<script type="module" src="js/app.js?v=20261106g"></script>
+<script type="module" src="js/app.js?v=20261106h"></script>
 
 </body>
 </html>

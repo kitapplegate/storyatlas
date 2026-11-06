@@ -119,6 +119,9 @@ function _bindSignIn() {
     _demoMode = true;
     _showPage('home');
   };
+  // Back to atlas (shown when already signed in)
+  const backLink = $('signin-back-to-atlas');
+  if (backLink) backLink.onclick = () => _showPage('home');
   // Avatar → toggle menu
   $('topbar-avatar').onclick = (e) => {
     e.stopPropagation();
@@ -166,14 +169,15 @@ function _promptForName(afterSave) {
 // ── Navigation ───────────────────────────────────────────────────
 
 function _bindNav() {
-  $('nav-home').onclick    = () => (_isSignedIn() || _demoMode) ? _showPage('home') : _showPage('signin');
-  $('record-back-btn').onclick  = () => _showPage('home');
-  $('listen-back-btn').onclick  = () => _showPage('home');
-  $('stories-back-btn').onclick = () => _showPage('home');
+  // Logo always goes to sign-in (home = login / switch users)
+  $('nav-home').onclick         = () => _showPage('signin');
+  $('record-back-btn').onclick  = () => (_isSignedIn() || _demoMode) ? _showPage('home') : _showPage('signin');
+  $('listen-back-btn').onclick  = () => (_isSignedIn() || _demoMode) ? _showPage('home') : _showPage('signin');
+  $('stories-back-btn').onclick = () => (_isSignedIn() || _demoMode) ? _showPage('home') : _showPage('signin');
   $('home-record-cta').onclick  = (e) => { e.preventDefault(); _navRecord(); };
 
   // Desktop nav
-  $('nav-btn-home').onclick     = () => _showPage('home');
+  $('nav-btn-home').onclick     = () => _showPage('signin');
   $('nav-btn-map').onclick      = () => _showPage('listen');
   $('nav-btn-stories').onclick  = () => _showPage('stories');
   $('nav-btn-keepsake').onclick = () => _showToast('Keepsake book coming soon.');
@@ -184,10 +188,10 @@ function _bindNav() {
   $('nav-btn-stories-card').onclick = () => _showPage('stories');
   $('nav-btn-keepsake-card').onclick= () => _showToast('Keepsake book coming soon.');
   $('home-see-all-btn').onclick     = () => _showPage('stories');
-  $('home-switch-btn').onclick      = () => _openSwitchMenu();
+  $('home-switch-btn').onclick      = () => _showPage('signin');
 
-  // Bottom tab bar (5 tabs)
-  $('tab-home').onclick     = () => _showPage('home');
+  // Bottom tab bar (5 tabs) — Home = sign-in/switcher
+  $('tab-home').onclick     = () => _showPage('signin');
   $('tab-map').onclick      = () => _showPage('listen');
   $('tab-record').onclick   = () => _navRecord();
   $('tab-stories').onclick  = () => _showPage('stories');
@@ -243,9 +247,15 @@ function _openSwitchMenu() {
 }
 
 function _showPage(name, push = true) {
-  // Auth guard — only signin is reachable when logged out
+  // Auth guard — inner pages need sign-in; but signin itself is always reachable
   if (name !== 'signin' && !_isSignedIn() && !_demoMode) {
     name = 'signin';
+  }
+
+  // When navigating to signin, show/hide the "Back to my atlas" link
+  if (name === 'signin') {
+    const backLink = $('signin-back-to-atlas');
+    if (backLink) backLink.style.display = (_isSignedIn() || _demoMode) ? '' : 'none';
   }
 
   if (name !== 'record') {
