@@ -1215,3 +1215,22 @@ body.page-landing .bottom-nav { display: none; }
   body.has-tabs { padding-bottom: 84px; }
   .v2-tabbar { display: flex; }
 }
+
+/* ── v2 spacing fixes (Claude, 2026-11-06) ───────────────────
+   The v2 timeline reuses .tl-track/.tl-dot/.tl-eras, which the Listen
+   page already styles as absolute-positioned. Scope v2's version so the
+   dots sit on the line and the era labels sit below it. */
+.v2-timeline .tl-track { position: relative; top: auto; height: 22px; background: none; border-radius: 0; }
+.v2-timeline .tl-track::before { content: ""; position: absolute; left: 0; right: 0; top: 9px; height: 4px; border-radius: 2px; background: var(--line); }
+.v2-timeline .tl-dot { top: 5px; }
+.v2-timeline .tl-eras { position: static; margin-top: 8px; font: 500 15px/20px var(--font-sans); letter-spacing: 0; }
+.si-map-area { background: url(../design/v2/map.svg) center/cover var(--parchment-deep); }
+.v2-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.v2-story { gap: 12px; }
+.seg button[aria-pressed=true] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(43,38,34,.12); }
+.si-auth-alt .v2-link, .si-auth-alt a { text-decoration: underline; }
+@media (max-width: 720px) {
+  .v2-atlas-foot-row span { display: none; }
+  .v2-timeline .tl-eras { font-size: 13px; }
+}
+.si-tl-float { width: 250px; }

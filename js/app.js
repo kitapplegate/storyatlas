@@ -458,7 +458,7 @@ function _storyCardHtml(story, idx) {
   const dur  = formatDuration(story.duration);
   const place = story.place ? story.place.label.split(',')[0] : '';
   const firstLine = (story.transcriptLines || [])[0] || '';
-  const quote = firstLine ? `<q class="v2-story-quote">"${_esc(firstLine)}"</q>` : '';
+  const quote = firstLine ? `<q class="v2-story-quote">${_esc(firstLine.replace(/^["'“]+|["'”]+$/g, ""))}</q>` : '';
   const placeChip = place ? `<span class="v2-chip v2-chip-place"><svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-pin"/></svg>${_esc(place)}</span>` : '';
   const eraChip   = era   ? `<span class="v2-chip v2-chip-era"><svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-clock"/></svg>${_esc(era)}</span>` : '';
   const ageChip   = story.ageAtEvent != null ? `<span class="v2-chip v2-chip-age">Age about ${story.ageAtEvent}</span>` : '';

@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20261106e">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
@@ -165,7 +165,7 @@
       <!-- Demo banner (shown in demo mode) -->
       <div id="demo-banner" style="display:none" class="demo-banner">
         <span class="v2-chip v2-chip-sample">SAMPLE</span>
-        Exploring Grandpa Joe's demo atlas —
+        You are exploring a sample atlas.
         <button class="v2-link" id="exit-demo-btn">Exit demo</button>
       </div>
 
@@ -226,7 +226,7 @@
             <h3 class="v2-continue-title" id="home-continue-title"></h3>
             <button class="btn btn-secondary btn-sm" id="home-continue-btn">
               <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-play"/></svg>
-              Listen · <span id="home-continue-dur"></span>
+              <span>Listen · <span id="home-continue-dur"></span></span>
             </button>
           </div>
           <button class="v2-card v2-go" id="nav-btn-map-card">
@@ -567,7 +567,7 @@
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <!-- App — bump v= on every deploy to force a cache bust -->
-<script type="module" src="js/app.js?v=20261106d"></script>
+<script type="module" src="js/app.js?v=20261106e"></script>
 
 </body>
 </html>
