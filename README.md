@@ -39,36 +39,34 @@ Safari and Firefox do not support `SpeechRecognition` — a typed-input fallback
 
 ## Demo path (acceptance criteria walkthrough)
 
-### 1. Voice interview → saved chunk
-1. Open the app. Enter the storyteller's name when prompted.
-2. The AI shows its first question.
-3. Press the **🎙 microphone button**. Speak for as long or short as you like. Press **⏹** to stop.
-4. The transcript appears, lightly cleaned for grammar. Press **"Save this story"**.
-5. If a place name was detected, a modal offers to geocode it — type/confirm the location and press **"Find on map"**.
-6. The ✅ saved banner confirms the chunk was stored.
+### 1. Entry screen
+1. Open the app. Press **"Continue on this device"** to start.
+2. Enter the storyteller's name when prompted (or skip and add it later).
 
-### 2. Chronological ordering (two chunks)
-1. Save a second story chunk (press **"Next question"** to get a new question).
-2. After saving, the app asks exactly **one ordering question**:  
-   *"Did [new story] happen before or after [previous story]?"*  
-3. Press **Before** or **After** — the timeline reorders immediately.
-4. Visit **Stories** to see chunks grouped by era in chronological order.
+### 2. Voice interview → saved story
+1. Press the **🎙 Record a story** button.
+2. The first time you record, you'll see a one-time privacy notice explaining local storage and browser speech recognition. Press **"I understand"** to proceed.
+3. A question is shown to start. Press the **🎙 microphone button**, speak, then press **⏹** to stop.
+4. The transcript appears. Edit the title if needed. Press **"Save this story"**.
 
-### 3. Map pin from a spoken address
-1. Speak a story that mentions a place (e.g. *"I arrived in Nairobi, Kenya…"*).
-2. The place-detection highlights the mention and opens the pin modal.
-3. Confirm or edit the address. The app geocodes it via OpenStreetMap Nominatim (free, no key).
-4. Navigate to **Map** — a pin appears at that location. Click it to read the story snippet.
+### 3. Chronological ordering (two stories)
+1. Save a second story. After saving, the placer asks **"When did this happen?"**.
+2. Press **Before** or **After** to slot it against an existing story in life order.
+3. Visit **Stories** to see everything in life order.
 
-### 4. Keepsake print view
-1. Navigate to **Keepsake**.
-2. All saved chunks appear in chronological order with place labels.
-3. Press **🖨 Print / Save PDF** — headers and navigation hide automatically for a clean printout.
-4. The page lists concrete services (Shutterfly, Blurb, Amazon KDP) to turn the PDF into a physical book.
+### 4. Map pin from a spoken place
+1. Speak a story that mentions a place (e.g. *"I grew up on Elm Street…"*).
+2. After saving, the placer shows **"Where did this happen?"** with any detected place names.
+3. Tap a suggested place name (or type one) then press **Search** — confirm the pin and press **"Confirm place"**.
+4. Navigate to **Map** — a pin appears at that location.
 
-### 5. Map: walking and armchair modes
-- **Armchair mode** (default): browse the map, click pins to read stories.
-- **Walking mode**: the app watches your GPS position; stories surface automatically when you come within 200 m of a pin.
+### 5. Try the demo
+Press **"Try the demo"** on the entry screen to explore a sample atlas with pre-written stories.
+The demo is read-only — audio controls are visibly disabled (transcript-only preview).
+
+### 6. Backup and restore
+Press **"Download all"** on the home screen to save a copy of all stories.
+Press **"Restore"** to load a backup on any device.
 
 ---
 
@@ -159,8 +157,8 @@ In [`interview.js`](js/interview.js), replace `pickNextQuestion()` with a call t
 
 - Speech recognition accuracy depends on the browser's model (Chrome is best).
 - Place detection is heuristic (capitalised proper nouns after prepositions). watsonx NER will be more accurate.
-- No user authentication or multi-device sync in MVP (by design — local-first). The production plan (local-first with cloud sync) is in [`ROADMAP.md`](ROADMAP.md).
-- Photo attachments are stored as base64 in localStorage; large photos may hit storage limits.
+- Stories are stored locally — no user accounts, no multi-device sync. The production plan is in [`ROADMAP.md`](ROADMAP.md).
+- **Keepsake book** (print/PDF) and **walking mode** (GPS-triggered stories) are planned features — not in this build.
 
 ---
 

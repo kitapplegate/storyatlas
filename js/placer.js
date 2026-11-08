@@ -305,7 +305,7 @@ function _renderStep2() {
     </div>
   `;
 
-  // Wire suggestions
+  // Wire suggestions — geocode only when the user explicitly taps one
   if (_detectedPlaces.length > 0) {
     container.querySelectorAll('.place-suggestion').forEach(card => {
       card.onclick = () => {
@@ -317,15 +317,6 @@ function _renderStep2() {
         _geocode(_selectedPlace.name);
       };
     });
-
-    // Auto-select and geocode the first detected place immediately
-    const firstCard = container.querySelector('.place-suggestion');
-    if (firstCard) {
-      firstCard.classList.add('selected');
-      _selectedPlace = _detectedPlaces[0];
-      document.getElementById('place-search-input').value = _selectedPlace.name;
-      _geocode(_selectedPlace.name);
-    }
   }
 
   document.getElementById('placer2-back').onclick = () => {
@@ -393,9 +384,9 @@ async function _geocode(query) {
 
   // Init map if needed
   if (!_map) {
-    _map = L.map('placer-map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2);
+    _map = L.map('placer-map', { zoomControl: false }).setView([20, 0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(_map);
     L.control.zoom({ position: 'bottomright' }).addTo(_map);
   }

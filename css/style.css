@@ -4,7 +4,6 @@
    Base: 18px · 4px grid · 48px min tap targets
    ═══════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Source+Sans+3:wght@400;500;600;700&display=swap');
 
 /* ── Tokens ──────────────────────────────────────────────────── */
 :root {
@@ -130,9 +129,13 @@ img { display: block; max-width: 100%; }
 
 /* ── SVG icon helper ─────────────────────────────────────────── */
 .ico { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.ico.sm { width: 18px; height: 18px; }
-.ico.lg { width: 32px; height: 32px; }
-.ico.xl { width: 44px; height: 44px; }
+.ico.sm  { width: 18px; height: 18px; }
+.ico.md  { width: 22px; height: 22px; }   /* v2 nav/card icons */
+.ico.sm2 { width: 17px; height: 17px; }   /* v2 small chip icons */
+.ico.sm3 { width: 15px; height: 15px; }   /* v2 chip icons */
+.ico.lg  { width: 32px; height: 32px; }
+.ico.xl  { width: 44px; height: 44px; }
+.ico.xl2 { width: 28px; height: 28px; }   /* record CTA mic */
 
 /* ── Segmented control ───────────────────────────────────────── */
 .seg {

@@ -69,9 +69,9 @@ export class Recorder {
     // Set up AudioContext for waveform visualisation
     if (this._onWaveform) {
       try {
-        const ctx      = new (window.AudioContext || window.webkitAudioContext)();
-        const source   = ctx.createMediaStreamSource(this._stream);
-        this._analyser = ctx.createAnalyser();
+        this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source   = this._audioCtx.createMediaStreamSource(this._stream);
+        this._analyser = this._audioCtx.createAnalyser();
         this._analyser.fftSize = 128;
         this._dataArray = new Uint8Array(this._analyser.frequencyBinCount);
         source.connect(this._analyser);
@@ -147,10 +147,14 @@ export class Recorder {
     const blob = new Blob(this._chunks, { type: mimeType });
     const transcript = this._liveTranscript.trim();
 
-    // Convert to base64 data URL for localStorage
-    const reader = new FileReader();
-    reader.onload = () => this._onStop(blob, this.duration, reader.result, transcript);
-    reader.readAsDataURL(blob);
+    // Close AudioContext to release resources
+    if (this._audioCtx) {
+      this._audioCtx.close().catch(() => {});
+      this._audioCtx = null;
+    }
+
+    // Pass Blob directly — caller converts to base64 only if IndexedDB fails
+    this._onStop(blob, this.duration, null, transcript);
   }
 
   // ── Live speech recognition ─────────────────────────────────────

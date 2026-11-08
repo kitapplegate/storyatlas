@@ -25,7 +25,7 @@ import {
 // ── State ────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-let _currentPage     = 'signin';
+let _currentPage     = 'home';
 let _recorder        = null;
 let _timerInterval   = null;
 let _players         = [];
@@ -81,15 +81,13 @@ document.addEventListener('DOMContentLoaded', () => {
   _bindNav();
   _bindRecord();
   migrateAudioToIndexedDB().then(n => { if (n) requestPersistence(); });
-  const start = _isSignedIn() ? 'home' : 'signin';
-  history.replaceState({ page: start }, '', '');
-  _showPage(start, false);
+  history.replaceState({ page: 'home' }, '', '');
+  _showPage('home', false);
 });
 
 window.addEventListener('popstate', (e) => {
-  let page = e.state?.page || 'signin';
-  // Guard: never land on inner pages without being signed in
-  if (!_isSignedIn() && !_demoMode) page = 'signin';
+  let page = e.state?.page || 'home';
+  if (page === 'signin') page = 'home';
   if (page === 'placer' || page === 'landing' || page === 'account') page = 'home';
   _showPage(page, false);
 });
@@ -104,14 +102,8 @@ document.addEventListener('click', (e) => {
 });
 
 function _bindSignIn() {
-  // Sign in button
-  $('signin-btn').onclick = () => {
-    _signIn();
-    _showPage('home');
-  };
-  // Create account button (same placeholder behaviour)
-  $('create-account-btn').onclick = () => {
-    _signIn();
+  // Continue on this device
+  $('continue-btn').onclick = () => {
     _showPage('home');
   };
   // Try the demo
@@ -119,9 +111,6 @@ function _bindSignIn() {
     _demoMode = true;
     _showPage('home');
   };
-  // Back to atlas (shown when already signed in)
-  const backLink = $('signin-back-to-atlas');
-  if (backLink) backLink.onclick = () => _showPage('home');
   // Avatar → toggle menu
   $('topbar-avatar').onclick = (e) => {
     e.stopPropagation();
@@ -132,13 +121,12 @@ function _bindSignIn() {
   $('avatar-menu-signout').onclick = () => {
     _signOut();
     $('avatar-menu').style.display = 'none';
-    _showPage('signin');
+    _showPage('home');
   };
   // Exit demo banner
   $('exit-demo-btn').onclick = () => {
     _demoMode = false;
-    if (_isSignedIn()) _showPage('home');
-    else _showPage('signin');
+    _showPage('home');
   };
   // Home name input (no-name state)
   $('home-name-btn').onclick = () => {
@@ -153,49 +141,51 @@ function _bindSignIn() {
 
 /** Show the name modal — called when the user tries to record without a name set */
 function _promptForName(afterSave) {
-  $('welcome-modal-overlay').classList.add('open');
-  $('welcome-name-input').focus();
-  // Override save to also run the callback
+  const close = _openModal('welcome-modal-overlay');
   $('welcome-save-btn').onclick = () => {
     const name = $('welcome-name-input').value.trim();
     if (!name) return;
     saveStoryteller({ name });
-    $('welcome-modal-overlay').classList.remove('open');
+    close();
     _refreshAll();
     if (afterSave) afterSave();
   };
+  $('welcome-skip-btn').onclick = () => close();
 }
 
 // ── Navigation ───────────────────────────────────────────────────
 
 function _bindNav() {
-  // Logo always goes to sign-in (home = login / switch users)
-  $('nav-home').onclick         = () => _showPage('signin');
-  $('record-back-btn').onclick  = () => (_isSignedIn() || _demoMode) ? _showPage('home') : _showPage('signin');
-  $('listen-back-btn').onclick  = () => (_isSignedIn() || _demoMode) ? _showPage('home') : _showPage('signin');
-  $('stories-back-btn').onclick = () => (_isSignedIn() || _demoMode) ? _showPage('home') : _showPage('signin');
+  // Logo goes to home hub
+  $('nav-home').onclick         = () => _showPage('home');
+  $('record-back-btn').onclick  = () => _showPage('home');
+  $('listen-back-btn').onclick  = () => _showPage('home');
+  $('stories-back-btn').onclick = () => _showPage('home');
   $('home-record-cta').onclick  = (e) => { e.preventDefault(); _navRecord(); };
 
-  // Desktop nav
-  $('nav-btn-home').onclick     = () => _showPage('signin');
+  // Desktop nav (hide Keepsake until implemented)
+  $('nav-btn-home').onclick     = () => _showPage('home');
   $('nav-btn-map').onclick      = () => _showPage('listen');
   $('nav-btn-stories').onclick  = () => _showPage('stories');
-  $('nav-btn-keepsake').onclick = () => _showToast('Keepsake book coming soon.');
+  const desktopKeepsake = $('nav-btn-keepsake');
+  if (desktopKeepsake) desktopKeepsake.style.display = 'none';
 
   // Home hub: atlas "Open atlas" button and side cards
   $('home-open-atlas-btn').onclick  = (e) => { e.preventDefault(); _showPage('listen'); };
   $('nav-btn-map-card').onclick     = () => _showPage('listen');
   $('nav-btn-stories-card').onclick = () => _showPage('stories');
-  $('nav-btn-keepsake-card').onclick= () => _showToast('Keepsake book coming soon.');
+  const keepsakeCard = $('nav-btn-keepsake-card');
+  if (keepsakeCard) keepsakeCard.style.display = 'none';
   $('home-see-all-btn').onclick     = () => _showPage('stories');
-  $('home-switch-btn').onclick      = () => _showPage('signin');
+  $('home-switch-btn').onclick      = () => _openSwitchMenu();
 
-  // Bottom tab bar (5 tabs) — Home = sign-in/switcher
-  $('tab-home').onclick     = () => _showPage('signin');
+  // Bottom tab bar (5 tabs — hide Keepsake until implemented)
+  $('tab-home').onclick     = () => _showPage('home');
   $('tab-map').onclick      = () => _showPage('listen');
   $('tab-record').onclick   = () => _navRecord();
   $('tab-stories').onclick  = () => _showPage('stories');
-  $('tab-keepsake').onclick = () => _showToast('Keepsake book coming soon.');
+  const tabKeepsake = $('tab-keepsake');
+  if (tabKeepsake) tabKeepsake.style.display = 'none';
 
   // Switch-storyteller menu
   $('switch-menu-close').onclick = () => { $('switch-menu-overlay').style.display = 'none'; };
@@ -247,17 +237,6 @@ function _openSwitchMenu() {
 }
 
 function _showPage(name, push = true) {
-  // Auth guard — inner pages need sign-in; but signin itself is always reachable
-  if (name !== 'signin' && !_isSignedIn() && !_demoMode) {
-    name = 'signin';
-  }
-
-  // When navigating to signin, show/hide the "Back to my atlas" link
-  if (name === 'signin') {
-    const backLink = $('signin-back-to-atlas');
-    if (backLink) backLink.style.display = (_isSignedIn() || _demoMode) ? '' : 'none';
-  }
-
   if (name !== 'record') {
     if (_recorder && _recorder.isRecording) _recorder.stop();
     stopSpeaking();
@@ -271,15 +250,13 @@ function _showPage(name, push = true) {
   });
   _currentPage = name;
 
-  // Top bar: show Sign-in link on signin screen, avatar on hub pages
-  const onSignIn = name === 'signin';
-  const onHub    = !onSignIn;
-  const signinLink = $('topbar-signin-link');
-  const avatar     = $('topbar-avatar');
-  const nav        = $('main-nav');
-  if (signinLink) signinLink.style.display = onSignIn ? '' : 'none';
-  if (avatar)     avatar.style.display     = onHub     ? '' : 'none';
-  if (nav)        nav.style.display        = (onHub && name === 'home') ? '' : 'none';
+  // Top bar: hide avatar on entry screen, show on hub pages
+  const onEntry = name === 'signin';
+  const onHub   = !onEntry;
+  const avatar  = $('topbar-avatar');
+  const nav     = $('main-nav');
+  if (avatar) avatar.style.display = onHub     ? '' : 'none';
+  if (nav)    nav.style.display    = (onHub && name === 'home') ? '' : 'none';
 
   // Update avatar initials
   if (onHub) {
@@ -292,18 +269,21 @@ function _showPage(name, push = true) {
     if (avatarDot)  avatarDot.textContent  = initials;
   }
 
-  // Tab bar: shown on hub pages, hidden on signin
+  // Tab bar: shown on hub pages, hidden on entry screen
   const tabbar = $('v2-tabbar');
   if (tabbar) tabbar.style.display = onHub ? '' : 'none';
 
   // body class for safe bottom padding on phone
   document.body.classList.toggle('has-tabs', onHub);
 
-  // Tab bar active state
+  // Tab bar active state + aria-current
   const tabMap = { home:'tab-home', listen:'tab-map', record:'tab-record', stories:'tab-stories' };
   Object.entries(tabMap).forEach(([page, id]) => {
     const t = $(id);
-    if (t) t.classList.toggle('on', page === name);
+    if (t) {
+      t.classList.toggle('on', page === name);
+      t.setAttribute('aria-current', page === name ? 'page' : 'false');
+    }
   });
 
   // Desktop nav active state
@@ -330,6 +310,10 @@ function _showPage(name, push = true) {
 function _renderHome() {
   const st      = _getStoryteller();
   const stories = _getStories();
+  // stories is life-order; byCreated is newest-first for "continue" + recent section
+  const byCreated = [...stories].sort((a, b) =>
+    new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+  );
   const hasName = !!st.name;
 
   // Demo banner
@@ -342,15 +326,15 @@ function _renderHome() {
   const nameEl = $('home-storyteller-name');
   if (nameEl) nameEl.textContent = st.name || '';
 
-  // Meta line: N stories · N places · lock Family only
+  // Meta line: N stories · N places
   const places = stories.filter(s => s.place).length;
   const metaEl = $('home-meta');
   if (metaEl) metaEl.innerHTML =
-    `${stories.length} stor${stories.length === 1 ? 'y' : 'ies'} <span style="opacity:.5">·</span> ${places} place${places === 1 ? '' : 's'} <span style="opacity:.5">·</span> <svg style="width:15px;height:15px;display:inline;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-lock"/></svg> Family only`;
+    `${stories.length} stor${stories.length === 1 ? 'y' : 'ies'} <span style="opacity:.5">·</span> ${places} place${places === 1 ? '' : 's'}`;
 
-  // "Continue where you left off" — most recent story
+  // "Continue where you left off" — most recently created story
   const continueCard = $('home-continue-card');
-  const latest = stories[0];
+  const latest = byCreated[0];
   if (continueCard) {
     if (latest) {
       continueCard.style.display = '';
@@ -390,8 +374,20 @@ function _renderHome() {
     refreshHomePins(stories);
   }, 50);
 
-  // Story list (3 most recent)
-  _renderStoryList(stories.slice(0, 3));
+  // Seg sort buttons (life-order vs by-place; recent section uses createdAt when in life-order)
+  const segLife  = $('seg-life');
+  const segPlace = $('seg-place');
+  const _applySort = (byPlace) => {
+    const sorted = byPlace
+      ? [...stories].sort((a, b) => (a.place?.label || '').localeCompare(b.place?.label || ''))
+      : byCreated;
+    _renderStoryList(sorted.slice(0, 3));
+    if (segLife)  { segLife.setAttribute('aria-pressed',  String(!byPlace)); segLife.classList.toggle('on', !byPlace); }
+    if (segPlace) { segPlace.setAttribute('aria-pressed', String(byPlace));  segPlace.classList.toggle('on', byPlace); }
+  };
+  if (segLife)  segLife.onclick  = () => _applySort(false);
+  if (segPlace) segPlace.onclick = () => _applySort(true);
+  _applySort(false);
 
   // "See all" link
   const seeAllWrap  = $('home-see-all-wrap');
@@ -430,8 +426,10 @@ function _renderStoryList(stories) {
     setTimeout(() => {
       const el = $('empty-leaflet');
       if (el && !el._mapInit) {
-        const m = L.map('empty-leaflet', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false }).setView([20,0],2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
+        const m = L.map('empty-leaflet', { zoomControl:false, dragging:false, scrollWheelZoom:false }).setView([20,0],2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(m);
         el._mapInit = true;
       }
     }, 50);
@@ -439,6 +437,10 @@ function _renderStoryList(stories) {
   }
 
   container.innerHTML = stories.map((s, i) => _storyCardHtml(s, i)).join('');
+  _wireStoryCards(container);
+}
+
+function _wireStoryCards(container) {
   container.querySelectorAll('.v2-story[data-id]').forEach(card => {
     card.onclick = () => {
       if (_demoMode) {
@@ -449,6 +451,9 @@ function _renderStoryList(stories) {
       _showPage('listen');
     };
   });
+  container.querySelectorAll('.v2-story-edit[data-edit-id]').forEach(btn => {
+    btn.onclick = (e) => { e.stopPropagation(); _openEditModal(btn.dataset.editId); };
+  });
 }
 
 function _renderStoriesPage() {
@@ -457,12 +462,7 @@ function _renderStoriesPage() {
   if (!container) return;
   if (!stories.length) { container.innerHTML = '<p style="padding:24px;color:var(--ink-soft)">No stories yet.</p>'; return; }
   container.innerHTML = stories.map((s, i) => _storyCardHtml(s, i)).join('');
-  container.querySelectorAll('.v2-story[data-id]').forEach(card => {
-    card.onclick = () => {
-      _currentStory = _demoMode ? DEMO_STORIES.find(s => s.id === card.dataset.id) : getStoryById(card.dataset.id);
-      _showPage('listen');
-    };
-  });
+  _wireStoryCards(container);
 }
 
 function _storyCardHtml(story, idx) {
@@ -481,17 +481,24 @@ function _storyCardHtml(story, idx) {
     ? `<span class="v2-story-status"><svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-check"/></svg>Written down</span>`
     : `<span class="v2-story-status pending"><svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-device"/></svg>Kept safe on this device</span>`;
 
+  const editBtn = _demoMode ? '' :
+    `<button class="v2-story-edit" data-edit-id="${_esc(story.id)}" aria-label="Edit ${_esc(story.title || 'Untitled')}"
+      style="position:absolute;top:12px;right:12px;background:none;border:none;cursor:pointer;padding:6px;color:var(--ink-faint);border-radius:8px;display:flex;align-items:center;justify-content:center"
+      title="Edit story">${_penSvg()}</button>`;
   return `
-    <button class="v2-story" data-id="${story.id}">
-      <span class="v2-story-num" style="position:absolute;top:-10px;left:18px;font:700 12px var(--font-sans);letter-spacing:.08em;background:var(--parchment);padding:0 8px;color:var(--ink-soft)">${idx + 1}</span>
-      <div class="v2-story-top">
-        <h3 class="v2-story-title">${_esc(story.title || 'Untitled')}</h3>
-        <span class="v2-story-dur">${dur}</span>
-      </div>
-      ${(placeChip || eraChip || ageChip) ? `<div class="v2-chips">${placeChip}${eraChip}${ageChip}</div>` : ''}
-      ${quote}
-      ${statusHtml}
-    </button>`;
+    <div class="v2-story-wrap" style="position:relative">
+      <button class="v2-story" data-id="${_esc(story.id)}">
+        <span class="v2-story-num" style="position:absolute;top:-10px;left:18px;font:700 12px var(--font-sans);letter-spacing:.08em;background:var(--parchment);padding:0 8px;color:var(--ink-soft)">${idx + 1}</span>
+        <div class="v2-story-top">
+          <h3 class="v2-story-title">${_esc(story.title || 'Untitled')}</h3>
+          <span class="v2-story-dur">${dur}</span>
+        </div>
+        ${(placeChip || eraChip || ageChip) ? `<div class="v2-chips">${placeChip}${eraChip}${ageChip}</div>` : ''}
+        ${quote}
+        ${statusHtml}
+      </button>
+      ${editBtn}
+    </div>`;
 }
 
 function _statusHtml(story) {
@@ -522,17 +529,14 @@ function _statusHtml(story) {
 function _openEditModal(id) {
   const story = getStoryById(id);
   if (!story) return;
-  const overlay = $('edit-story-modal-overlay');
   const titleInput = $('edit-story-title');
   const transcriptInput = $('edit-story-transcript');
   titleInput.value = story.title || '';
   transcriptInput.value = (story.transcriptLines || []).join('\n');
-  overlay.classList.add('open');
 
-  const close = () => overlay.classList.remove('open');
+  const close = _openModal('edit-story-modal-overlay');
 
   $('edit-story-cancel').onclick = close;
-  overlay.onclick = (e) => { if (e.target === overlay) close(); };
 
   $('edit-story-save').onclick = () => {
     const newTitle = titleInput.value.trim();
@@ -545,12 +549,23 @@ function _openEditModal(id) {
     };
     if (saveStory(updatedStory)) {
       close();
-      _renderHome();
+      _refreshAll();
       _showToast('Story updated.');
     } else {
       _showToast('Could not save — device may be full.');
     }
   };
+
+  const deleteBtn = $('edit-story-delete');
+  if (deleteBtn) {
+    deleteBtn.onclick = () => {
+      if (!confirm(`Delete "${story.title || 'Untitled'}"? This cannot be undone.`)) return;
+      deleteStory(story.id);
+      close();
+      _refreshAll();
+      _showToast('Story deleted.');
+    };
+  }
 }
 
 // ── Record page ───────────────────────────────────────────────────
@@ -661,6 +676,8 @@ function _showRecordRecording() {
   $('record-state-recording').style.display = '';
 }
 
+const MIC_CONSENT_KEY = 'sa_mic_consent';
+
 async function _startRecording() {
   if (_recorder && _recorder.isRecording) return;
 
@@ -668,6 +685,20 @@ async function _startRecording() {
   if (!getStoryteller().name) {
     _promptForName(() => _startRecording());
     return;
+  }
+
+  // Show consent before first microphone use
+  if (!localStorage.getItem(MIC_CONSENT_KEY)) {
+    if ($('consent-modal-overlay')) {
+      const closeConsent = _openModal('consent-modal-overlay');
+      $('consent-accept-btn').onclick = () => {
+        localStorage.setItem(MIC_CONSENT_KEY, '1');
+        closeConsent();
+        _startRecording();
+      };
+      $('consent-cancel-btn').onclick = () => closeConsent();
+      return;
+    }
   }
 
   _recorder = new Recorder({
@@ -721,7 +752,7 @@ async function _onRecordingComplete(blob, duration, dataUrl, liveTranscript = ''
   // If we didn't get a live transcript, try transcribing now and update the screen
   let finalTranscript = liveTranscript;
   if (!liveTranscript) {
-    transcribe(blob, dataUrl, () => {}, liveTranscript).then(result => {
+    transcribe(blob, null, () => {}, liveTranscript).then(result => {
       finalTranscript = (result.lines || []).map(l => l.text || l).join(' ');
       if ($('record-state-review').style.display !== 'none') {
         $('review-transcript').textContent = finalTranscript;
@@ -768,13 +799,18 @@ async function _onRecordingComplete(blob, duration, dataUrl, liveTranscript = ''
     };
 
     // Audio goes to IndexedDB. If that's unavailable (some private windows),
-    // fall back to the old base64-in-localStorage way.
+    // fall back to base64-in-localStorage (convert on demand, not upfront).
     try {
       await putAudio(id, blob);
     } catch (e) {
       console.warn('StoryAtlas: IndexedDB save failed, falling back', e);
-      story.audioDataUrl = dataUrl;
-      story.hasAudio     = false;
+      story.audioDataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+      story.hasAudio = false;
     }
     if (!saveStory(story)) {
       if (story.hasAudio) deleteAudio(id).catch(() => {});
@@ -1016,8 +1052,31 @@ async function _loadStoryAudio(story, player) {
   let blob = null;
   try { blob = await getAudio(story.id); } catch { /* fall back below */ }
   if (player.destroyed) return;
-  if (blob) player.load(URL.createObjectURL(blob));
-  else if (story.audioDataUrl) player.load(story.audioDataUrl);
+  if (blob) {
+    player.load(URL.createObjectURL(blob));
+  } else if (story.audioDataUrl) {
+    player.load(story.audioDataUrl);
+  } else {
+    // No audio available — disable controls and show a "transcript only" note
+    player.disable?.();
+    const key = player._playBtn?.id?.replace('play-btn-', '');
+    if (key) {
+      const scrubber = document.getElementById(`scrubber-${key}`);
+      const skipBack = document.getElementById(`skip-back-${key}`);
+      const skipFwd  = document.getElementById(`skip-fwd-${key}`);
+      const playBtn  = document.getElementById(`play-btn-${key}`);
+      if (scrubber) scrubber.style.opacity = '0.35';
+      if (skipBack) { skipBack.disabled = true; skipBack.style.opacity = '0.35'; }
+      if (skipFwd)  { skipFwd.disabled  = true; skipFwd.style.opacity  = '0.35'; }
+      if (playBtn)  { playBtn.disabled  = true; playBtn.style.opacity  = '0.35'; }
+      if (playBtn?.parentElement) {
+        const note = document.createElement('p');
+        note.style.cssText = 'font-size:14px;color:var(--ink-soft);text-align:center;margin:4px 0 0';
+        note.textContent = 'Transcript preview — no audio in demo';
+        playBtn.parentElement.after(note);
+      }
+    }
+  }
 }
 
 /** Saving failed — keep the review screen and offer the recording as a file so it isn't lost. */
@@ -1059,6 +1118,55 @@ function _renderListenEmpty() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
+
+/**
+ * Open a modal overlay with full accessibility:
+ * - sets role/aria-modal/aria-labelledby on the inner .modal
+ * - moves focus to the first focusable element
+ * - traps Tab inside the modal
+ * - closes on Escape or backdrop click
+ * - restores focus on close
+ * Returns a close function.
+ */
+function _openModal(overlayId, onClose) {
+  const overlay = $(overlayId);
+  if (!overlay) return () => {};
+  const modal = overlay.querySelector('[role="dialog"]') || overlay.querySelector('.modal');
+  const previousFocus = document.activeElement;
+
+  overlay.classList.add('open');
+
+  const FOCUSABLE = 'button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  const getFocusable = () => [...modal.querySelectorAll(FOCUSABLE)];
+  const firstFocusable = getFocusable()[0];
+  if (firstFocusable) firstFocusable.focus();
+
+  const trapTab = (e) => {
+    if (e.key !== 'Tab') return;
+    const focusable = getFocusable();
+    if (!focusable.length) { e.preventDefault(); return; }
+    const first = focusable[0];
+    const last  = focusable[focusable.length - 1];
+    if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+    else            { if (document.activeElement === last)  { e.preventDefault(); first.focus(); } }
+  };
+  const onEscape = (e) => { if (e.key === 'Escape') close(); };
+  const onBackdrop = (e) => { if (e.target === overlay) close(); };
+
+  document.addEventListener('keydown', trapTab);
+  document.addEventListener('keydown', onEscape);
+  overlay.addEventListener('click', onBackdrop);
+
+  function close() {
+    overlay.classList.remove('open');
+    document.removeEventListener('keydown', trapTab);
+    document.removeEventListener('keydown', onEscape);
+    overlay.removeEventListener('click', onBackdrop);
+    if (previousFocus) previousFocus.focus();
+    if (onClose) onClose();
+  }
+  return close;
+}
 
 function _refreshAll() {
   if (_currentPage === 'home') _renderHome();

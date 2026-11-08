@@ -40,12 +40,14 @@ export function initHomeMap(containerId) {
   }
 
   _atlasMap = L.map(containerId, {
-    zoomControl: false, attributionControl: false,
+    zoomControl: false,
     dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
     touchZoom: false,
   }).setView([20, 0], 2);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_atlasMap);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(_atlasMap);
 }
 
 /**
@@ -84,11 +86,11 @@ export function initListenMap(containerId) {
   const el = document.getElementById(containerId);
   if (!el || _listenMap) return;
 
-  _listenMap = L.map(containerId, {
-    zoomControl: false, attributionControl: false,
-  }).setView([20, 0], 2);
+  _listenMap = L.map(containerId).setView([20, 0], 2);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_listenMap);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(_listenMap);
   L.control.zoom({ position: 'bottomright' }).addTo(_listenMap);
   return _listenMap;
 }

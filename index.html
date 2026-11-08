@@ -9,7 +9,6 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
   <link rel="stylesheet" href="css/style.css?v=20261106g">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -56,8 +55,6 @@
         <button id="nav-btn-keepsake">Keepsake</button>
       </nav>
       <span class="grow"></span>
-      <!-- Sign in link shown on sign-in screen -->
-      <a class="v2-link" id="topbar-signin-link" href="#signin" style="display:none;font-size:16px">Sign in</a>
       <!-- Avatar shown when signed in -->
       <button class="v2-avatar" id="topbar-avatar" aria-label="Account menu" style="display:none">
         <b id="topbar-avatar-name"></b><span class="v2-avatar-dot" id="topbar-avatar-dot"></span>
@@ -65,7 +62,7 @@
       <!-- Avatar menu -->
       <div class="v2-avatar-menu" id="avatar-menu" style="display:none">
         <button id="avatar-menu-signout">
-          <svg class="ico sm" style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-signout"/></svg>
+          <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-signout"/></svg>
           Sign out
         </button>
       </div>
@@ -84,22 +81,7 @@
           <h1 class="si-h1">Every story<br>has a <em>place.</em></h1>
           <p class="si-lede">Record a grandparent's memories one at a time. Story Atlas writes them down, puts them in life order, and pins each one to the map where it happened.</p>
 
-          <form class="si-auth" id="signin" onsubmit="return false">
-            <h2>Welcome back</h2>
-            <label class="si-field">
-              <span>Email</span>
-              <input type="email" id="signin-email" autocomplete="email" placeholder="you@example.com">
-            </label>
-            <label class="si-field">
-              <span>Password</span>
-              <input type="password" id="signin-password" autocomplete="current-password">
-            </label>
-            <button class="btn btn-primary si-btn" id="signin-btn">Sign in</button>
-            <div class="si-auth-alt">
-              <button class="v2-link" id="create-account-btn">Create an account</button>
-              <button class="v2-link" style="color:var(--ink-soft);font-weight:500">Forgot password?</button>
-            </div>
-          </form>
+          <button class="btn btn-primary si-btn" id="continue-btn" style="max-width:420px;width:100%;margin-bottom:16px">Continue on this device</button>
 
           <button class="si-demo" id="demo-btn">
             <svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:var(--rust);flex:none" viewBox="0 0 24 24"><path d="M5 4l14 8-14 8z"/></svg>
@@ -108,14 +90,7 @@
 
           <p class="si-trust">
             <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none" viewBox="0 0 24 24"><use href="#i-lock"/></svg>
-            Your recordings stay on this device. Only people you invite can listen.
-          </p>
-
-          <!-- Shown when already signed in — lets user return to their atlas -->
-          <p style="margin-top:20px;display:none" id="signin-back-to-atlas">
-            <button class="btn btn-secondary" style="width:100%;max-width:420px">
-              ← Back to my atlas
-            </button>
+            Stories and recordings are stored in this browser on this device.
           </p>
         </div>
 
@@ -135,8 +110,8 @@
             <p class="v2-overline">Story 4 of 12</p>
             <h3 class="si-float-title">The House on Elm Street</h3>
             <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
-              <span class="v2-chip v2-chip-place"><svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-pin"/></svg>Elm Street</span>
-              <span class="v2-chip v2-chip-era"><svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-clock"/></svg>About 1952</span>
+              <span class="v2-chip v2-chip-place"><svg class="ico sm3" viewBox="0 0 24 24"><use href="#i-pin"/></svg>Elm Street</span>
+              <span class="v2-chip v2-chip-era"><svg class="ico sm3" viewBox="0 0 24 24"><use href="#i-clock"/></svg>About 1952</span>
             </div>
             <q class="si-float-quote">My father painted the porch green every spring.</q>
           </div>
@@ -193,13 +168,13 @@
           <h1 class="v2-who-h1" id="home-storyteller-h1" style="display:none">
             <span id="home-storyteller-name"></span>
             <button class="v2-switch" id="home-switch-btn" aria-label="Switch storyteller">
-              Switch <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-down"/></svg>
+              Switch <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-down"/></svg>
             </button>
           </h1>
           <p class="v2-meta" id="home-meta"></p>
         </div>
         <a class="v2-record-cta" id="home-record-cta" href="#" style="text-decoration:none">
-          <span class="v2-record-mic"><svg style="width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-mic"/></svg></span>
+          <span class="v2-record-mic"><svg class="ico xl2" viewBox="0 0 24 24"><use href="#i-mic"/></svg></span>
           <span><b>Record a story</b><small>We'll offer a question to start</small></span>
         </a>
       </section>
@@ -212,7 +187,7 @@
             <div id="home-leaflet" style="position:absolute;inset:0;z-index:1"></div>
             <img class="v2-map-placeholder" src="design/v2/map.svg" id="home-map-placeholder" alt="">
             <a class="v2-map-btn" id="home-open-atlas-btn" href="#">
-              <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-map"/></svg>Open atlas
+              <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-map"/></svg>Open atlas
             </a>
           </div>
           <div class="v2-atlas-foot">
@@ -232,22 +207,22 @@
             <p class="v2-overline">Pick up where you left off</p>
             <h3 class="v2-continue-title" id="home-continue-title"></h3>
             <button class="btn btn-secondary btn-sm" id="home-continue-btn">
-              <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-play"/></svg>
+              <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-play"/></svg>
               <span>Listen · <span id="home-continue-dur"></span></span>
             </button>
           </div>
           <button class="v2-card v2-go" id="nav-btn-map-card">
-            <span class="v2-tile v2-tile-slate"><svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-map"/></svg></span>
+            <span class="v2-tile v2-tile-slate"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-map"/></svg></span>
             <span><h3>The map</h3><p id="home-map-places-label">Walk through the places</p></span>
             <svg class="v2-chev" viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-left:auto;color:var(--ink-soft)"><use href="#i-chev"/></svg>
           </button>
           <button class="v2-card v2-go" id="nav-btn-stories-card">
-            <span class="v2-tile v2-tile-ochre"><svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-list"/></svg></span>
+            <span class="v2-tile v2-tile-ochre"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-list"/></svg></span>
             <span><h3>All stories</h3><p id="home-stories-count-label">In life order</p></span>
             <svg class="v2-chev" viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-left:auto;color:var(--ink-soft)"><use href="#i-chev"/></svg>
           </button>
           <button class="v2-card v2-go" id="nav-btn-keepsake-card">
-            <span class="v2-tile v2-tile-sage"><svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-book"/></svg></span>
+            <span class="v2-tile v2-tile-sage"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-book"/></svg></span>
             <span><h3>Keepsake book</h3><p>Print it or save a PDF</p></span>
             <svg class="v2-chev" viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-left:auto;color:var(--ink-soft)"><use href="#i-chev"/></svg>
           </button>
@@ -256,9 +231,9 @@
 
       <!-- Recent stories -->
       <div class="v2-section-head">
-        <h2 class="v2-section-h2">Recent stories</h2>
+        <h2 class="v2-section-h2">Recently added</h2>
         <div class="seg" role="group" aria-label="Sort stories" id="home-seg">
-          <button aria-pressed="true" id="seg-life">Life order</button>
+          <button aria-pressed="true" id="seg-life">Recent first</button>
           <button aria-pressed="false" id="seg-place">By place</button>
         </div>
       </div>
@@ -271,18 +246,18 @@
 
       <!-- Safe copy -->
       <section class="v2-card v2-safe" id="backup-card">
-        <span class="v2-tile v2-tile-sage"><svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-shield"/></svg></span>
+        <span class="v2-tile v2-tile-sage"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-shield"/></svg></span>
         <div>
           <b>Keep a safe copy</b>
           <p>Download every story and recording. Restore it on any device.</p>
         </div>
         <div class="v2-safe-actions">
           <button class="btn btn-secondary btn-sm" id="backup-download-btn">
-            <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-dl"/></svg>
+            <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-dl"/></svg>
             Download all
           </button>
           <label class="btn btn-secondary btn-sm" for="backup-restore-input" style="cursor:pointer">
-            <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-up"/></svg>
+            <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-up"/></svg>
             Restore
           </label>
           <input type="file" id="backup-restore-input" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0">
@@ -497,23 +472,23 @@
   ═══════════════════════════════════════════════════════════ -->
   <nav class="v2-tabbar" id="v2-tabbar" aria-label="Main navigation" style="display:none">
     <button class="v2-tab on" id="tab-home" aria-label="Home">
-      <svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-home"/></svg>
+      <svg class="ico md" viewBox="0 0 24 24"><use href="#i-home"/></svg>
       <span>Home</span>
     </button>
     <button class="v2-tab" id="tab-map" aria-label="Map">
-      <svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-map"/></svg>
+      <svg class="ico md" viewBox="0 0 24 24"><use href="#i-map"/></svg>
       <span>Map</span>
     </button>
     <button class="v2-tab v2-tab-record" id="tab-record" aria-label="Record">
-      <svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-mic"/></svg>
+      <svg class="ico md" viewBox="0 0 24 24"><use href="#i-mic"/></svg>
       <span>Record</span>
     </button>
     <button class="v2-tab" id="tab-stories" aria-label="Stories">
-      <svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-list"/></svg>
+      <svg class="ico md" viewBox="0 0 24 24"><use href="#i-list"/></svg>
       <span>Stories</span>
     </button>
     <button class="v2-tab" id="tab-keepsake" aria-label="Keepsake">
-      <svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><use href="#i-book"/></svg>
+      <svg class="ico md" viewBox="0 0 24 24"><use href="#i-book"/></svg>
       <span>Keepsake</span>
     </button>
   </nav>
@@ -529,7 +504,7 @@
     <p class="v2-overline" style="margin-bottom:12px">Storyteller</p>
     <div id="switch-menu-list"></div>
     <button class="v2-menu-item" id="switch-add-btn">
-      <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      <svg class="ico sm2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
       Add another storyteller
     </button>
     <button class="v2-menu-close" id="switch-menu-close">Cancel</button>
@@ -538,8 +513,8 @@
 
 <!-- Welcome modal (name prompt for record) -->
 <div class="modal-overlay" id="welcome-modal-overlay">
-  <div class="modal welcome-modal">
-    <h2>Whose stories are these?</h2>
+  <div class="modal welcome-modal" role="dialog" aria-modal="true" aria-labelledby="welcome-modal-title">
+    <h2 id="welcome-modal-title">Whose stories are these?</h2>
     <p class="modal-sub">Add a name so stories are labelled correctly. You can always change it later.</p>
     <label for="welcome-name-input">Full name</label>
     <input type="text" id="welcome-name-input" placeholder="e.g. Grandpa Joe" autocomplete="off">
@@ -556,15 +531,40 @@
 
 <!-- Edit story modal -->
 <div class="modal-overlay" id="edit-story-modal-overlay">
-  <div class="modal modal-wide">
-    <h2>Edit story</h2>
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+    <h2 id="edit-modal-title">Edit story</h2>
     <label for="edit-story-title">Title</label>
     <input type="text" id="edit-story-title" placeholder="Story title" autocomplete="off">
     <label for="edit-story-transcript">Transcript</label>
     <textarea id="edit-story-transcript" rows="6" placeholder="Transcript text…"></textarea>
     <div class="modal-actions">
-      <button class="btn btn-ghost" id="edit-story-cancel">Cancel</button>
       <button class="btn btn-primary" id="edit-story-save">Save changes</button>
+      <button class="btn btn-ghost" id="edit-story-cancel">Cancel</button>
+      <button id="edit-story-delete" style="background:none;border:none;cursor:pointer;font-size:14px;color:#c0392b;margin-top:8px;width:100%;padding:6px 0;">Delete this story</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recording consent modal -->
+<div class="modal-overlay" id="consent-modal-overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="consent-modal-title">
+    <h2 id="consent-modal-title">Before you record</h2>
+    <p class="modal-sub" style="line-height:1.6">
+      Story Atlas records audio and stores it <strong>in this browser on this device</strong> — nothing leaves your device automatically.
+    </p>
+    <p class="modal-sub" style="margin-top:12px;line-height:1.6">
+      While you speak, your browser may also send audio to a speech service (such as Google) to produce a live transcript. This is handled by the browser itself, not by Story Atlas.
+    </p>
+    <p class="modal-sub" style="margin-top:12px;line-height:1.6">
+      If you add a place later, the place name you type or confirm will be sent to <strong>OpenStreetMap Nominatim</strong> to look up coordinates.
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-block" id="consent-accept-btn" style="font-size:17px;height:56px">
+        I understand — start recording
+      </button>
+      <button id="consent-cancel-btn" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-soft,#888);margin-top:12px;width:100%;padding:6px 0;">
+        Cancel
+      </button>
     </div>
   </div>
 </div>
