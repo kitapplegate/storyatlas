@@ -983,7 +983,7 @@ body.page-landing .bottom-nav { display: none; }
 /* ── Sign-in screen ─────────────────────────────────────── */
 .si-layout {
   display: grid; grid-template-columns: 1fr 1.05fr; gap: 64px;
-  align-items: center; min-height: calc(100vh - 72px); padding: 56px 0;
+  align-items: start; min-height: calc(100vh - 72px); padding: 56px 0;
 }
 .si-h1 { font: 500 clamp(40px,5vw,64px)/1.06 var(--font-serif); letter-spacing: -.015em; margin-top: 14px; }
 .si-h1 em { font-style: italic; color: var(--rust); }
@@ -1007,6 +1007,22 @@ body.page-landing .bottom-nav { display: none; }
 .si-demo b { display: block; font-size: 17px; }
 .si-demo small { color: var(--ink-soft); font-size: 15px; }
 .si-trust { display: flex; gap: 8px; align-items: center; margin-top: 18px; font-size: 15px; color: var(--ink-soft); }
+
+/* About section (inline on landing page) */
+.si-about-rule { border: none; border-top: 1.5px solid var(--line); margin: 40px 0 32px; }
+.si-about { max-width: 520px; padding-bottom: 48px; }
+.si-about-h2 { font: 500 20px/26px var(--font-serif); color: var(--ink); margin-bottom: 10px; }
+.si-about-body { font-size: 16px; line-height: 26px; color: var(--ink-soft); margin-bottom: 0; }
+.si-about-body strong { color: var(--ink); }
+.si-about-body code { font-family: monospace; font-size: 14px; background: var(--parchment-deep); padding: 1px 5px; border-radius: 4px; }
+.si-about-steps { padding-left: 22px; }
+.si-about-steps li { font-size: 16px; line-height: 26px; color: var(--ink-soft); margin-bottom: 10px; }
+.si-about-steps li b { color: var(--ink); }
+.si-about-steps li code { font-family: monospace; font-size: 14px; background: var(--parchment-deep); padding: 1px 5px; border-radius: 4px; }
+.si-about-steps li em { font-style: italic; }
+.si-about-list { padding-left: 22px; }
+.si-about-list li { font-size: 16px; line-height: 26px; color: var(--ink-soft); margin-bottom: 6px; }
+.si-about-list li strong { color: var(--ink); }
 
 /* Collage */
 .si-collage { position: relative; height: 620px; }

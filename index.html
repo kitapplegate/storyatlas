@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css?v=20261109c">
+  <link rel="stylesheet" href="css/style.css?v=20261109d">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -169,9 +169,55 @@
             <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none" viewBox="0 0 24 24"><use href="#i-lock"/></svg>
             Stories and recordings are stored in this browser on this device.
           </p>
-          <p style="margin-top:12px;font-size:15px">
-            <button class="v2-link js-about-link" style="font-size:15px">How it works &amp; privacy →</button>
-          </p>
+
+          <!-- ── About section (inline on landing page) ── -->
+          <hr class="si-about-rule">
+
+          <div class="si-about">
+
+            <h2 class="si-about-h2">About this project</h2>
+            <p class="si-about-body">Story Atlas is a hackathon project built to help families preserve the memories of older relatives before they are lost. Sit down with a grandparent, ask a question, and let them talk. The app records their voice, writes down what they say, and pins each story to the place on the map where it happened — creating a living atlas of a life, told in their own words.</p>
+
+            <h2 class="si-about-h2" style="margin-top:28px">How it works</h2>
+            <ol class="si-about-steps">
+              <li>
+                <b>Record</b> — Tap the microphone button and ask your question. Story Atlas transcribes the recording automatically and suggests any place names it hears.
+              </li>
+              <li>
+                <b>Place</b> — After recording, search for the location and drop a pin on the map. You choose where it goes — nothing is placed without your confirmation.
+              </li>
+              <li>
+                <b>Listen</b> — Open the atlas to see every story pinned to its place. Tap a pin to read the transcript, or browse the full list in life order.
+              </li>
+            </ol>
+
+            <h2 class="si-about-h2" style="margin-top:28px">Where your files are saved</h2>
+            <p class="si-about-body">Everything stays on <strong>this device, in this browser</strong>. No account is needed and nothing is sent to a server.</p>
+            <ul class="si-about-list">
+              <li><strong>Audio recordings</strong> are stored in <strong>IndexedDB</strong> — the browser's built-in large-file store.</li>
+              <li><strong>Story text, transcripts, and pins</strong> are stored in <strong>localStorage</strong>.</li>
+              <li>Clearing your browser data or switching browsers will erase everything.</li>
+            </ul>
+            <p class="si-about-body" style="margin-top:12px">Use the <strong>Download backup</strong> button (Stories tab → bottom of the page) regularly to save a copy of all your stories and recordings as a single <code>.json</code> file. You can restore it on any device.</p>
+
+            <h2 class="si-about-h2" style="margin-top:28px">Getting a copy of the recordings</h2>
+            <p class="si-about-body">To export the audio files:</p>
+            <ol class="si-about-steps">
+              <li>Go to the <strong>Stories</strong> tab and tap <strong>Download backup</strong>. This saves a <code>.json</code> file containing all story data <em>and</em> the audio recordings encoded inside it.</li>
+              <li>To listen to a recording outside the app, open the backup <code>.json</code> in a text editor, find the story by its title, and copy the value of the <code>"audioBase64"</code> field. Paste it into an online Base64-to-audio converter, or use a tool like <code>atob()</code> in the browser console to decode it to a file.</li>
+              <li>For safekeeping, download a fresh backup after every session.</li>
+            </ol>
+
+            <h2 class="si-about-h2" style="margin-top:28px">Tips for a great recording</h2>
+            <ul class="si-about-list">
+              <li>Find a quiet room — the app uses your device's built-in microphone.</li>
+              <li>Ask one question at a time and let the storyteller speak without interruption.</li>
+              <li>Short stories (under 5 minutes) transcribe most accurately.</li>
+              <li>You can edit the transcript after recording if any words came out wrong.</li>
+            </ul>
+
+          </div>
+          <!-- ── end About ── -->
         </div>
 
         <!-- Right: product collage -->
@@ -659,7 +705,7 @@
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <!-- App — bump v= on every deploy to force a cache bust -->
-<script type="module" src="js/app.js?v=20261109c"></script>
+<script type="module" src="js/app.js?v=20261109d"></script>
 
 </body>
 </html>
