@@ -83,13 +83,13 @@ document.addEventListener('DOMContentLoaded', () => {
   _bindNav();
   _bindRecord();
   migrateAudioToIndexedDB().then(n => { if (n) requestPersistence(); });
-  history.replaceState({ page: 'home' }, '', '');
-  _showPage('home', false);
+  history.replaceState({ page: 'signin' }, '', '');
+  _showPage('signin', false);
 });
 
 window.addEventListener('popstate', (e) => {
-  let page = e.state?.page || 'home';
-  if (page === 'signin') page = 'home';
+  let page = e.state?.page || 'signin';
+  if (page === 'about') page = 'signin';
   if (page === 'placer' || page === 'landing' || page === 'account') page = 'home';
   _showPage(page, false);
 });
@@ -165,7 +165,7 @@ function _promptForName(afterSave) {
 
 function _bindNav() {
   // Logo goes to home hub
-  $('nav-home').onclick         = () => _showPage('home');
+  $('nav-home').onclick         = () => _showPage('signin');
   $('record-back-btn').onclick  = () => _showPage('home');
   $('listen-back-btn').onclick  = () => _showPage('home');
   $('stories-back-btn').onclick = () => _showPage('home');
