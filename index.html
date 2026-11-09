@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css?v=20261106g">
+  <link rel="stylesheet" href="css/style.css?v=20261109a">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -70,8 +70,86 @@
   </header>
 
   <!-- ══════════════════════════════════════════════════════════
+       ABOUT / ONBOARDING SCREEN
+   ═══════════════════════════════════════════════════════════ -->
+  <section id="page-about">
+    <main class="v2-wrap about-wrap">
+
+      <div class="about-hero">
+        <p class="v2-overline" style="color:var(--rust-dark)">A family keepsake, told out loud</p>
+        <h1 class="about-h1">Every story<br>has a <em>place.</em></h1>
+        <p class="about-lede">Record a grandparent's memories one at a time. Story Atlas writes them down, puts them in life order, and pins each one to the map where it happened.</p>
+      </div>
+
+      <!-- How it works -->
+      <div class="about-steps">
+        <div class="about-step">
+          <div class="about-step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-mic"/></svg>
+          </div>
+          <div>
+            <p class="about-step-title">1 · Record</p>
+            <p class="about-step-body">Tap the microphone and let them speak. Story Atlas listens, transcribes the words, and detects any places they mention.</p>
+          </div>
+        </div>
+        <div class="about-step">
+          <div class="about-step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-pin"/></svg>
+          </div>
+          <div>
+            <p class="about-step-title">2 · Place</p>
+            <p class="about-step-body">After recording, search for the location the story happened and drop a pin. You're always in control — nothing is placed automatically.</p>
+          </div>
+        </div>
+        <div class="about-step">
+          <div class="about-step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-map"/></svg>
+          </div>
+          <div>
+            <p class="about-step-title">3 · Listen</p>
+            <p class="about-step-body">Browse the living atlas — tap any pin to read the transcript, or use the Stories list to jump through a lifetime in order.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Privacy / storage callout -->
+      <div class="about-privacy">
+        <div class="about-privacy-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-lock"/></svg>
+        </div>
+        <div>
+          <p class="about-privacy-title">Everything stays on this device</p>
+          <p class="about-privacy-body">Recordings, transcripts, and pins are stored entirely in your browser — in <strong>IndexedDB</strong> for audio and <strong>localStorage</strong> for story data. Nothing is uploaded to any server. If you clear your browser data, the stories will be lost, so use the <strong>Download backup</strong> button in the Stories tab regularly.</p>
+        </div>
+      </div>
+
+      <!-- Tips -->
+      <div class="about-tips">
+        <p class="about-tips-title">Tips for a great recording</p>
+        <ul class="about-tips-list">
+          <li>Find a quiet room — Story Atlas uses your device's built-in microphone.</li>
+          <li>Ask one question at a time and let the storyteller speak without interruption.</li>
+          <li>Short stories (under 5 minutes) transcribe most accurately.</li>
+          <li>You can edit the transcript after recording if any words came out wrong.</li>
+          <li>Download a backup after every few sessions so you never lose anything.</li>
+        </ul>
+      </div>
+
+      <!-- CTA -->
+      <div class="about-cta">
+        <button class="btn btn-primary about-start-btn" id="about-start-btn">Get started</button>
+        <button class="si-demo about-demo-btn" id="about-demo-btn">
+          <svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:var(--rust);flex:none" viewBox="0 0 24 24"><path d="M5 4l14 8-14 8z"/></svg>
+          <span><b>Try the demo</b><small>Explore a sample atlas. No account needed.</small></span>
+        </button>
+      </div>
+
+    </main>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
        SIGN-IN SCREEN
-  ═══════════════════════════════════════════════════════════ -->
+   ═══════════════════════════════════════════════════════════ -->
   <section id="page-signin" style="display:none">
     <main class="v2-wrap">
       <div class="si-layout">
@@ -574,7 +652,7 @@
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <!-- App — bump v= on every deploy to force a cache bust -->
-<script type="module" src="js/app.js?v=20261106h"></script>
+<script type="module" src="js/app.js?v=20261109a"></script>
 
 </body>
 </html>

@@ -77,17 +77,18 @@ let _usedQIndices = [];
 // ── Init ─────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+  _bindAbout();
   _bindSignIn();
   _bindNav();
   _bindRecord();
   migrateAudioToIndexedDB().then(n => { if (n) requestPersistence(); });
-  history.replaceState({ page: 'home' }, '', '');
-  _showPage('home', false);
+  history.replaceState({ page: 'about' }, '', '');
+  _showPage('about', false);
 });
 
 window.addEventListener('popstate', (e) => {
-  let page = e.state?.page || 'home';
-  if (page === 'signin') page = 'home';
+  let page = e.state?.page || 'about';
+  if (page === 'signin') page = 'about';
   if (page === 'placer' || page === 'landing' || page === 'account') page = 'home';
   _showPage(page, false);
 });
@@ -100,6 +101,16 @@ document.addEventListener('click', (e) => {
     menu.style.display = 'none';
   }
 });
+
+function _bindAbout() {
+  // "Get started" → show sign-in / entry screen
+  document.getElementById('about-start-btn').onclick = () => _showPage('signin');
+  // "Try the demo" → go straight to home in demo mode
+  document.getElementById('about-demo-btn').onclick = () => {
+    _demoMode = true;
+    _showPage('home');
+  };
+}
 
 function _bindSignIn() {
   // Continue on this device
@@ -243,15 +254,15 @@ function _showPage(name, push = true) {
   }
   if (name !== 'listen') _destroyPlayers();
 
-  const ALL_PAGES = ['signin', 'home', 'record', 'listen', 'placer', 'stories'];
+  const ALL_PAGES = ['about', 'signin', 'home', 'record', 'listen', 'placer', 'stories'];
   ALL_PAGES.forEach(p => {
     const el = $(`page-${p}`);
     if (el) el.style.display = (p === name) ? '' : 'none';
   });
   _currentPage = name;
 
-  // Top bar: hide avatar on entry screen, show on hub pages
-  const onEntry = name === 'signin';
+  // Top bar: hide avatar on about/entry screens, show on hub pages
+  const onEntry = name === 'signin' || name === 'about';
   const onHub   = !onEntry;
   const avatar  = $('topbar-avatar');
   const nav     = $('main-nav');
