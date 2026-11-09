@@ -26,6 +26,7 @@ import {
 const $ = id => document.getElementById(id);
 
 let _currentPage     = 'home';
+let _prevPage        = 'home';
 let _recorder        = null;
 let _timerInterval   = null;
 let _players         = [];
@@ -82,13 +83,13 @@ document.addEventListener('DOMContentLoaded', () => {
   _bindNav();
   _bindRecord();
   migrateAudioToIndexedDB().then(n => { if (n) requestPersistence(); });
-  history.replaceState({ page: 'about' }, '', '');
-  _showPage('about', false);
+  history.replaceState({ page: 'home' }, '', '');
+  _showPage('home', false);
 });
 
 window.addEventListener('popstate', (e) => {
-  let page = e.state?.page || 'about';
-  if (page === 'signin') page = 'about';
+  let page = e.state?.page || 'home';
+  if (page === 'signin') page = 'home';
   if (page === 'placer' || page === 'landing' || page === 'account') page = 'home';
   _showPage(page, false);
 });
@@ -103,13 +104,9 @@ document.addEventListener('click', (e) => {
 });
 
 function _bindAbout() {
-  // "Get started" → show sign-in / entry screen
-  document.getElementById('about-start-btn').onclick = () => _showPage('signin');
-  // "Try the demo" → go straight to home in demo mode
-  document.getElementById('about-demo-btn').onclick = () => {
-    _demoMode = true;
-    _showPage('home');
-  };
+  // Back button returns to wherever the user came from
+  $('about-back-btn').onclick = () => _showPage(_prevPage === 'about' ? 'home' : _prevPage);
+  // "About" links wired from both sign-in and home — see _bindNav / _bindSignIn
 }
 
 function _bindSignIn() {
@@ -190,6 +187,11 @@ function _bindNav() {
   $('home-see-all-btn').onclick     = () => _showPage('stories');
   $('home-switch-btn').onclick      = () => _openSwitchMenu();
 
+  // "About" links
+  document.querySelectorAll('.js-about-link').forEach(el => {
+    el.onclick = () => _showPage('about');
+  });
+
   // Bottom tab bar (5 tabs — hide Keepsake until implemented)
   $('tab-home').onclick     = () => _showPage('home');
   $('tab-map').onclick      = () => _showPage('listen');
@@ -259,10 +261,11 @@ function _showPage(name, push = true) {
     const el = $(`page-${p}`);
     if (el) el.style.display = (p === name) ? '' : 'none';
   });
+  _prevPage    = _currentPage;
   _currentPage = name;
 
-  // Top bar: hide avatar on about/entry screens, show on hub pages
-  const onEntry = name === 'signin' || name === 'about';
+  // Top bar: hide avatar only on the sign-in entry screen
+  const onEntry = name === 'signin';
   const onHub   = !onEntry;
   const avatar  = $('topbar-avatar');
   const nav     = $('main-nav');

@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css?v=20261109a">
+  <link rel="stylesheet" href="css/style.css?v=20261109b">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -135,12 +135,11 @@
         </ul>
       </div>
 
-      <!-- CTA -->
+      <!-- Back -->
       <div class="about-cta">
-        <button class="btn btn-primary about-start-btn" id="about-start-btn">Get started</button>
-        <button class="si-demo about-demo-btn" id="about-demo-btn">
-          <svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:var(--rust);flex:none" viewBox="0 0 24 24"><path d="M5 4l14 8-14 8z"/></svg>
-          <span><b>Try the demo</b><small>Explore a sample atlas. No account needed.</small></span>
+        <button class="btn btn-secondary about-start-btn" id="about-back-btn">
+          <svg style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;margin-right:6px" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+          Back
         </button>
       </div>
 
@@ -169,6 +168,9 @@
           <p class="si-trust">
             <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none" viewBox="0 0 24 24"><use href="#i-lock"/></svg>
             Stories and recordings are stored in this browser on this device.
+          </p>
+          <p style="margin-top:12px;font-size:15px">
+            <button class="v2-link js-about-link" style="font-size:15px">How it works &amp; privacy →</button>
           </p>
         </div>
 
@@ -341,6 +343,11 @@
           <input type="file" id="backup-restore-input" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0">
         </div>
       </section>
+
+      <!-- About link -->
+      <p style="margin-top:24px;margin-bottom:8px;text-align:center;font-size:15px;color:var(--ink-soft)">
+        <button class="v2-link js-about-link" style="font-size:15px">About Story Atlas &amp; privacy</button>
+      </p>
 
     </main>
   </section>
@@ -652,7 +659,7 @@
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <!-- App — bump v= on every deploy to force a cache bust -->
-<script type="module" src="js/app.js?v=20261109a"></script>
+<script type="module" src="js/app.js?v=20261109b"></script>
 
 </body>
 </html>
