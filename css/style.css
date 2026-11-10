@@ -1319,6 +1319,8 @@ body.page-landing .bottom-nav { display: none; }
 .about-lede { margin-top: 18px; font-size: 19px; line-height: 30px; color: var(--ink-soft); max-width: 34em; }
 
 /* Steps */
+.about-intro { max-width: 34em; margin-bottom: 44px; }
+.about-wrap .si-about { max-width: none; padding-bottom: 44px; }
 .about-steps { display: flex; flex-direction: column; gap: 28px; margin-bottom: 44px; }
 .about-step { display: flex; gap: 20px; align-items: flex-start; }
 .about-step-icon {

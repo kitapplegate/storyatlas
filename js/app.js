@@ -301,9 +301,10 @@ function _showPage(name, push = true) {
   _prevPage    = _currentPage;
   _currentPage = name;
 
-  // Top bar: hide avatar only on the sign-in entry screen
+  // Avatar and tab bar belong to a signed-in (or demo) session; the landing
+  // page never shows them, and neither does About when nobody is signed in.
   const onEntry = name === 'signin';
-  const onHub   = !onEntry;
+  const onHub   = !onEntry && (_isSignedIn() || _demoMode);
   const avatar  = $('topbar-avatar');
   const nav     = $('main-nav');
   if (avatar) avatar.style.display = onHub     ? '' : 'none';

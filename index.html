@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css?v=20261110c">
+  <link rel="stylesheet" href="css/style.css?v=20261110e">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -82,6 +82,12 @@
         <p class="about-lede">Record a grandparent's memories one at a time. Story Atlas writes them down, puts them in life order, and pins each one to the map where it happened.</p>
       </div>
 
+      <!-- About this project -->
+      <div class="about-intro">
+        <h2 class="si-about-h2">About this project</h2>
+        <p class="si-about-body">Story Atlas is a project to help families keep the memories of older relatives before they are lost. Sit down with a grandparent and let Story Atlas do the interview: it asks a question, then they talk. The app records their voice, writes down what they say, and pins each story to the place on the map where it happened. Story by story, it becomes an atlas of a life, told in their own words.</p>
+      </div>
+
       <!-- How it works -->
       <div class="about-steps">
         <div class="about-step">
@@ -90,7 +96,7 @@
           </div>
           <div>
             <p class="about-step-title">1 · Record</p>
-            <p class="about-step-body">Tap the microphone and let them speak. Story Atlas listens, transcribes the words, and detects any places they mention.</p>
+            <p class="about-step-body">Story Atlas asks a question and can read it aloud. Tap the microphone and let them answer. It writes down what they say and suggests any places they mention.</p>
           </div>
         </div>
         <div class="about-step">
@@ -119,73 +125,44 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-lock"/></svg>
         </div>
         <div>
-          <p class="about-privacy-title">Everything stays on this device</p>
-          <p class="about-privacy-body">Recordings, transcripts, and pins are stored entirely in your browser — in <strong>IndexedDB</strong> for audio and <strong>localStorage</strong> for story data. Story Atlas has no server and never uploads them. Two things do leave the device: while you record, your browser may send audio to its speech service (such as Google) to write the live transcript, and a place name you search for goes to OpenStreetMap. If you clear your browser data, the stories will be lost, so use the <strong>Download backup</strong> button in the Stories tab regularly.</p>
+          <p class="about-privacy-title">Your stories stay on this device</p>
+          <p class="about-privacy-body">Recordings, transcripts, and pins are stored in this browser, on this device. Story Atlas has no server and never uploads them. Clearing your browser data erases them, so keep a backup.</p>
         </div>
+      </div>
+
+      <!-- Storage and backup details -->
+      <div class="si-about">
+
+        <h2 class="si-about-h2">Where your files are saved</h2>
+        <p class="si-about-body">Profiles are just names on this device. There is no password, and each profile keeps its own stories.</p>
+        <ul class="si-about-list">
+          <li><strong>Audio recordings</strong> are stored in <strong>IndexedDB</strong>, the browser's built-in large-file store.</li>
+          <li><strong>Story text, transcripts, and pins</strong> are stored in <strong>localStorage</strong>.</li>
+          <li>Clearing your browser data or switching browsers will erase everything.</li>
+        </ul>
+
+        <h2 class="si-about-h2" style="margin-top:28px">What leaves the device</h2>
+        <p class="si-about-body">Two things. While you record, your browser may send audio to its own speech service (such as Google) to write the live transcript. And when you search for a place, that place name goes to OpenStreetMap to find it on the map.</p>
+
+        <h2 class="si-about-h2" style="margin-top:28px">Keeping a backup</h2>
+        <ol class="si-about-steps">
+          <li>On <strong>Home</strong>, under <strong>Keep a safe copy</strong>, tap <strong>Download all</strong>. This saves one <code>.json</code> file with every story and recording in the profile you are signed in to.</li>
+          <li>To bring them back, or move them to another device, open Story Atlas there, choose a profile, and tap <strong>Restore</strong>.</li>
+          <li>Download a fresh backup after every session.</li>
+        </ol>
+
       </div>
 
       <!-- Tips -->
       <div class="about-tips">
         <p class="about-tips-title">Tips for a great recording</p>
         <ul class="about-tips-list">
-          <li>Find a quiet room — Story Atlas uses your device's built-in microphone.</li>
+          <li>Find a quiet room. Story Atlas uses your device's built-in microphone.</li>
           <li>Take one question at a time and let the storyteller speak without interruption.</li>
           <li>Short stories (under 5 minutes) transcribe most accurately.</li>
           <li>You can edit the transcript after recording if any words came out wrong.</li>
-          <li>Download a backup after every few sessions so you never lose anything.</li>
         </ul>
       </div>
-
-      <!-- Back -->
-          <!-- ── Project details ── -->
-          <hr class="si-about-rule">
-
-          <div class="si-about">
-
-            <h2 class="si-about-h2">About this project</h2>
-            <p class="si-about-body">Story Atlas is a project to help families keep the memories of older relatives before they are lost. Sit down with a grandparent and let Story Atlas do the interview: it asks a question, then they talk. The app records their voice, writes down what they say, and pins each story to the place on the map where it happened. Story by story, it becomes an atlas of a life, told in their own words.</p>
-
-            <h2 class="si-about-h2" style="margin-top:28px">How it works</h2>
-            <ol class="si-about-steps">
-              <li>
-                <b>Record</b> — Story Atlas asks a question and can read it aloud. Tap the microphone and let them answer. Story Atlas transcribes the recording automatically and suggests any place names it hears.
-              </li>
-              <li>
-                <b>Place</b> — After recording, search for the location and drop a pin on the map. You choose where it goes — nothing is placed without your confirmation.
-              </li>
-              <li>
-                <b>Listen</b> — Open the atlas to see every story pinned to its place. Tap a pin to read the transcript, or browse the full list in life order.
-              </li>
-            </ol>
-
-            <h2 class="si-about-h2" style="margin-top:28px">Where your files are saved</h2>
-            <p class="si-about-body">Everything stays on <strong>this device, in this browser</strong>. Profiles are just names on this device — there is no password, and Story Atlas has no server to send anything to.</p>
-            <p class="si-about-body" style="margin-top:12px">Two things do leave the device. While you record, your browser may send audio to its own speech service (such as Google) to write the live transcript. And when you search for a place, that place name goes to OpenStreetMap to find it on the map.</p>
-            <ul class="si-about-list">
-              <li><strong>Audio recordings</strong> are stored in <strong>IndexedDB</strong> — the browser's built-in large-file store.</li>
-              <li><strong>Story text, transcripts, and pins</strong> are stored in <strong>localStorage</strong>.</li>
-              <li>Clearing your browser data or switching browsers will erase everything.</li>
-            </ul>
-            <p class="si-about-body" style="margin-top:12px">Use the <strong>Download backup</strong> button (Stories tab → bottom of the page) regularly to save a copy of all your stories and recordings as a single <code>.json</code> file. You can restore it on any device.</p>
-
-            <h2 class="si-about-h2" style="margin-top:28px">Getting a copy of the recordings</h2>
-            <p class="si-about-body">To export the audio files:</p>
-            <ol class="si-about-steps">
-              <li>Go to the <strong>Stories</strong> tab and tap <strong>Download backup</strong>. This saves a <code>.json</code> file containing all story data <em>and</em> the audio recordings encoded inside it.</li>
-              <li>To listen to a recording outside the app, open the backup <code>.json</code> in a text editor, find the story by its title, and copy the value of the <code>"audioBase64"</code> field. Paste it into an online Base64-to-audio converter, or use a tool like <code>atob()</code> in the browser console to decode it to a file.</li>
-              <li>For safekeeping, download a fresh backup after every session.</li>
-            </ol>
-
-            <h2 class="si-about-h2" style="margin-top:28px">Tips for a great recording</h2>
-            <ul class="si-about-list">
-              <li>Find a quiet room — the app uses your device's built-in microphone.</li>
-              <li>Take one question at a time and let the storyteller speak without interruption.</li>
-              <li>Short stories (under 5 minutes) transcribe most accurately.</li>
-              <li>You can edit the transcript after recording if any words came out wrong.</li>
-            </ul>
-
-          </div>
-          <!-- ── end About ── -->
 
       <div class="about-cta">
         <button class="btn btn-secondary about-start-btn" id="about-back-btn">
@@ -731,7 +708,7 @@
     try { tried = !!sessionStorage.getItem('sa_heal'); sessionStorage.setItem('sa_heal', '1'); } catch (e) { tried = true; }
     if (tried) { document.getElementById('boot-fail').style.display = ''; return; }
     var gets = FILES.map(function (f) {
-      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261110c' : '');
+      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261110e' : '');
       return fetch(url, { cache: 'reload' }).catch(function () {});
     });
     gets.push(fetch(location.pathname, { cache: 'reload' }).catch(function () {}));
@@ -741,7 +718,7 @@
   window.addEventListener('unhandledrejection', heal);
 })();
 </script>
-<script type="module" src="js/app.js?v=20261110c"></script>
+<script type="module" src="js/app.js?v=20261110e"></script>
 
 </body>
 </html>
