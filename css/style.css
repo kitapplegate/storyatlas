@@ -1034,7 +1034,8 @@ body.page-landing .bottom-nav { display: none; }
 }
 .si-profile-add-row input:focus { outline: none; border-color: var(--rust); box-shadow: 0 0 0 3px rgba(164,80,44,.2); }
 .si-profile-add-row .btn { height: 52px; padding: 0 22px; font-size: 16px; }
-.si-about-link { margin-top: 18px; font-size: 16px; }
+.v2-topbar-about { font-size: 16px; white-space: nowrap; min-height: 44px; padding: 0 4px; }
+.v2-topbar-about[aria-current=page] { text-decoration: underline; }
 
 /* About section (project details on the About page) */
 .si-about-rule { border: none; border-top: 1.5px solid var(--line); margin: 40px 0 32px; }
@@ -1245,6 +1246,8 @@ body.page-landing .bottom-nav { display: none; }
   .v2-wrap { padding: 0 16px; }
   .v2-nav { display: none; }
   .v2-avatar b { display: none; }
+  .v2-topbar-about-long { display: none; }
+  .v2-topbar .v2-wrap { gap: 12px; }
   .si-layout { padding: 28px 0; min-height: 0; gap: 28px; }
   .si-h1 { font-size: 40px; line-height: 44px; }
   .si-collage { height: 340px; }

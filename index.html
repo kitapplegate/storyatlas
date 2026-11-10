@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css?v=20261110b">
+  <link rel="stylesheet" href="css/style.css?v=20261110c">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -55,6 +55,7 @@
         <button id="nav-btn-keepsake">Keepsake</button>
       </nav>
       <span class="grow"></span>
+      <button class="v2-link v2-topbar-about js-about-link" id="topbar-about">About<span class="v2-topbar-about-long"> Story Atlas</span> &amp; privacy</button>
       <!-- Avatar shown when signed in -->
       <button class="v2-avatar" id="topbar-avatar" aria-label="Account menu" style="display:none">
         <b id="topbar-avatar-name"></b><span class="v2-avatar-dot" id="topbar-avatar-dot"></span>
@@ -229,10 +230,6 @@
             <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none" viewBox="0 0 24 24"><use href="#i-lock"/></svg>
             Stories and recordings are stored in this browser on this device.
           </p>
-
-          <p class="si-about-link">
-            <button class="v2-link js-about-link">About Story Atlas &amp; privacy</button>
-          </p>
         </div>
 
         <!-- Right: product collage -->
@@ -404,11 +401,6 @@
           <input type="file" id="backup-restore-input" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0">
         </div>
       </section>
-
-      <!-- About link -->
-      <p style="margin-top:24px;margin-bottom:8px;text-align:center;font-size:15px;color:var(--ink-soft)">
-        <button class="v2-link js-about-link" style="font-size:15px">About Story Atlas &amp; privacy</button>
-      </p>
 
     </main>
   </section>
@@ -739,7 +731,7 @@
     try { tried = !!sessionStorage.getItem('sa_heal'); sessionStorage.setItem('sa_heal', '1'); } catch (e) { tried = true; }
     if (tried) { document.getElementById('boot-fail').style.display = ''; return; }
     var gets = FILES.map(function (f) {
-      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261110b' : '');
+      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261110c' : '');
       return fetch(url, { cache: 'reload' }).catch(function () {});
     });
     gets.push(fetch(location.pathname, { cache: 'reload' }).catch(function () {}));
@@ -749,7 +741,7 @@
   window.addEventListener('unhandledrejection', heal);
 })();
 </script>
-<script type="module" src="js/app.js?v=20261110b"></script>
+<script type="module" src="js/app.js?v=20261110c"></script>
 
 </body>
 </html>

@@ -344,6 +344,9 @@ function _showPage(name, push = true) {
     if (b) b.setAttribute('aria-current', page === name ? 'page' : 'false');
   });
 
+  const aboutLink = $('topbar-about');
+  if (aboutLink) aboutLink.setAttribute('aria-current', name === 'about' ? 'page' : 'false');
+
   if (push) history.pushState({ page: name }, '', '');
 
   if (name === 'signin')  _renderLanding();
