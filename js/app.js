@@ -90,6 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
   migrateAudioToIndexedDB().then(n => { if (n) requestPersistence(); });
   history.replaceState({ page: 'signin' }, '', '');
   _showPage('signin', false);
+  // Tell the boot guard in index.html that the app started.
+  window.__saBooted = true;
+  try { sessionStorage.removeItem('sa_heal'); } catch (_) {}
 });
 
 window.addEventListener('popstate', (e) => {

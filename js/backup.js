@@ -51,8 +51,10 @@ export async function downloadBackup() {
  * Read a backup file and add any stories not already saved here.
  * Returns { added, skipped, failed }. Throws if the file isn't a Story Atlas backup.
  */
-// ~50 MB upper limit for a backup file (generous but prevents obvious abuse)
-const MAX_BACKUP_BYTES = 50 * 1024 * 1024;
+// Upper limit for a backup file. A backup is ~29 MB per hour of audio (48 kbps
+// plus base64), so 500 MB is roughly 17 hours. Much past that the browser can't
+// hold the file as one string anyway.
+const MAX_BACKUP_BYTES = 500 * 1024 * 1024;
 
 const ID_RE = /^[a-zA-Z0-9_-]{1,64}$/;
 
@@ -73,7 +75,7 @@ function _validateStory(s) {
 
 export async function restoreBackup(file) {
   if (file.size > MAX_BACKUP_BYTES) {
-    throw new Error('That backup file is too large to restore (limit 50 MB).');
+    throw new Error('That backup file is too large to restore (limit 500 MB).');
   }
 
   let backup;

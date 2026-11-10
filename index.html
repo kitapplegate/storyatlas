@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css?v=20261110a">
+  <link rel="stylesheet" href="css/style.css?v=20261110b">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -119,7 +119,7 @@
         </div>
         <div>
           <p class="about-privacy-title">Everything stays on this device</p>
-          <p class="about-privacy-body">Recordings, transcripts, and pins are stored entirely in your browser — in <strong>IndexedDB</strong> for audio and <strong>localStorage</strong> for story data. Nothing is uploaded to any server. If you clear your browser data, the stories will be lost, so use the <strong>Download backup</strong> button in the Stories tab regularly.</p>
+          <p class="about-privacy-body">Recordings, transcripts, and pins are stored entirely in your browser — in <strong>IndexedDB</strong> for audio and <strong>localStorage</strong> for story data. Story Atlas has no server and never uploads them. Two things do leave the device: while you record, your browser may send audio to its speech service (such as Google) to write the live transcript, and a place name you search for goes to OpenStreetMap. If you clear your browser data, the stories will be lost, so use the <strong>Download backup</strong> button in the Stories tab regularly.</p>
         </div>
       </div>
 
@@ -158,7 +158,8 @@
             </ol>
 
             <h2 class="si-about-h2" style="margin-top:28px">Where your files are saved</h2>
-            <p class="si-about-body">Everything stays on <strong>this device, in this browser</strong>. Profiles are just names on this device — there is no password, and nothing is sent to a server.</p>
+            <p class="si-about-body">Everything stays on <strong>this device, in this browser</strong>. Profiles are just names on this device — there is no password, and Story Atlas has no server to send anything to.</p>
+            <p class="si-about-body" style="margin-top:12px">Two things do leave the device. While you record, your browser may send audio to its own speech service (such as Google) to write the live transcript. And when you search for a place, that place name goes to OpenStreetMap to find it on the map.</p>
             <ul class="si-about-list">
               <li><strong>Audio recordings</strong> are stored in <strong>IndexedDB</strong> — the browser's built-in large-file store.</li>
               <li><strong>Story text, transcripts, and pins</strong> are stored in <strong>localStorage</strong>.</li>
@@ -719,7 +720,36 @@
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <!-- App — bump v= on every deploy to force a cache bust -->
-<script type="module" src="js/app.js?v=20261110a"></script>
+<!-- Boot guard: right after an update a browser can pair this page with an older
+     cached script (or the reverse), which leaves a blank page. If the app errors
+     before it starts, re-fetch the scripts past the cache and reload once. -->
+<div id="boot-fail" style="display:none;max-width:520px;margin:80px auto;padding:0 24px;font:18px/1.5 system-ui,sans-serif;text-align:center">
+  <p><b>Story Atlas couldn't start.</b></p>
+  <p>Your stories are still saved on this device. Please reload the page.</p>
+  <p><button onclick="location.reload()" style="font:inherit;padding:10px 22px;border-radius:12px;border:1.5px solid #a4502c;background:#a4502c;color:#fff;cursor:pointer">Reload</button></p>
+</div>
+<script>
+(function () {
+  var FILES = ['app','storage','audiostore','backup','interview','recorder','transcriber','placer','player','map'];
+  var healing = false;
+  function heal() {
+    if (window.__saBooted || healing) return;
+    healing = true;
+    var tried = false;
+    try { tried = !!sessionStorage.getItem('sa_heal'); sessionStorage.setItem('sa_heal', '1'); } catch (e) { tried = true; }
+    if (tried) { document.getElementById('boot-fail').style.display = ''; return; }
+    var gets = FILES.map(function (f) {
+      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261110b' : '');
+      return fetch(url, { cache: 'reload' }).catch(function () {});
+    });
+    gets.push(fetch(location.pathname, { cache: 'reload' }).catch(function () {}));
+    Promise.all(gets).then(function () { location.reload(); });
+  }
+  window.addEventListener('error', heal);
+  window.addEventListener('unhandledrejection', heal);
+})();
+</script>
+<script type="module" src="js/app.js?v=20261110b"></script>
 
 </body>
 </html>
