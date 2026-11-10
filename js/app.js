@@ -6,6 +6,7 @@
 import {
   getStoriesSorted, getStoryById, saveStory, deleteStory,
   getStoryteller, saveStoryteller, migrateAudioToIndexedDB,
+  getProfiles, getActiveProfileId, setActiveProfile, createProfile,
   generateId, formatDuration, assignEra,
 } from './storage.js';
 import { putAudio, getAudio, deleteAudio, requestPersistence } from './audiostore.js';
@@ -25,8 +26,8 @@ import {
 // ── State ────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-let _currentPage     = 'home';
-let _prevPage        = 'home';
+let _currentPage     = 'signin';
+let _prevPage        = 'signin';
 let _recorder        = null;
 let _timerInterval   = null;
 let _players         = [];
@@ -35,11 +36,15 @@ let _listenMapReady  = false;
 let _currentQuestion = null;
 let _demoMode        = false;   // true when exploring the sample atlas
 
-// Auth helpers (placeholder — no real accounts yet)
-const AUTH_KEY = 'sa_signed_in';
-const _isSignedIn = () => !!localStorage.getItem(AUTH_KEY);
-const _signIn     = ()  => localStorage.setItem(AUTH_KEY, '1');
-const _signOut    = ()  => { localStorage.removeItem(AUTH_KEY); _demoMode = false; };
+// "Signed in" means a device profile is active (see storage.js). No passwords.
+const _isSignedIn = () => !!getActiveProfileId();
+const _signOut    = ()  => { setActiveProfile(null); _demoMode = false; _currentStory = null; };
+const _enterProfile = (id) => {
+  setActiveProfile(id);
+  _demoMode = false;
+  _currentStory = null;
+  _showPage('home');
+};
 
 // Demo sample data
 const DEMO_STORIES = [
@@ -91,6 +96,7 @@ window.addEventListener('popstate', (e) => {
   let page = e.state?.page || 'signin';
   if (page === 'about') page = 'signin';
   if (page === 'placer' || page === 'landing' || page === 'account') page = 'home';
+  if (page !== 'signin' && !_isSignedIn() && !_demoMode) page = 'signin';
   _showPage(page, false);
 });
 
@@ -105,14 +111,21 @@ document.addEventListener('click', (e) => {
 
 function _bindAbout() {
   // Back button returns to wherever the user came from
-  $('about-back-btn').onclick = () => _showPage(_prevPage === 'about' ? 'home' : _prevPage);
+  $('about-back-btn').onclick = () => _showPage(_prevPage === 'about' ? 'signin' : _prevPage);
   // "About" links wired from both sign-in and home — see _bindNav / _bindSignIn
 }
 
 function _bindSignIn() {
-  // Continue on this device
-  $('continue-btn').onclick = () => {
-    _showPage('home');
+  // Add a profile
+  $('profile-add-form').onsubmit = (e) => {
+    e.preventDefault();
+    const input = $('profile-add-input');
+    const name  = input.value.trim();
+    if (!name) { input.focus(); return; }
+    const id = createProfile(name);
+    if (!id) { _showToast("Could not save the profile. This browser's storage is full or blocked."); return; }
+    input.value = '';
+    _enterProfile(id);
   };
   // Try the demo
   $('demo-btn').onclick = () => {
@@ -129,12 +142,13 @@ function _bindSignIn() {
   $('avatar-menu-signout').onclick = () => {
     _signOut();
     $('avatar-menu').style.display = 'none';
-    _showPage('home');
+    _showPage('signin');
   };
   // Exit demo banner
   $('exit-demo-btn').onclick = () => {
     _demoMode = false;
-    _showPage('home');
+    _currentStory = null;
+    _showPage(_isSignedIn() ? 'home' : 'signin');
   };
   // Home name input (no-name state)
   $('home-name-btn').onclick = () => {
@@ -185,7 +199,7 @@ function _bindNav() {
   const keepsakeCard = $('nav-btn-keepsake-card');
   if (keepsakeCard) keepsakeCard.style.display = 'none';
   $('home-see-all-btn').onclick     = () => _showPage('stories');
-  $('home-switch-btn').onclick      = () => _openSwitchMenu();
+  $('home-switch-btn').onclick      = () => _showPage('signin');   // pick another profile on the landing page
 
   // "About" links
   document.querySelectorAll('.js-about-link').forEach(el => {
@@ -249,7 +263,27 @@ function _openSwitchMenu() {
   overlay.style.display = '';
 }
 
+/** Landing page: one button per profile on this device. */
+function _renderLanding() {
+  const list     = $('profile-list');
+  const profiles = getProfiles();
+  $('profile-heading').textContent = profiles.length ? "Who's telling stories?" : 'Start an atlas';
+  list.innerHTML = profiles.map(p => {
+    const initials = p.name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+    const count    = `${p.storyCount} stor${p.storyCount === 1 ? 'y' : 'ies'}`;
+    return `<button class="si-profile" role="listitem" data-profile-id="${_esc(p.id)}">
+      <span class="si-profile-dot" aria-hidden="true">${_esc(initials)}</span>
+      <span><b>${_esc(p.name)}</b><small>${count}</small></span>
+    </button>`;
+  }).join('');
+  list.querySelectorAll('.si-profile').forEach(btn => {
+    btn.onclick = () => _enterProfile(btn.dataset.profileId);
+  });
+}
+
 function _showPage(name, push = true) {
+  // Everything past the landing page needs a profile (or the demo).
+  if (name !== 'signin' && name !== 'about' && !_isSignedIn() && !_demoMode) name = 'signin';
   if (name !== 'record') {
     if (_recorder && _recorder.isRecording) _recorder.stop();
     stopSpeaking();
@@ -309,6 +343,7 @@ function _showPage(name, push = true) {
 
   if (push) history.pushState({ page: name }, '', '');
 
+  if (name === 'signin')  _renderLanding();
   if (name === 'home')    _renderHome();
   if (name === 'stories') _renderStoriesPage();
   if (name === 'listen' && _currentStory)  _renderListen(_currentStory);

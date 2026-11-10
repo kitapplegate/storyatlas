@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css?v=20261109e">
+  <link rel="stylesheet" href="css/style.css?v=20261110a">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -136,41 +136,7 @@
       </div>
 
       <!-- Back -->
-      <div class="about-cta">
-        <button class="btn btn-secondary about-start-btn" id="about-back-btn">
-          <svg style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;margin-right:6px" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
-          Back
-        </button>
-      </div>
-
-    </main>
-  </section>
-
-  <!-- ══════════════════════════════════════════════════════════
-       SIGN-IN SCREEN
-   ═══════════════════════════════════════════════════════════ -->
-  <section id="page-signin" style="display:none">
-    <main class="v2-wrap">
-      <div class="si-layout">
-        <!-- Left: pitch + auth -->
-        <div>
-          <p class="v2-overline" style="color:var(--rust-dark)">A family keepsake, told out loud</p>
-          <h1 class="si-h1">Every story<br>has a <em>place.</em></h1>
-          <p class="si-lede">Record a grandparent's memories one at a time. Story Atlas writes them down, puts them in life order, and pins each one to the map where it happened.</p>
-
-          <button class="btn btn-primary si-btn" id="continue-btn" style="max-width:420px;width:100%;margin-bottom:16px">Continue on this device</button>
-
-          <button class="si-demo" id="demo-btn">
-            <svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:var(--rust);flex:none" viewBox="0 0 24 24"><path d="M5 4l14 8-14 8z"/></svg>
-            <span><b>Try the demo</b><small>Explore a sample atlas. No account needed.</small></span>
-          </button>
-
-          <p class="si-trust">
-            <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none" viewBox="0 0 24 24"><use href="#i-lock"/></svg>
-            Stories and recordings are stored in this browser on this device.
-          </p>
-
-          <!-- ── About section (inline on landing page) ── -->
+          <!-- ── Project details ── -->
           <hr class="si-about-rule">
 
           <div class="si-about">
@@ -192,7 +158,7 @@
             </ol>
 
             <h2 class="si-about-h2" style="margin-top:28px">Where your files are saved</h2>
-            <p class="si-about-body">Everything stays on <strong>this device, in this browser</strong>. No account is needed and nothing is sent to a server.</p>
+            <p class="si-about-body">Everything stays on <strong>this device, in this browser</strong>. Profiles are just names on this device — there is no password, and nothing is sent to a server.</p>
             <ul class="si-about-list">
               <li><strong>Audio recordings</strong> are stored in <strong>IndexedDB</strong> — the browser's built-in large-file store.</li>
               <li><strong>Story text, transcripts, and pins</strong> are stored in <strong>localStorage</strong>.</li>
@@ -218,6 +184,54 @@
 
           </div>
           <!-- ── end About ── -->
+
+      <div class="about-cta">
+        <button class="btn btn-secondary about-start-btn" id="about-back-btn">
+          <svg style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;margin-right:6px" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+          Back
+        </button>
+      </div>
+
+    </main>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SIGN-IN SCREEN
+   ═══════════════════════════════════════════════════════════ -->
+  <section id="page-signin" style="display:none">
+    <main class="v2-wrap">
+      <div class="si-layout">
+        <!-- Left: pitch + auth -->
+        <div>
+          <p class="v2-overline" style="color:var(--rust-dark)">A family keepsake, told out loud</p>
+          <h1 class="si-h1">Every story<br>has a <em>place.</em></h1>
+          <p class="si-lede">Record a grandparent's memories one at a time. Story Atlas writes them down, puts them in life order, and pins each one to the map where it happened.</p>
+
+          <div class="si-profiles">
+            <h2 class="si-profiles-h2" id="profile-heading">Who's telling stories?</h2>
+            <div class="si-profile-list" id="profile-list" role="list"></div>
+            <form class="si-profile-add" id="profile-add-form" autocomplete="off">
+              <label class="si-profile-add-label" for="profile-add-input">Add a profile</label>
+              <div class="si-profile-add-row">
+                <input type="text" id="profile-add-input" placeholder="e.g. Grandma Rose" maxlength="60">
+                <button class="btn btn-primary" type="submit" id="profile-add-btn">Add</button>
+              </div>
+            </form>
+          </div>
+
+          <button class="si-demo" id="demo-btn">
+            <svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:var(--rust);flex:none" viewBox="0 0 24 24"><path d="M5 4l14 8-14 8z"/></svg>
+            <span><b>Try the demo</b><small>Explore a sample atlas. No profile needed.</small></span>
+          </button>
+
+          <p class="si-trust">
+            <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none" viewBox="0 0 24 24"><use href="#i-lock"/></svg>
+            Stories and recordings are stored in this browser on this device.
+          </p>
+
+          <p class="si-about-link">
+            <button class="v2-link js-about-link">About Story Atlas &amp; privacy</button>
+          </p>
         </div>
 
         <!-- Right: product collage -->
@@ -705,7 +719,7 @@
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <!-- App — bump v= on every deploy to force a cache bust -->
-<script type="module" src="js/app.js?v=20261109e"></script>
+<script type="module" src="js/app.js?v=20261110a"></script>
 
 </body>
 </html>

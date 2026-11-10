@@ -1008,7 +1008,35 @@ body.page-landing .bottom-nav { display: none; }
 .si-demo small { color: var(--ink-soft); font-size: 15px; }
 .si-trust { display: flex; gap: 8px; align-items: center; margin-top: 18px; font-size: 15px; color: var(--ink-soft); }
 
-/* About section (inline on landing page) */
+/* Profile picker (landing page) */
+.si-profiles { margin-top: 32px; max-width: 420px; }
+.si-profiles-h2 { font: 500 24px var(--font-serif); margin-bottom: 14px; }
+.si-profile-list { display: flex; flex-direction: column; gap: 10px; }
+.si-profile {
+  display: flex; align-items: center; gap: 14px; width: 100%; min-height: 64px;
+  padding: 10px 16px; border-radius: 16px; border: 1.5px solid var(--line);
+  background: var(--paper); cursor: pointer; text-align: left; font: inherit; color: var(--ink);
+}
+.si-profile:hover, .si-profile:focus-visible { border-color: var(--rust); }
+.si-profile-dot {
+  flex: none; width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--rust); color: #fff;
+  font: 600 16px var(--font-sans);
+}
+.si-profile b { display: block; font-size: 18px; }
+.si-profile small { color: var(--ink-soft); font-size: 15px; }
+.si-profile-add { margin-top: 16px; }
+.si-profile-add-label { display: block; font: 600 16px/22px var(--font-sans); margin-bottom: 6px; }
+.si-profile-add-row { display: flex; gap: 10px; }
+.si-profile-add-row input {
+  flex: 1; min-width: 0; height: 52px; border-radius: 12px; border: 1.5px solid #cdbfa8;
+  background: #fffdf8; padding: 0 16px; font-size: 17px;
+}
+.si-profile-add-row input:focus { outline: none; border-color: var(--rust); box-shadow: 0 0 0 3px rgba(164,80,44,.2); }
+.si-profile-add-row .btn { height: 52px; padding: 0 22px; font-size: 16px; }
+.si-about-link { margin-top: 18px; font-size: 16px; }
+
+/* About section (project details on the About page) */
 .si-about-rule { border: none; border-top: 1.5px solid var(--line); margin: 40px 0 32px; }
 .si-about { max-width: 520px; padding-bottom: 48px; }
 .si-about-h2 { font: 500 20px/26px var(--font-serif); color: var(--ink); margin-bottom: 10px; }

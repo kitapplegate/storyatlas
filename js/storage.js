@@ -1,6 +1,7 @@
 /**
  * Story Atlas — Storage v2
- * Audio-first data model. All data in localStorage under 'storyatlas_v2'.
+ * Audio-first data model. Each profile's data sits in localStorage under its own
+ * key (the first profile uses 'storyatlas_v2'); 'storyatlas_profiles' is the index.
  *
  * Data shape:
  *   { storyteller: { name, dob }, stories: Story[] }
@@ -25,11 +26,90 @@
 
 import { putAudio, deleteAudio } from './audiostore.js';
 
-const STORAGE_KEY = 'storyatlas_v2';
+const STORAGE_KEY  = 'storyatlas_v2';          // legacy single-atlas key (first profile keeps it)
+const PROFILES_KEY = 'storyatlas_profiles';
+
+// ── Profiles ─────────────────────────────────────────────────────
+// A profile is one atlas on this device. Index shape:
+//   { activeId: string|null, profiles: [{ id, name, key, createdAt }] }
+// Each profile's stories live under its own localStorage `key`.
+
+function _readJson(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function _loadProfileIndex() {
+  const idx = _readJson(PROFILES_KEY);
+  if (idx && Array.isArray(idx.profiles)) return idx;
+  // First run with profiles: adopt the existing single atlas, if there is one.
+  const fresh  = { activeId: null, profiles: [] };
+  const legacy = _readJson(STORAGE_KEY);
+  if (legacy && (legacy.storyteller?.name || legacy.stories?.length)) {
+    fresh.profiles.push({
+      id: generateId(),
+      name: legacy.storyteller?.name || 'My atlas',
+      key: STORAGE_KEY,
+      createdAt: new Date().toISOString(),
+    });
+    _saveProfileIndex(fresh);
+  }
+  return fresh;
+}
+
+function _saveProfileIndex(idx) {
+  try { localStorage.setItem(PROFILES_KEY, JSON.stringify(idx)); return true; }
+  catch (e) { console.warn('StoryAtlas: could not save profiles', e); return false; }
+}
+
+function _activeKey() {
+  const idx = _loadProfileIndex();
+  const p   = idx.profiles.find(x => x.id === idx.activeId);
+  return p ? p.key : STORAGE_KEY;
+}
+
+/** Profiles on this device, with a display name and story count each. */
+function getProfiles() {
+  return _loadProfileIndex().profiles.map(p => {
+    const data = _readJson(p.key);
+    return {
+      id: p.id,
+      name: data?.storyteller?.name || p.name,
+      storyCount: data?.stories?.length || 0,
+    };
+  });
+}
+
+function getActiveProfileId() {
+  const idx = _loadProfileIndex();
+  return idx.profiles.some(p => p.id === idx.activeId) ? idx.activeId : null;
+}
+
+/** Pass null to sign out. */
+function setActiveProfile(id) {
+  const idx = _loadProfileIndex();
+  idx.activeId = idx.profiles.some(p => p.id === id) ? id : null;
+  _saveProfileIndex(idx);
+}
+
+/** Create a profile, make it active, and return its id (null if it didn't save). */
+function createProfile(name) {
+  const idx = _loadProfileIndex();
+  const id  = generateId();
+  // The legacy key is free only if no profile already owns it.
+  const key = idx.profiles.length === 0 && !_readJson(STORAGE_KEY) ? STORAGE_KEY : `${STORAGE_KEY}:${id}`;
+  idx.profiles.push({ id, name, key, createdAt: new Date().toISOString() });
+  idx.activeId = id;
+  if (!_saveProfileIndex(idx)) return null;
+  saveData({ storyteller: { name, dob: '' }, stories: [] });
+  return id;
+}
 
 function loadData() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(_activeKey());
     if (raw) return JSON.parse(raw);
   } catch (e) { /* corrupted — fall through */ }
   return { storyteller: { name: '', dob: '' }, stories: [] };
@@ -38,7 +118,7 @@ function loadData() {
 /** Returns false if the browser refused the write (storage full or blocked). */
 function saveData(data) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(_activeKey(), JSON.stringify(data));
     return true;
   } catch (e) {
     console.warn('StoryAtlas: could not save', e);
@@ -182,5 +262,6 @@ export {
   getAllStories, getStoryById, saveStory, deleteStory,
   getStoriesSorted, reorderStory, migrateAudioToIndexedDB,
   getStoryteller, saveStoryteller,
+  getProfiles, getActiveProfileId, setActiveProfile, createProfile,
   generateId, formatDuration, assignEra,
 };
