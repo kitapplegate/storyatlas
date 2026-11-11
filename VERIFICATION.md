@@ -1,5 +1,42 @@
 # Verification
 
+## 2026-11-10 — Landing page, profiles, About page, boot guard (commits eaa49e4..58f7113)
+
+**Environment:** Node.js local; in-app browser against `http://localhost:8080` (a server already running on that port) and the live GitHub Pages site. No real microphone used.
+
+### Tests run
+
+```
+node --test test/storage.test.js      -> 48 pass, 0 fail
+node --check js/<module>.js           -> all OK
+```
+Throwaway script with a fake `localStorage` (not in the repo): legacy atlas adopted as first profile, profiles keep separate stories, sign-out clears the active profile.
+
+### Observed in a browser (localhost)
+
+- Landing page: profile picker, add profile, demo; no "Continue on this device".
+- Add profile signs in; second profile gets a separate atlas; picking a profile opens the right one.
+- Logo returns to landing from Home and Stories; Switch and Sign out go to landing.
+- Without a profile or demo, Home/Stories tabs bounce to landing.
+- Top-bar "About Story Atlas & privacy" opens About from landing and Home; Back returns to the origin page.
+- About page: one copy of each section; avatar and tab bar hidden when signed out, shown in demo.
+- Audio store: 3 MB blob saved to IndexedDB, survived a reload, deleted cleanly. `navigator.storage.persisted()` was false in the test browser.
+- Boot guard: a missing-export module failure does raise a window `error` event; guard stays idle on a normal boot and on errors after boot.
+
+### Observed on the live site
+
+- Fresh load of https://kitapplegate.github.io/storyatlas shows the landing page; each deploy confirmed by fetching the page for its `app.js?v=` stamp (last: `20261110e`).
+
+### Not yet verified
+
+- Record → transcript → place → listen with a real microphone (never run in any session).
+- The boot guard's automatic re-fetch-and-reload path end to end (could not recreate a stale cache on demand).
+- Restoring a large backup file (limit raised 50 MB → 500 MB, untested with a real file).
+- Top-bar About link at phone width; Firefox and Safari.
+- Everything still listed under 2026-11-08 below except the entry screen, which changed.
+
+---
+
 ## 2026-11-08 — Audit fixes (commit 7694210)
 
 **Environment:** Node.js (local), no live browser run this session.
