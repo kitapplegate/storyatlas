@@ -28,6 +28,7 @@ const $ = id => document.getElementById(id);
 
 let _currentPage     = 'signin';
 let _prevPage        = 'signin';
+let _aboutReturn     = 'signin';   // where About's button goes back to
 let _recorder        = null;
 let _timerInterval   = null;
 let _players         = [];
@@ -114,7 +115,12 @@ document.addEventListener('click', (e) => {
 
 function _bindAbout() {
   // Back button returns to wherever the user came from
-  $('about-back-btn').onclick = () => _showPage(_prevPage === 'about' ? 'signin' : _prevPage);
+  $('about-back-btn').onclick = () => _showPage(_aboutReturn);
+  // "On this page" jump links scroll, they don't navigate (no URL hash: a hash
+  // change would fire popstate and bounce the page).
+  document.querySelectorAll('.about-jump [data-jump]').forEach(btn => {
+    btn.onclick = () => $(btn.dataset.jump)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   // "About" links wired from both sign-in and home — see _bindNav / _bindSignIn
 }
 
@@ -181,28 +187,38 @@ function _promptForName(afterSave) {
 // ── Navigation ───────────────────────────────────────────────────
 
 function _bindNav() {
-  // Logo goes to home hub
+  // Logo goes to the landing page (storyteller picker). An open profile stays
+  // open there: the top bar keeps the avatar and its card is marked "Open now".
   $('nav-home').onclick         = () => _showPage('signin');
+  $('avatar-menu-switch').onclick = () => {
+    $('avatar-menu').style.display = 'none';
+    _showPage('signin');
+  };
   $('record-back-btn').onclick  = () => _showPage('home');
-  $('listen-back-btn').onclick  = () => _showPage('home');
-  $('stories-back-btn').onclick = () => _showPage('home');
   $('home-record-cta').onclick  = (e) => { e.preventDefault(); _navRecord(); };
 
   // Desktop nav (hide Keepsake until implemented)
   $('nav-btn-home').onclick     = () => _showPage('home');
   $('nav-btn-map').onclick      = () => _showPage('listen');
   $('nav-btn-stories').onclick  = () => _showPage('stories');
+  $('nav-btn-record').onclick   = () => _navRecord();
   const desktopKeepsake = $('nav-btn-keepsake');
   if (desktopKeepsake) desktopKeepsake.style.display = 'none';
 
-  // Home hub: atlas "Open atlas" button and side cards
-  $('home-open-atlas-btn').onclick  = (e) => { e.preventDefault(); _showPage('listen'); };
-  $('nav-btn-map-card').onclick     = () => _showPage('listen');
-  $('nav-btn-stories-card').onclick = () => _showPage('stories');
-  const keepsakeCard = $('nav-btn-keepsake-card');
-  if (keepsakeCard) keepsakeCard.style.display = 'none';
+  // Home hub
+  $('home-open-atlas-btn').onclick  = (e) => { e.preventDefault(); e.stopPropagation(); _showPage('listen'); };
+  // The whole map preview opens the map (but not the attribution links on it).
+  $('home-map-wrap').onclick        = (e) => { if (!e.target.closest('.leaflet-control')) _showPage('listen'); };
   $('home-see-all-btn').onclick     = () => _showPage('stories');
-  $('home-switch-btn').onclick      = () => _showPage('signin');   // pick another profile on the landing page
+  $('home-switch-btn').onclick      = () => _showPage('signin');   // pick another storyteller on the landing page
+  $('home-first-record').onclick    = () => _navRecord();
+  $('stories-record-btn').onclick   = () => _navRecord();
+  // "or restore a backup" is a <label>; let the keyboard open the file picker too.
+  document.querySelectorAll('label[for="backup-restore-input"][tabindex]').forEach(l => {
+    l.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('backup-restore-input').click(); }
+    });
+  });
 
   // "About" links
   document.querySelectorAll('.js-about-link').forEach(el => {
@@ -216,11 +232,6 @@ function _bindNav() {
   $('tab-stories').onclick  = () => _showPage('stories');
   const tabKeepsake = $('tab-keepsake');
   if (tabKeepsake) tabKeepsake.style.display = 'none';
-
-  // Switch-storyteller menu
-  $('switch-menu-close').onclick = () => { $('switch-menu-overlay').style.display = 'none'; };
-  $('switch-menu-overlay').onclick = (e) => { if (e.target === $('switch-menu-overlay')) $('switch-menu-overlay').style.display = 'none'; };
-  $('switch-add-btn').onclick = () => { $('switch-menu-overlay').style.display = 'none'; _showToast('Multiple storytellers coming in the next update.'); };
 
   // Backup
   $('backup-download-btn').onclick = async () => {
@@ -253,30 +264,22 @@ function _navRecord() {
   else { _showPage('record'); }
 }
 
-function _openSwitchMenu() {
-  const overlay = $('switch-menu-overlay');
-  const list    = $('switch-menu-list');
-  const st = _getStoryteller();
-  list.innerHTML = st.name
-    ? `<div class="v2-menu-item" style="cursor:default;color:var(--ink)">
-         <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-         ${_esc(st.name)}
-       </div>`
-    : '';
-  overlay.style.display = '';
-}
-
-/** Landing page: one button per profile on this device. */
+/** Landing page: one button per storyteller (device profile). */
 function _renderLanding() {
   const list     = $('profile-list');
   const profiles = getProfiles();
+  const activeId = getActiveProfileId();
   $('profile-heading').textContent = profiles.length ? "Who's telling stories?" : 'Start an atlas';
+  $('profile-add-label').textContent = profiles.length ? 'Add another storyteller' : "Who's telling the stories?";
   list.innerHTML = profiles.map(p => {
     const initials = p.name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
     const count    = `${p.storyCount} stor${p.storyCount === 1 ? 'y' : 'ies'}`;
-    return `<button class="si-profile" role="listitem" data-profile-id="${_esc(p.id)}">
+    const current  = p.id === activeId;
+    return `<button class="si-profile${current ? ' is-current' : ''}" role="listitem" data-profile-id="${_esc(p.id)}"${current ? ' aria-current="true"' : ''}>
       <span class="si-profile-dot" aria-hidden="true">${_esc(initials)}</span>
-      <span><b>${_esc(p.name)}</b><small>${count}</small></span>
+      <span class="si-profile-text"><b>${_esc(p.name)}</b><small>${count}</small></span>
+      ${current ? '<span class="si-profile-badge">Open now</span>' : ''}
+      <svg class="si-profile-chev" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chev"/></svg>
     </button>`;
   }).join('');
   list.querySelectorAll('.si-profile').forEach(btn => {
@@ -304,14 +307,33 @@ function _showPage(name, push = true) {
   // Avatar and tab bar belong to a signed-in (or demo) session; the landing
   // page never shows them, and neither does About when nobody is signed in.
   const onEntry = name === 'signin';
+  // The landing page is the storyteller picker, so arriving there ends the demo.
+  if (onEntry) _demoMode = false;
   const onHub   = !onEntry && (_isSignedIn() || _demoMode);
+  // The avatar also shows on the landing page while a profile is open, so
+  // going back there doesn't look like being signed out.
+  const showAvatar = onHub || (onEntry && _isSignedIn());
   const avatar  = $('topbar-avatar');
   const nav     = $('main-nav');
-  if (avatar) avatar.style.display = onHub     ? '' : 'none';
-  if (nav)    nav.style.display    = (onHub && name === 'home') ? '' : 'none';
+  if (avatar) avatar.style.display = showAvatar ? '' : 'none';
+  if (nav)    nav.style.display    = onHub ? '' : 'none';   // same links on every page
+  $('avatar-menu').style.display = 'none';
+
+  // About's button says where it leads: back where you were, or on to start.
+  if (name === 'about') {
+    if (_prevPage !== 'about') _aboutReturn = _prevPage;
+    if (!onHub) _aboutReturn = 'signin';
+    const labels = { home: 'Back to Home', listen: 'Back to the map', stories: 'Back to Stories', record: 'Back to recording' };
+    $('about-back-btn').textContent = onHub
+      ? (labels[_aboutReturn] || 'Back to Home')
+      : (getProfiles().length ? 'Choose a storyteller' : 'Start an atlas');
+    if (onHub && !labels[_aboutReturn]) _aboutReturn = 'home';
+    window.scrollTo(0, 0);
+  }
+  $('avatar-menu-switch').style.display = onEntry ? 'none' : '';
 
   // Update avatar initials
-  if (onHub) {
+  if (showAvatar) {
     const st = _getStoryteller();
     const name2 = st.name || '';
     const initials = name2.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0,2) || '?';
@@ -339,7 +361,7 @@ function _showPage(name, push = true) {
   });
 
   // Desktop nav active state
-  const navBtnMap = { home:'nav-btn-home', listen:'nav-btn-map', stories:'nav-btn-stories' };
+  const navBtnMap = { home:'nav-btn-home', listen:'nav-btn-map', stories:'nav-btn-stories', record:'nav-btn-record' };
   Object.entries(navBtnMap).forEach(([page, id]) => {
     const b = $(id);
     if (b) b.setAttribute('aria-current', page === name ? 'page' : 'false');
@@ -388,6 +410,17 @@ function _renderHome() {
   if (metaEl) metaEl.innerHTML =
     `${stories.length} stor${stories.length === 1 ? 'y' : 'ies'} <span style="opacity:.5">·</span> ${places} place${places === 1 ? '' : 's'}`;
 
+  // No stories yet: one welcome card with the single next step, instead of an
+  // empty map, an empty timeline and an empty list.
+  const empty = stories.length === 0;
+  $('home-first').style.display      = empty ? '' : 'none';
+  $('home-full').style.display       = empty ? 'none' : '';
+  $('home-record-cta').style.display = empty ? 'none' : '';
+  $('home-first-title').textContent  = st.name ? `Record ${st.name}'s first story` : 'Record the first story';
+  // Backups belong to a real storyteller, not the sample atlas.
+  $('backup-card').style.display     = _demoMode ? 'none' : '';
+  if (empty) return;
+
   // "Continue where you left off" — most recently created story
   const continueCard = $('home-continue-card');
   const latest = byCreated[0];
@@ -405,12 +438,6 @@ function _renderHome() {
     }
   }
 
-  // Side card labels
-  const mapLabel = $('home-map-places-label');
-  if (mapLabel) mapLabel.textContent = places ? `Walk through ${places} place${places === 1 ? '' : 's'}` : 'Walk through the places';
-  const storiesLabel = $('home-stories-count-label');
-  if (storiesLabel) storiesLabel.textContent = stories.length ? `${stories.length} stories in life order` : 'In life order';
-
   // Atlas foot: latest story name
   const atlasLatest = $('home-atlas-latest');
   if (atlasLatest && latest) {
@@ -418,8 +445,8 @@ function _renderHome() {
     atlasLatest.textContent = `Latest: ${latest.title || 'Untitled'}${era ? ' · ' + era : ''}`;
   }
 
-  // Timeline
-  _renderHomeTimeline(stories);
+  // Timeline: the highlighted dot is the latest story, matching the label beside it
+  _renderHomeTimeline(stories, latest?.id);
 
   // Map placeholder vs real Leaflet
   const storiesWithPlace = stories.filter(s => s.place && s.place.lat != null);
@@ -430,36 +457,20 @@ function _renderHome() {
     refreshHomePins(stories);
   }, 50);
 
-  // Seg sort buttons (life-order vs by-place; recent section uses createdAt when in life-order)
-  const segLife  = $('seg-life');
-  const segPlace = $('seg-place');
-  const _applySort = (byPlace) => {
-    const sorted = byPlace
-      ? [...stories].sort((a, b) => (a.place?.label || '').localeCompare(b.place?.label || ''))
-      : byCreated;
-    _renderStoryList(sorted.slice(0, 3));
-    if (segLife)  { segLife.setAttribute('aria-pressed',  String(!byPlace)); segLife.classList.toggle('on', !byPlace); }
-    if (segPlace) { segPlace.setAttribute('aria-pressed', String(byPlace));  segPlace.classList.toggle('on', byPlace); }
-  };
-  if (segLife)  segLife.onclick  = () => _applySort(false);
-  if (segPlace) segPlace.onclick = () => _applySort(true);
-  _applySort(false);
-
-  // "See all" link
-  const seeAllWrap  = $('home-see-all-wrap');
-  const seeAllCount = $('home-see-all-count');
-  if (seeAllWrap)  seeAllWrap.style.display  = stories.length > 3 ? '' : 'none';
-  if (seeAllCount) seeAllCount.textContent   = stories.length;
+  // Latest three, newest first. The full list (life order) is the Stories page.
+  _renderStoryList(byCreated.slice(0, 3));
+  $('home-see-all-btn').style.display   = stories.length > 3 ? '' : 'none';
+  $('home-see-all-count').textContent   = stories.length;
 }
 
-function _renderHomeTimeline(stories) {
+function _renderHomeTimeline(stories, latestId) {
   const track = $('home-tl-track');
   if (!track) return;
   const total = stories.length;
   let html = '';
   stories.forEach((s, i) => {
     const pct = total < 2 ? 50 : Math.round((i / (total - 1)) * 92 + 4);
-    const isLatest = i === 0;
+    const isLatest = s.id === latestId;
     html += `<i class="tl-dot${isLatest ? ' tl-dot-now' : ''}" style="left:${pct}%" title="${_esc(s.title || '')}"></i>`;
   });
   track.innerHTML = html;
@@ -469,30 +480,8 @@ function _renderStoryList(stories) {
   const container = $('story-list');
   if (!container) return;
 
-  if (!stories.length) {
-    container.innerHTML = `
-      <div class="empty-state" style="padding:32px 0;text-align:center">
-        <div class="empty-map" style="height:160px;border-radius:18px;border:1px solid var(--line);position:relative;overflow:hidden;background:var(--parchment-deep);margin-bottom:20px">
-          <div id="empty-leaflet"></div>
-          ${_emptyPinSvg()}
-        </div>
-        <p class="t-h2">No stories yet.</p>
-        <p class="t-body soft" style="margin-top:4px">Tap Record to tell the first one.</p>
-      </div>`;
-    setTimeout(() => {
-      const el = $('empty-leaflet');
-      if (el && !el._mapInit) {
-        const m = L.map('empty-leaflet', { zoomControl:false, dragging:false, scrollWheelZoom:false }).setView([20,0],2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(m);
-        el._mapInit = true;
-      }
-    }, 50);
-    return;
-  }
-
-  container.innerHTML = stories.map((s, i) => _storyCardHtml(s, i)).join('');
+  // (With no stories, Home shows the welcome card instead of this list.)
+  container.innerHTML = stories.map(s => _storyCardHtml(s)).join('');
   _wireStoryCards(container);
 }
 
@@ -516,13 +505,44 @@ function _renderStoriesPage() {
   const stories = _getStories();
   const container = $('stories-page-list');
   if (!container) return;
-  if (!stories.length) { container.innerHTML = '<p style="padding:24px;color:var(--ink-soft)">No stories yet.</p>'; return; }
-  container.innerHTML = stories.map((s, i) => _storyCardHtml(s, i)).join('');
+  const st = _getStoryteller();
+  $('stories-overline').textContent = st.name ? `Stories of ${st.name}` : 'Stories';
+  const places = stories.filter(s => s.place).length;
+  $('stories-meta').textContent = stories.length
+    ? `${stories.length} stor${stories.length === 1 ? 'y' : 'ies'} · ${places} place${places === 1 ? '' : 's'} · earliest memories first`
+    : '';
+  if (!stories.length) {
+    container.innerHTML = `
+      <div class="v2-card v2-empty">
+        <p class="t-h2">No stories yet.</p>
+        <p class="t-body soft">Each story you record lands here, in the order it happened in their life.</p>
+        <button class="btn btn-primary js-empty-record">${_micSvg()} Record the first story</button>
+      </div>`;
+    container.querySelector('.js-empty-record').onclick = () => _navRecord();
+    return;
+  }
+  // Life order, grouped into chapters: a heading each time the era changes.
+  const total = stories.length;
+  let html = '', lastEra = null, open = false;
+  stories.forEach(s => {
+    const era = s.era || assignEra(s, total) || 'Undated';
+    if (era !== lastEra) {
+      if (open) html += '</div>';
+      html += `<h2 class="v2-era-h2"><span>${_esc(era)}</span></h2><div class="v2-stories">`;
+      open = true; lastEra = era;
+    }
+    html += _storyCardHtml(s);
+  });
+  if (open) html += '</div>';
+  container.innerHTML = html;
   _wireStoryCards(container);
 }
 
-function _storyCardHtml(story, idx) {
-  const total = _getStories().length;
+function _storyCardHtml(story) {
+  const all   = _getStories();
+  const total = all.length;
+  // The number is the story's place in life order, wherever the card is shown.
+  const idx  = Math.max(0, all.findIndex(s => s.id === story.id));
   const era  = story.era || assignEra(story, total);
   const dur  = formatDuration(story.duration);
   const place = story.place ? story.place.label.split(',')[0] : '';
@@ -1160,17 +1180,22 @@ function _transcriptLines(story) {
 }
 
 function _renderListenEmpty() {
-  const sheet = $('listen-sheet-content');
-  if (sheet) {
-    sheet.innerHTML = `
-      <div class="pad" style="margin-top:40px;text-align:center">
-        <p class="t-h2">No stories yet.</p>
-        <p class="t-body soft" style="margin-top:8px">Record your first story to see it here.</p>
-        <button class="btn btn-primary" style="margin-top:24px" onclick="document.getElementById('nav-record').click()">
-          ${_micSvg()} Record a story
-        </button>
-      </div>`;
-  }
+  const html = `
+    <div class="listen-empty">
+      <p class="t-h2">Nothing on the map yet.</p>
+      <p class="t-body soft">Record a story and pin it to a place. It will show up here.</p>
+      <button class="btn btn-primary js-empty-record">${_micSvg()} Record a story</button>
+    </div>`;
+  // Phone sheet and desktop panel both get it.
+  ['listen-sheet-content', 'listen-desktop-content'].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.innerHTML = html;
+    el.querySelector('.js-empty-record').onclick = () => _navRecord();
+  });
+  ['mobile-upnext', 'desktop-upnext'].forEach(id => { const el = $(id); if (el) el.style.display = 'none'; });
+  if (!_listenMapReady) { initListenMap('listen-map'); _listenMapReady = true; }
+  renderListenPins([], null);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -1268,9 +1293,3 @@ function _checkSvg()  { return `<svg class="ico" viewBox="0 0 24 24" aria-hidden
 function _penSvg()    { return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></svg>`; }
 function _alertSvg()  { return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V13M12 16.5v.01"/></svg>`; }
 function _deviceSvg() { return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18h2"/></svg>`; }
-function _emptyPinSvg() {
-  return `<svg style="position:absolute;left:50%;top:50%;width:64px;height:76px;margin:-52px 0 0 -32px" viewBox="-16 -40 32 44">
-    <path d="M0 0 C-3 -7 -12 -13 -12 -22 A12 12 0 1 1 12 -22 C12 -13 3 -7 0 0Z" fill="rgba(251,248,241,.8)" stroke="#a4502c" stroke-width="1.6" stroke-dasharray="3 3"/>
-    <circle cx="0" cy="-22" r="4.5" fill="none" stroke="#a4502c" stroke-width="1.6"/>
-  </svg>`;
-}

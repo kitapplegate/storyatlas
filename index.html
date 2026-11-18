@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css?v=20261110e">
+  <link rel="stylesheet" href="css/style.css?v=20261117b">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -44,7 +44,7 @@
   ═══════════════════════════════════════════════════════════ -->
   <header class="v2-topbar" id="main-topbar">
     <div class="v2-wrap">
-      <button class="v2-brand" id="nav-home" aria-label="Go to home">
+      <button class="v2-brand" id="nav-home" aria-label="Story Atlas, choose a storyteller">
         <img src="assets/mark.svg" alt="">Story Atlas
       </button>
       <!-- Desktop nav — hidden on phone, hidden on sign-in -->
@@ -53,19 +53,27 @@
         <button id="nav-btn-map">Map</button>
         <button id="nav-btn-stories">Stories</button>
         <button id="nav-btn-keepsake">Keepsake</button>
+        <button id="nav-btn-record" class="v2-nav-record">
+          <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-mic"/></svg>Record
+        </button>
       </nav>
       <span class="grow"></span>
-      <button class="v2-link v2-topbar-about js-about-link" id="topbar-about">About<span class="v2-topbar-about-long"> Story Atlas</span> &amp; privacy</button>
-      <!-- Avatar shown when signed in -->
-      <button class="v2-avatar" id="topbar-avatar" aria-label="Account menu" style="display:none">
-        <b id="topbar-avatar-name"></b><span class="v2-avatar-dot" id="topbar-avatar-dot"></span>
-      </button>
-      <!-- Avatar menu -->
-      <div class="v2-avatar-menu" id="avatar-menu" style="display:none">
-        <button id="avatar-menu-signout">
-          <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-signout"/></svg>
-          Sign out
+      <button class="v2-link v2-topbar-about js-about-link" id="topbar-about">About<span class="v2-topbar-about-long"> Story Atlas</span><span class="v2-topbar-about-mid"> &amp; privacy</span></button>
+      <!-- Avatar + its menu, shown while a storyteller is open -->
+      <div class="v2-account">
+        <button class="v2-avatar" id="topbar-avatar" aria-label="Storyteller menu" style="display:none">
+          <b id="topbar-avatar-name"></b><span class="v2-avatar-dot" id="topbar-avatar-dot"></span>
         </button>
+        <div class="v2-avatar-menu" id="avatar-menu" style="display:none">
+          <button id="avatar-menu-switch">
+            <svg class="ico sm2" viewBox="0 0 24 24"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>
+            Switch storyteller
+          </button>
+          <button id="avatar-menu-signout">
+            <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-signout"/></svg>
+            Sign out
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -76,99 +84,101 @@
   <section id="page-about" style="display:none">
     <main class="v2-wrap about-wrap">
 
-      <div class="about-hero">
-        <p class="v2-overline" style="color:var(--rust-dark)">A family keepsake, told out loud</p>
-        <h1 class="about-h1">Every story<br>has a <em>place.</em></h1>
-        <p class="about-lede">Record a grandparent's memories one at a time. Story Atlas writes them down, puts them in life order, and pins each one to the map where it happened.</p>
-      </div>
-
-      <!-- About this project -->
-      <div class="about-intro">
-        <h2 class="si-about-h2">About this project</h2>
-        <p class="si-about-body">Story Atlas is a project to help families keep the memories of older relatives before they are lost. Sit down with a grandparent and let Story Atlas do the interview: it asks a question, then they talk. The app records their voice, writes down what they say, and pins each story to the place on the map where it happened. Story by story, it becomes an atlas of a life, told in their own words.</p>
-      </div>
+      <header class="about-hero">
+        <p class="v2-overline about-overline">About &amp; privacy</p>
+        <h1 class="about-h1">How Story Atlas <em>works.</em></h1>
+        <p class="about-lede">Story Atlas helps families keep the memories of older relatives before they are lost. Sit down with a grandparent and let it do the interview: it asks a question, they talk, and each story is written down and pinned to the place where it happened.</p>
+        <nav class="about-jump" aria-label="On this page">
+          <button data-jump="about-how">How it works</button>
+          <button data-jump="about-privacy">Privacy</button>
+          <button data-jump="about-backup">Backups</button>
+          <button data-jump="about-tips">Recording tips</button>
+        </nav>
+      </header>
 
       <!-- How it works -->
-      <div class="about-steps">
-        <div class="about-step">
-          <div class="about-step-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-mic"/></svg>
-          </div>
-          <div>
-            <p class="about-step-title">1 · Record</p>
-            <p class="about-step-body">Story Atlas asks a question and can read it aloud. Tap the microphone and let them answer. It writes down what they say and suggests any places they mention.</p>
-          </div>
+      <section class="about-section" id="about-how">
+        <h2 class="about-h2">Three steps, one story at a time</h2>
+        <div class="about-steps">
+          <article class="v2-card about-step">
+            <span class="about-step-icon"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-mic"/></svg></span>
+            <p class="v2-overline">Step 1</p>
+            <h3 class="about-step-title">Record</h3>
+            <p class="about-step-body">Story Atlas asks a question and can read it aloud. Tap the microphone and let them answer. It writes down what they say.</p>
+          </article>
+          <article class="v2-card about-step">
+            <span class="about-step-icon about-step-icon-slate"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-pin"/></svg></span>
+            <p class="v2-overline">Step 2</p>
+            <h3 class="about-step-title">Place</h3>
+            <p class="about-step-body">Search for where the story happened and drop a pin. It suggests places it heard, but nothing is placed without you.</p>
+          </article>
+          <article class="v2-card about-step">
+            <span class="about-step-icon about-step-icon-sage"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-map"/></svg></span>
+            <p class="v2-overline">Step 3</p>
+            <h3 class="about-step-title">Listen</h3>
+            <p class="about-step-body">Open the map and tap any pin to hear the story and read along, or go through a whole life in order from the Stories list.</p>
+          </article>
         </div>
-        <div class="about-step">
-          <div class="about-step-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-pin"/></svg>
-          </div>
-          <div>
-            <p class="about-step-title">2 · Place</p>
-            <p class="about-step-body">After recording, search for the location the story happened and drop a pin. You're always in control — nothing is placed automatically.</p>
-          </div>
+      </section>
+
+      <!-- Privacy -->
+      <section class="about-section" id="about-privacy">
+        <h2 class="about-h2">Your privacy, plainly</h2>
+        <p class="about-section-lede">Story Atlas has no server and no accounts. A storyteller is just a name on this device, with no password, and each one keeps their own stories.</p>
+        <div class="about-split">
+          <article class="about-panel about-panel-stays">
+            <h3><svg class="ico md" viewBox="0 0 24 24"><use href="#i-lock"/></svg>Stays on this device</h3>
+            <ul>
+              <li>Every voice recording</li>
+              <li>Every transcript, title and map pin</li>
+              <li>The list of storytellers</li>
+            </ul>
+          </article>
+          <article class="about-panel about-panel-leaves">
+            <h3><svg class="ico md" viewBox="0 0 24 24"><use href="#i-up"/></svg>Leaves this device</h3>
+            <ul>
+              <li>While you record, your browser may send audio to its own speech service (such as Google) to write the live transcript.</li>
+              <li>When you search for a place, the place name goes to OpenStreetMap to find it on the map.</li>
+              <li>Map pictures are loaded from OpenStreetMap as you look around the map.</li>
+            </ul>
+          </article>
         </div>
-        <div class="about-step">
-          <div class="about-step-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-map"/></svg>
-          </div>
-          <div>
-            <p class="about-step-title">3 · Listen</p>
-            <p class="about-step-body">Browse the living atlas — tap any pin to read the transcript, or use the Stories list to jump through a lifetime in order.</p>
-          </div>
-        </div>
-      </div>
+        <p class="about-warn">
+          <svg class="ico md" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V13M12 16.5v.01"/></svg>
+          <span><strong>Clearing your browser data, or switching browsers, erases everything.</strong> Keep a backup.</span>
+        </p>
+        <details class="about-details">
+          <summary>Technical detail: where the files live</summary>
+          <ul class="si-about-list">
+            <li><strong>Audio recordings</strong> are stored in <strong>IndexedDB</strong>, the browser's built-in large-file store.</li>
+            <li><strong>Story text, transcripts, and pins</strong> are stored in <strong>localStorage</strong>.</li>
+          </ul>
+        </details>
+      </section>
 
-      <!-- Privacy / storage callout -->
-      <div class="about-privacy">
-        <div class="about-privacy-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-lock"/></svg>
-        </div>
-        <div>
-          <p class="about-privacy-title">Your stories stay on this device</p>
-          <p class="about-privacy-body">Recordings, transcripts, and pins are stored in this browser, on this device. Story Atlas has no server and never uploads them. Clearing your browser data erases them, so keep a backup.</p>
-        </div>
-      </div>
-
-      <!-- Storage and backup details -->
-      <div class="si-about">
-
-        <h2 class="si-about-h2">Where your files are saved</h2>
-        <p class="si-about-body">Profiles are just names on this device. There is no password, and each profile keeps its own stories.</p>
-        <ul class="si-about-list">
-          <li><strong>Audio recordings</strong> are stored in <strong>IndexedDB</strong>, the browser's built-in large-file store.</li>
-          <li><strong>Story text, transcripts, and pins</strong> are stored in <strong>localStorage</strong>.</li>
-          <li>Clearing your browser data or switching browsers will erase everything.</li>
-        </ul>
-
-        <h2 class="si-about-h2" style="margin-top:28px">What leaves the device</h2>
-        <p class="si-about-body">Two things. While you record, your browser may send audio to its own speech service (such as Google) to write the live transcript. And when you search for a place, that place name goes to OpenStreetMap to find it on the map.</p>
-
-        <h2 class="si-about-h2" style="margin-top:28px">Keeping a backup</h2>
-        <ol class="si-about-steps">
-          <li>On <strong>Home</strong>, under <strong>Keep a safe copy</strong>, tap <strong>Download all</strong>. This saves one <code>.json</code> file with every story and recording in the profile you are signed in to.</li>
-          <li>To bring them back, or move them to another device, open Story Atlas there, choose a profile, and tap <strong>Restore</strong>.</li>
-          <li>Download a fresh backup after every session.</li>
+      <!-- Backups -->
+      <section class="about-section" id="about-backup">
+        <h2 class="about-h2">Keeping a backup</h2>
+        <ol class="v2-card about-numbered">
+          <li><span>On <strong>Home</strong>, under <strong>Keep a safe copy</strong>, tap <strong>Download all</strong>. This saves one <code>.json</code> file with every story and recording for the storyteller you have open.</span></li>
+          <li><span>To bring them back, or move them to another device, open Story Atlas there, choose a storyteller, and tap <strong>Restore</strong>.</span></li>
+          <li><span>Download a fresh backup after every session.</span></li>
         </ol>
-
-      </div>
+      </section>
 
       <!-- Tips -->
-      <div class="about-tips">
-        <p class="about-tips-title">Tips for a great recording</p>
-        <ul class="about-tips-list">
-          <li>Find a quiet room. Story Atlas uses your device's built-in microphone.</li>
-          <li>Take one question at a time and let the storyteller speak without interruption.</li>
-          <li>Short stories (under 5 minutes) transcribe most accurately.</li>
-          <li>You can edit the transcript after recording if any words came out wrong.</li>
+      <section class="about-section" id="about-tips">
+        <h2 class="about-h2">Tips for a good recording</h2>
+        <ul class="about-tips-grid">
+          <li><svg class="ico md" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Find a quiet room. Story Atlas uses your device's built-in microphone.</span></li>
+          <li><svg class="ico md" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Take one question at a time and let the storyteller speak without interruption.</span></li>
+          <li><svg class="ico md" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>Short stories (under 5 minutes) transcribe most accurately.</span></li>
+          <li><svg class="ico md" viewBox="0 0 24 24"><use href="#i-check"/></svg><span>You can edit the transcript after recording if any words came out wrong.</span></li>
         </ul>
-      </div>
+      </section>
 
       <div class="about-cta">
-        <button class="btn btn-secondary about-start-btn" id="about-back-btn">
-          <svg style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;margin-right:6px" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
-          Back
-        </button>
+        <button class="btn btn-primary about-start-btn" id="about-back-btn">Back</button>
       </div>
 
     </main>
@@ -190,7 +200,7 @@
             <h2 class="si-profiles-h2" id="profile-heading">Who's telling stories?</h2>
             <div class="si-profile-list" id="profile-list" role="list"></div>
             <form class="si-profile-add" id="profile-add-form" autocomplete="off">
-              <label class="si-profile-add-label" for="profile-add-input">Add a profile</label>
+              <label class="si-profile-add-label" for="profile-add-input" id="profile-add-label">Add a storyteller</label>
               <div class="si-profile-add-row">
                 <input type="text" id="profile-add-input" placeholder="e.g. Grandma Rose" maxlength="60">
                 <button class="btn btn-primary" type="submit" id="profile-add-btn">Add</button>
@@ -200,12 +210,12 @@
 
           <button class="si-demo" id="demo-btn">
             <svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:var(--rust);flex:none" viewBox="0 0 24 24"><path d="M5 4l14 8-14 8z"/></svg>
-            <span><b>Try the demo</b><small>Explore a sample atlas. No profile needed.</small></span>
+            <span><b>Try the demo</b><small>Explore a sample atlas. Nothing to set up.</small></span>
           </button>
 
           <p class="si-trust">
             <svg style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none" viewBox="0 0 24 24"><use href="#i-lock"/></svg>
-            Stories and recordings are stored in this browser on this device.
+            <span>Stories and recordings are stored in this browser on this device. <button class="v2-link js-about-link">How privacy works</button></span>
           </p>
         </div>
 
@@ -270,23 +280,22 @@
       <section class="v2-hello">
         <div class="v2-who">
           <p class="v2-overline">Stories of</p>
-          <!-- No storyteller yet -->
+          <!-- No storyteller name yet -->
           <div id="home-no-name" style="display:none">
-            <p class="v2-who-h1" style="font-size:22px;color:var(--ink-soft)">Whose stories will these be?</p>
-            <div style="display:flex;gap:10px;align-items:stretch;margin-top:14px;max-width:380px">
-              <input type="text" id="home-name-input" placeholder="e.g. Grandma Rose" autocomplete="off"
-                style="flex:1;height:52px;border-radius:12px;border:1.5px solid #cdbfa8;background:#fffdf8;padding:0 16px;font-size:17px">
-              <button class="btn btn-primary" id="home-name-btn" style="height:52px;padding:0 22px;font-size:16px">Begin →</button>
+            <p class="v2-who-h1 v2-who-ask">Whose stories will these be?</p>
+            <div class="v2-name-row">
+              <input type="text" id="home-name-input" placeholder="e.g. Grandma Rose" autocomplete="off">
+              <button class="btn btn-primary" id="home-name-btn">Begin →</button>
             </div>
           </div>
           <!-- Storyteller name -->
           <h1 class="v2-who-h1" id="home-storyteller-h1" style="display:none">
             <span id="home-storyteller-name"></span>
-            <button class="v2-switch" id="home-switch-btn" aria-label="Switch storyteller">
-              Switch <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-down"/></svg>
-            </button>
           </h1>
-          <p class="v2-meta" id="home-meta"></p>
+          <p class="v2-meta">
+            <span id="home-meta"></span>
+            <button class="v2-link v2-switch-link" id="home-switch-btn">Switch storyteller</button>
+          </p>
         </div>
         <a class="v2-record-cta" id="home-record-cta" href="#" style="text-decoration:none">
           <span class="v2-record-mic"><svg class="ico xl2" viewBox="0 0 24 24"><use href="#i-mic"/></svg></span>
@@ -294,90 +303,93 @@
         </a>
       </section>
 
-      <!-- Atlas card + side links -->
-      <section class="v2-grid-top">
-        <article class="v2-card v2-atlas-card">
-          <div class="v2-map-area" id="home-map-wrap">
-            <!-- Leaflet fills this; placeholder map shown until pins load -->
-            <div id="home-leaflet" style="position:absolute;inset:0;z-index:1"></div>
-            <img class="v2-map-placeholder" src="design/v2/map.svg" id="home-map-placeholder" alt="">
-            <a class="v2-map-btn" id="home-open-atlas-btn" href="#">
-              <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-map"/></svg>Open atlas
-            </a>
-          </div>
-          <div class="v2-atlas-foot">
-            <div class="v2-atlas-foot-row">
-              <b>A life in stories</b>
-              <span id="home-atlas-latest"></span>
-            </div>
-            <div class="v2-timeline" id="home-timeline">
-              <div class="tl-track" id="home-tl-track"></div>
-              <div class="tl-eras"><span>Childhood</span><span>Youth</span><span>Work</span><span>Family</span><span>Later</span></div>
-            </div>
-          </div>
-        </article>
-
-        <div class="v2-side">
-          <div class="v2-card v2-continue" id="home-continue-card" style="display:none">
-            <p class="v2-overline">Pick up where you left off</p>
-            <h3 class="v2-continue-title" id="home-continue-title"></h3>
-            <button class="btn btn-secondary btn-sm" id="home-continue-btn">
-              <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-play"/></svg>
-              <span>Listen · <span id="home-continue-dur"></span></span>
+      <!-- First visit: no stories yet -->
+      <section class="v2-card v2-first" id="home-first" style="display:none">
+        <img class="v2-first-img" src="assets/illustration.png" alt="">
+        <div class="v2-first-body">
+          <p class="v2-overline about-overline">Start here</p>
+          <h2 class="v2-first-h2" id="home-first-title">Record the first story</h2>
+          <p class="v2-first-lede">Sit somewhere quiet together. Story Atlas asks a question, they answer, and it writes the story down.</p>
+          <ol class="v2-first-steps">
+            <li><span><b>Record</b> one memory, a few minutes long.</span></li>
+            <li><span><b>Place</b> it on the map where it happened.</span></li>
+            <li><span><b>Listen</b> back, and watch the atlas grow.</span></li>
+          </ol>
+          <div class="v2-first-actions">
+            <button class="btn btn-primary" id="home-first-record">
+              <svg class="ico md" viewBox="0 0 24 24"><use href="#i-mic"/></svg>
+              Record the first story
             </button>
+            <label class="v2-link" for="backup-restore-input" tabindex="0">or restore a backup</label>
           </div>
-          <button class="v2-card v2-go" id="nav-btn-map-card">
-            <span class="v2-tile v2-tile-slate"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-map"/></svg></span>
-            <span><h3>The map</h3><p id="home-map-places-label">Walk through the places</p></span>
-            <svg class="v2-chev" viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-left:auto;color:var(--ink-soft)"><use href="#i-chev"/></svg>
-          </button>
-          <button class="v2-card v2-go" id="nav-btn-stories-card">
-            <span class="v2-tile v2-tile-ochre"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-list"/></svg></span>
-            <span><h3>All stories</h3><p id="home-stories-count-label">In life order</p></span>
-            <svg class="v2-chev" viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-left:auto;color:var(--ink-soft)"><use href="#i-chev"/></svg>
-          </button>
-          <button class="v2-card v2-go" id="nav-btn-keepsake-card">
-            <span class="v2-tile v2-tile-sage"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-book"/></svg></span>
-            <span><h3>Keepsake book</h3><p>Print it or save a PDF</p></span>
-            <svg class="v2-chev" viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-left:auto;color:var(--ink-soft)"><use href="#i-chev"/></svg>
-          </button>
         </div>
       </section>
 
-      <!-- Recent stories -->
-      <div class="v2-section-head">
-        <h2 class="v2-section-h2">Recently added</h2>
-        <div class="seg" role="group" aria-label="Sort stories" id="home-seg">
-          <button aria-pressed="true" id="seg-life">Recent first</button>
-          <button aria-pressed="false" id="seg-place">By place</button>
+      <!-- Atlas, once there are stories -->
+      <div id="home-full">
+        <section class="v2-grid-top">
+          <article class="v2-card v2-atlas-card">
+            <div class="v2-map-area" id="home-map-wrap">
+              <!-- Leaflet fills this; placeholder map shown until pins load -->
+              <div id="home-leaflet" style="position:absolute;inset:0;z-index:1"></div>
+              <img class="v2-map-placeholder" src="design/v2/map.svg" id="home-map-placeholder" alt="">
+              <a class="v2-map-btn" id="home-open-atlas-btn" href="#">
+                <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-map"/></svg>Open the map
+              </a>
+            </div>
+            <div class="v2-atlas-foot">
+              <div class="v2-atlas-foot-row">
+                <b>A life in stories</b>
+                <span id="home-atlas-latest"></span>
+              </div>
+              <div class="v2-timeline" id="home-timeline">
+                <div class="tl-track" id="home-tl-track"></div>
+                <div class="tl-eras"><span>Childhood</span><span>Youth</span><span>Work</span><span>Family</span><span>Later</span></div>
+              </div>
+            </div>
+          </article>
+
+          <div class="v2-side">
+            <div class="v2-card v2-continue" id="home-continue-card" style="display:none">
+              <p class="v2-overline">Pick up where you left off</p>
+              <h3 class="v2-continue-title" id="home-continue-title"></h3>
+              <button class="btn btn-secondary btn-sm" id="home-continue-btn">
+                <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-play"/></svg>
+                <span>Listen · <span id="home-continue-dur"></span></span>
+              </button>
+            </div>
+            <section class="v2-card v2-safe" id="backup-card">
+              <span class="v2-tile v2-tile-sage"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-shield"/></svg></span>
+              <div class="v2-safe-text">
+                <b>Keep a safe copy</b>
+                <p>Download every story and recording. Restore it on any device.</p>
+              </div>
+              <div class="v2-safe-actions">
+                <button class="btn btn-secondary btn-sm" id="backup-download-btn">
+                  <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-dl"/></svg>
+                  Download all
+                </button>
+                <label class="btn btn-secondary btn-sm" for="backup-restore-input" style="cursor:pointer">
+                  <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-up"/></svg>
+                  Restore
+                </label>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- Latest stories -->
+        <div class="v2-section-head">
+          <h2 class="v2-section-h2">Latest stories</h2>
+          <button class="v2-link v2-see-all" id="home-see-all-btn">
+            See all <span id="home-see-all-count"></span> stories
+            <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-chev"/></svg>
+          </button>
         </div>
+        <section class="v2-stories" id="story-list"></section>
       </div>
 
-      <section class="v2-stories" id="story-list"></section>
-
-      <p id="home-see-all-wrap" style="margin-top:20px;text-align:center;display:none">
-        <button class="v2-link" id="home-see-all-btn">See all <span id="home-see-all-count"></span> stories</button>
-      </p>
-
-      <!-- Safe copy -->
-      <section class="v2-card v2-safe" id="backup-card">
-        <span class="v2-tile v2-tile-sage"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-shield"/></svg></span>
-        <div>
-          <b>Keep a safe copy</b>
-          <p>Download every story and recording. Restore it on any device.</p>
-        </div>
-        <div class="v2-safe-actions">
-          <button class="btn btn-secondary btn-sm" id="backup-download-btn">
-            <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-dl"/></svg>
-            Download all
-          </button>
-          <label class="btn btn-secondary btn-sm" for="backup-restore-input" style="cursor:pointer">
-            <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-up"/></svg>
-            Restore
-          </label>
-          <input type="file" id="backup-restore-input" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0">
-        </div>
-      </section>
+      <input type="file" id="backup-restore-input" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0">
 
     </main>
   </section>
@@ -527,14 +539,6 @@
   <section id="page-listen" class="paper-bg" style="display:none">
     <div class="listen-map-area map-area" id="listen-map-wrap">
       <div id="listen-map" style="height:100%"></div>
-      <button class="icon-btn float" style="position:absolute;left:16px;top:20px;z-index:10"
-        id="listen-back-btn" aria-label="Back to home">
-        <svg class="ico" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
-      </button>
-      <span class="chip chip-paper" style="position:absolute;right:16px;top:28px;z-index:10">
-        <svg class="ico sm" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
-        Life order
-      </span>
     </div>
     <div class="listen-sheet paper-bg" id="listen-sheet-content"></div>
     <div id="mobile-upnext" class="card"
@@ -568,18 +572,23 @@
   </section>
 
   <!-- ══════════════════════════════════════════════════════════
-       STORIES LIST PAGE (full list, linked from home hub)
+       STORIES LIST PAGE (full list, in life order)
   ═══════════════════════════════════════════════════════════ -->
   <section id="page-stories" style="display:none">
-    <div class="v2-wrap" style="padding-top:24px;padding-bottom:120px">
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
-        <button class="icon-btn" id="stories-back-btn" aria-label="Back">
-          <svg class="ico" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    <main class="v2-wrap v2-page">
+      <header class="v2-page-head">
+        <div>
+          <p class="v2-overline" id="stories-overline">Stories</p>
+          <h1 class="v2-page-h1">A life, in order</h1>
+          <p class="v2-meta" id="stories-meta"></p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="stories-record-btn">
+          <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-mic"/></svg>
+          Record a story
         </button>
-        <h1 class="t-h1">All stories</h1>
-      </div>
-      <div id="stories-page-list" class="v2-stories"></div>
-    </div>
+      </header>
+      <div id="stories-page-list"></div>
+    </main>
   </section>
 
   <!-- ══════════════════════════════════════════════════════════
@@ -612,19 +621,6 @@
 
 <!-- Toast -->
 <div id="toast" role="status" aria-live="polite"></div>
-
-<!-- Switch-storyteller menu (small popup) -->
-<div class="v2-menu-overlay" id="switch-menu-overlay" style="display:none">
-  <div class="v2-menu">
-    <p class="v2-overline" style="margin-bottom:12px">Storyteller</p>
-    <div id="switch-menu-list"></div>
-    <button class="v2-menu-item" id="switch-add-btn">
-      <svg class="ico sm2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-      Add another storyteller
-    </button>
-    <button class="v2-menu-close" id="switch-menu-close">Cancel</button>
-  </div>
-</div>
 
 <!-- Welcome modal (name prompt for record) -->
 <div class="modal-overlay" id="welcome-modal-overlay">
@@ -708,7 +704,7 @@
     try { tried = !!sessionStorage.getItem('sa_heal'); sessionStorage.setItem('sa_heal', '1'); } catch (e) { tried = true; }
     if (tried) { document.getElementById('boot-fail').style.display = ''; return; }
     var gets = FILES.map(function (f) {
-      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261110e' : '');
+      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261117b' : '');
       return fetch(url, { cache: 'reload' }).catch(function () {});
     });
     gets.push(fetch(location.pathname, { cache: 'reload' }).catch(function () {}));
@@ -718,7 +714,7 @@
   window.addEventListener('unhandledrejection', heal);
 })();
 </script>
-<script type="module" src="js/app.js?v=20261110e"></script>
+<script type="module" src="js/app.js?v=20261117b"></script>
 
 </body>
 </html>

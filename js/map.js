@@ -75,9 +75,12 @@ export function refreshHomePins(stories) {
     _pins[s.id + '_home'] = m;
   });
 
+  // Re-measure first (the card may have just been shown or resized), and jump
+  // rather than animate so the preview never settles off-centre.
+  _atlasMap.invalidateSize({ animate: false });
   const lls = list.map(s => [s.place.lat, s.place.lng]);
-  if (lls.length === 1) _atlasMap.setView(lls[0], 12);
-  else _atlasMap.fitBounds(lls, { padding: [16, 16] });
+  if (lls.length === 1) _atlasMap.setView(lls[0], 12, { animate: false });
+  else _atlasMap.fitBounds(lls, { padding: [32, 32], animate: false });
 }
 
 // ── Listen map ───────────────────────────────────────────────────
@@ -86,7 +89,8 @@ export function initListenMap(containerId) {
   const el = document.getElementById(containerId);
   if (!el || _listenMap) return;
 
-  _listenMap = L.map(containerId).setView([20, 0], 2);
+  // One zoom control only (added bottom-right below), not Leaflet's default too.
+  _listenMap = L.map(containerId, { zoomControl: false }).setView([20, 0], 2);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
