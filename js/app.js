@@ -13,7 +13,7 @@ import {
 import { putAudio, getAudio, deleteAudio, requestPersistence } from './audiostore.js';
 import { downloadBackup, restoreBackup } from './backup.js';
 
-import { speakQuestion, stopSpeaking } from './interview.js';
+import { speakQuestion, stopSpeaking, followUpQuestions } from './interview.js';
 
 import { Recorder, renderWaveform } from './recorder.js';
 import { transcribe, detectPlaces, splitIntoLines } from './transcriber.js';
@@ -83,7 +83,7 @@ const QUESTIONS = [
   'What is something you made, built, or created that you are proud of?',
   'Tell me what you would want the people who come after you to know about your life.',
 ];
-let _usedQIndices = [];
+let _questionQueue = [];   // [{ text, from }] — `from` is the story a follow-up came from
 
 // ── Init ─────────────────────────────────────────────────────────
 
@@ -422,6 +422,8 @@ function _showPage(name, push = true) {
     stopSpeaking();
   }
   if (name !== 'listen') _destroyPlayers();
+
+  if (name === 'record' && _currentPage !== 'record') _buildQuestionQueue();
 
   const ALL_PAGES = ['about', 'signin', 'home', 'record', 'listen', 'placer', 'stories'];
   ALL_PAGES.forEach(p => {
@@ -803,6 +805,7 @@ function _bindRecord() {
       _currentQuestion = val;
       $('record-question-text').textContent = val;
       $('record-question-compact').textContent = val;
+      $('record-question-over').textContent = 'Your question';
       $('custom-q-wrap').style.display = 'none';
       $('btn-write-q').style.display = '';
     }
@@ -843,14 +846,28 @@ function _nextQuestion() {
     readBtn.setAttribute('aria-label', 'Read question aloud');
   }
 
-  if (_usedQIndices.length >= QUESTIONS.length) _usedQIndices = [];
-  let idx;
-  do { idx = Math.floor(Math.random() * QUESTIONS.length); }
-  while (_usedQIndices.includes(idx));
-  _usedQIndices.push(idx);
-  _currentQuestion = QUESTIONS[idx];
+  if (!_questionQueue.length) _questionQueue = _shuffled(QUESTIONS).map(text => ({ text, from: '' }));
+  const next = _questionQueue.shift();
+  _currentQuestion = next.text;
   $('record-question-text').textContent = _currentQuestion;
   $('record-question-compact').textContent = _currentQuestion;
+  $('record-question-over').textContent = next.from ? `Following up on “${next.from}”` : 'A question to start';
+}
+
+const _shuffled = (list) => [...list].sort(() => Math.random() - 0.5);
+
+/**
+ * Line up the questions for this sitting. The interviewer remembers: it starts
+ * with follow-ups drawn from the stories already told (newest first), never
+ * repeats a question that has been answered, then falls back to the question bank.
+ */
+function _buildQuestionQueue() {
+  const stories = _demoMode ? [] : getStoriesSorted();
+  const asked   = stories.map(s => s.question).filter(Boolean);
+  const follow  = followUpQuestions(stories, asked);
+  const bank    = _shuffled(QUESTIONS.filter(q => !asked.includes(q))).map(text => ({ text, from: '' }));
+  _questionQueue = [...follow.slice(0, 5), ...bank, ...follow.slice(5)];
+  _nextQuestion();
 }
 
 function _showRecordReady() {
@@ -1020,7 +1037,7 @@ async function _onRecordingComplete(blob, duration, dataUrl, liveTranscript = ''
     requestPersistence();
 
     // Detect places from the transcript text for the placer wizard
-    const detectedPlaces = detectPlaces(editedText || _currentQuestion);
+    const detectedPlaces = detectPlaces(editedText);
 
     // Next visit to Record starts fresh
     _showRecordReady();
@@ -1384,12 +1401,25 @@ function _refreshAll() {
   }
 }
 
-/** Edit / Delete buttons shown with a story on the map page. */
+/** Fix or add the pin on a story that is already saved. */
+function _changePlace(story) {
+  _showPage('placer');
+  $('placer-step1').innerHTML = '';
+  $('placer-step2').innerHTML = '';
+  const heard = detectPlaces((story.transcriptLines || []).join(' '));
+  startPlacer(story, heard, (updated) => {
+    _currentStory = updated;
+    _showPage('listen');
+  }, { placeOnly: true });
+}
+
+/** Edit / Change place / Delete buttons shown with a story on the map page. */
 function _storyActionsHtml(story) {
   if (_demoMode) return '';
   return `
     <div class="story-actions">
       <button class="story-action" data-story-action="edit" data-story-id="${_esc(story.id)}">${_penSvg()}Edit</button>
+      <button class="story-action" data-story-action="place" data-story-id="${_esc(story.id)}">${_pinSvg()}${story.place ? 'Change place' : 'Add a place'}</button>
       <button class="story-action story-action-danger" data-story-action="delete" data-story-id="${_esc(story.id)}">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>Delete
       </button>
@@ -1402,6 +1432,7 @@ document.addEventListener('click', (e) => {
   const story = getStoryById(btn.dataset.storyId);
   if (!story) return;
   if (btn.dataset.storyAction === 'edit') _openEditModal(story.id);
+  else if (btn.dataset.storyAction === 'place') _changePlace(story);
   else _confirmDeleteStory(story);
 });
 

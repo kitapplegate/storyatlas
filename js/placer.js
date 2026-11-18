@@ -8,6 +8,7 @@
  */
 
 import { getStoriesSorted, getStoryById, reorderStory, saveStory } from './storage.js';
+import { autoPlace, findPlace, zoomFor, precisionFor } from './geocode.js';
 
 let _story    = null;   // the story being placed
 let _step     = 1;      // 1 or 2
@@ -23,8 +24,8 @@ let _sorted = [];
 
 // Step 2 state
 let _selectedPlace = null;   // { name, quote }
-let _precision     = 'Street';
 let _detectedPlaces = [];
+let _placeOnly      = false;   // true when changing the place of a story saved earlier
 
 // ── Public API ───────────────────────────────────────────────────
 
@@ -33,18 +34,19 @@ let _detectedPlaces = [];
  * @param {object}   story          — the story object (already saved)
  * @param {object[]} detectedPlaces — [{ name, quote }] from transcriber
  * @param {Function} onDone         — called with updated story when wizard finishes
+ * @param {{placeOnly?: boolean}} [opts] — placeOnly skips the "when" step (changing a saved story's place)
  */
-export function startPlacer(story, detectedPlaces, onDone) {
+export function startPlacer(story, detectedPlaces, onDone, opts = {}) {
   _story          = story;
   _detectedPlaces = detectedPlaces || [];
   _onDone         = onDone;
   _step           = 1;
   _selectedPlace  = null;
-  _precision      = 'Street';
+  _placeOnly      = !!opts.placeOnly;
 
   _sorted = getStoriesSorted().filter(s => s.id !== story.id);
 
-  if (_sorted.length === 0) {
+  if (_sorted.length === 0 || _placeOnly) {
     // First story — skip time placement, go straight to place
     _step = 2;
     _renderStep2();
@@ -228,9 +230,11 @@ function _renderMiniTimeline(neighbor) {
 }
 
 // ── Step 2: Place on map ─────────────────────────────────────────
+// The app finds the place by itself from what was said and drops the pin.
+// The person only has to press one button. Searching, picking another match
+// and tapping the map are all behind "Change the place".
 
 function _renderStep2() {
-  // Switch visible step
   const s1 = document.getElementById('placer-step1');
   const s2 = document.getElementById('placer-step2');
   if (s1) s1.style.display = 'none';
@@ -238,144 +242,160 @@ function _renderStep2() {
   const container = s2;
   if (!container) return;
 
-  // The old map's element is about to be replaced — drop it so _geocode builds a fresh one
+  // The old map's element is about to be replaced — drop it so a fresh one is built
   if (_map) { _map.remove(); _map = null; _marker = null; }
+  _searchSeq++;
+  _pin = null;
 
+  const stepLabel = _placeOnly ? '' : (_sorted.length ? 'Step 2 of 2' : '');
   container.innerHTML = `
     <header class="appbar">
       <button class="icon-btn" id="placer2-back" aria-label="Back">
         <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
       </button>
-      <span class="t-label grow" style="font-size:18px">Place this story</span>
-      <span class="t-caption" style="padding-right:8px">Step 2 of 2</span>
+      <span class="t-label grow" style="font-size:18px">${_placeOnly ? 'Change the place' : 'Place this story'}</span>
+      <span class="t-caption" style="padding-right:8px">${stepLabel}</span>
     </header>
+    ${_placeOnly || !_sorted.length ? '' : `
     <div class="steps" style="padding:0 24px; margin-top:4px">
       <span class="steps-bar on"></span>
       <span class="steps-bar on"></span>
-    </div>
+    </div>`}
     <div class="pad" style="margin-top:16px">
       <h1 class="t-h1" style="font-size:30px">Where did this happen?</h1>
-      <p class="t-body soft" style="margin-top:4px;font-size:17px;line-height:24px">
-        ${_detectedPlaces.length > 0
-          ? 'Places we heard in the story. Tap one to find it, or type the place yourself.'
-          : 'Type a town, a street or a landmark and we\'ll find it on the map.'}
-      </p>
 
-      ${_detectedPlaces.length > 0 ? _renderPlaceSuggestions() : ''}
-
-      <div style="margin-top:14px">
-        <label class="t-label" for="place-search-input">Place name or address</label>
-        <div class="row gap8" style="margin-top:6px">
-          <input id="place-search-input" type="text" class="modal input"
-            style="margin-bottom:0;flex:1;border-radius:var(--radius-sm);padding:12px 14px;font-size:16px;border:1.5px solid var(--line);background:var(--parchment)"
-            placeholder="e.g. Lincoln School, Springfield"
-            value="${_selectedPlace ? _esc(_selectedPlace.name) : ''}">
-          <button class="btn btn-secondary" id="place-search-btn" style="flex:none">Search</button>
-        </div>
-      </div>
-
-      <p id="place-search-status" class="place-status" role="status" aria-live="polite"></p>
-      <div id="place-results" class="place-results" style="display:none"></div>
+      <div id="place-answer" class="place-answer" role="status" aria-live="polite"></div>
 
       <div id="placer-map" class="map-area card" style="height:236px;margin-top:14px;border-radius:18px"></div>
-      <p id="placer-map-tip" class="t-caption" style="margin-top:8px">Can't find it? Zoom in and tap the map to put the pin there yourself.</p>
-      <div id="placer-map-hint" style="display:none;margin-top:6px">
-        <span class="chip chip-paper" style="background:rgba(43,38,34,.82);color:var(--paper)">
-          <svg class="ico sm" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg>
-          Drag the pin to move it
-        </span>
-      </div>
 
-      <div id="precision-section" style="display:none;margin-top:14px">
-        <div class="t-label" style="margin-bottom:8px">How exact is the pin?</div>
-        <div class="precision-grid">
-          ${['Exact spot','Street','Neighborhood','Town'].map(p => `
-            <button class="precision-btn${p === _precision ? ' on' : ''}" data-precision="${p}">
-              ${p === _precision ? '<svg class="ico sm" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : ''}
-              ${p}
-            </button>
-          `).join('')}
+      <button class="btn btn-secondary btn-block" id="place-change-btn" style="margin-top:14px;display:none">
+        Change the place
+      </button>
+
+      <div id="place-change" style="display:none">
+        <div style="margin-top:18px">
+          <label class="t-label" for="place-search-input">Type the place</label>
+          <div class="row gap8" style="margin-top:6px">
+            <input id="place-search-input" type="text" class="modal input"
+              style="margin-bottom:0;flex:1;min-width:0;border-radius:var(--radius-sm);padding:12px 14px;font-size:16px;border:1.5px solid var(--line);background:var(--parchment)"
+              placeholder="e.g. Lincoln School, Springfield">
+            <button class="btn btn-secondary" id="place-search-btn" style="flex:none">Search</button>
+          </div>
         </div>
+        <p id="place-search-status" class="place-status" role="status" aria-live="polite"></p>
+        <div id="place-results" class="place-results" style="display:none"></div>
+        <p class="t-caption" style="margin-top:10px">You can also zoom in and tap the map to put the pin exactly where you want it.</p>
       </div>
     </div>
 
-    <div class="row gap12 placer-footer">
-      <button class="btn btn-secondary grow" id="placer-skip-place">Skip, no place</button>
-      <button class="btn btn-primary grow" id="placer-confirm-place" disabled>Confirm place</button>
+    <div class="placer-footer placer-footer-stack">
+      <button class="btn btn-primary btn-block" id="placer-confirm-place" disabled>Looks right</button>
+      <button class="btn btn-quiet btn-block" id="placer-skip-place">${_placeOnly && _story.place ? 'Remove the place' : 'Skip, no place'}</button>
     </div>
   `;
 
-  // Wire suggestions — geocode only when the user explicitly taps one
-  if (_detectedPlaces.length > 0) {
-    container.querySelectorAll('.place-suggestion').forEach(card => {
-      card.onclick = () => {
-        container.querySelectorAll('.place-suggestion').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-        const idx = parseInt(card.dataset.idx);
-        _selectedPlace = _detectedPlaces[idx];
-        document.getElementById('place-search-input').value = _selectedPlace.name;
-        _geocode(_selectedPlace.name);
-      };
-    });
-  }
-
   document.getElementById('placer2-back').onclick = () => {
-    if (_sorted.length > 0) { _step = 1; _initBinarySearch(); _renderStep1(); }
+    if (_placeOnly) _finish(_story.place ?? null, true);
+    else if (_sorted.length > 0) { _step = 1; _initBinarySearch(); _renderStep1(); }
     else _finish(null);
   };
+  document.getElementById('place-change-btn').onclick = () => _openChange(true);
   document.getElementById('place-search-btn').onclick = () => {
     const val = document.getElementById('place-search-input').value.trim();
-    if (val) { _selectedPlace = null; _geocode(val); }
+    if (val) _search(val);
   };
   document.getElementById('place-search-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       const val = e.target.value.trim();
-      if (val) { _selectedPlace = null; _geocode(val); }
+      if (val) _search(val);
     }
   });
-
-  container.querySelectorAll('.precision-btn').forEach(btn => {
-    btn.onclick = () => {
-      _precision = btn.dataset.precision;
-      container.querySelectorAll('.precision-btn').forEach(b => {
-        b.classList.toggle('on', b.dataset.precision === _precision);
-        b.innerHTML = (b.dataset.precision === _precision
-          ? '<svg class="ico sm" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
-          : '') + b.dataset.precision;
-      });
-    };
-  });
-
   document.getElementById('placer-skip-place').onclick = () => _finish(null);
   document.getElementById('placer-confirm-place').onclick = () => {
-    if (_marker) {
-      const ll = _marker.getLatLng();
-      const label = document.getElementById('place-search-input').value.trim() || 'Pinned on the map';
-      _finish({ label, lat: ll.lat, lng: ll.lng, precision: _precision });
-    }
+    if (!_marker || !_pin) return;
+    const ll = _marker.getLatLng();
+    _finish({ label: _pin.label, lat: ll.lat, lng: ll.lng, precision: _pin.precision });
   };
 
   _initMap();
+
+  if (_placeOnly && _story.place) {
+    // Changing an existing pin: show it, with the search box open.
+    const p = _story.place;
+    _setPin({ lat: p.lat, lng: p.lng, label: p.label, kind: '' }, 14, p.precision);
+    _say('Right now this story is pinned at', _shortLabel(p.label));
+    _openChange(false);
+  } else if (_detectedPlaces.length) {
+    _autoFind();
+  } else {
+    _say('We didn’t hear a place in this story.', '', 'Type where it happened, or skip this step.');
+    _openChange(false);
+  }
 }
 
-function _renderPlaceSuggestions() {
-  return `
-    <div class="place-suggestions" style="margin-top:14px">
-      ${_detectedPlaces.slice(0, 4).map((p, i) => `
-        <div class="card place-suggestion" data-idx="${i}">
-          <div class="place-suggestion-check">
-            <svg class="ico sm" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
-          </div>
-          <div class="place-suggestion-heard">
-            <svg class="ico sm" viewBox="0 0 24 24"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 16v4M16.5 18h4"/></svg>
-            Heard
-          </div>
-          <div class="place-suggestion-name">${_esc(p.name)}</div>
-          <div class="place-suggestion-quote">"${_esc(p.quote)}"</div>
-        </div>
-      `).join('')}
-    </div>
-  `;
+/** The headline above the map: what the app did, in plain words. */
+function _say(lead, place, note) {
+  const el = document.getElementById('place-answer');
+  if (!el) return;
+  el.innerHTML =
+    `<p class="place-answer-lead">${_esc(lead)}</p>` +
+    (place ? `<p class="place-answer-name">${_esc(place)}</p>` : '') +
+    (note  ? `<p class="place-answer-note">${_esc(note)}</p>` : '');
+}
+
+/** Show the search box. `focus` when the person asked for it. */
+function _openChange(focus) {
+  document.getElementById('place-change').style.display = '';
+  document.getElementById('place-change-btn').style.display = 'none';
+  if (focus) document.getElementById('place-search-input').focus();
+}
+
+/** A shorter place name for the headline: "Sangre Ridge Elementary, Stillwater, Oklahoma". */
+function _shortLabel(label) {
+  const parts = label.split(',').map(s => s.trim()).filter(Boolean)
+    .filter(p => !/^\d{4,}/.test(p) && !/ County$/.test(p) && p !== 'United States');
+  if (parts.length <= 3) return parts.join(', ');
+  return [parts[0], parts[parts.length - 2], parts[parts.length - 1]].join(', ');
+}
+
+/** Where this storyteller's other stories are: the newest one that has a pin. */
+function _nearbyHint() {
+  const placed = _sorted.filter(s => s.place && s.place.lat != null)
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  return placed.length ? { lat: placed[0].place.lat, lng: placed[0].place.lng } : null;
+}
+
+/** Find the place from what was said and drop the pin, with nothing to press. */
+async function _autoFind() {
+  const seq = ++_searchSeq;
+  _say('Finding the place on the map…');
+  let found = null;
+  try {
+    found = await autoPlace(_detectedPlaces.map(p => p.name), _nearbyHint());
+  } catch (e) { /* treated as not found */ }
+  if (seq !== _searchSeq || !document.getElementById('place-answer')) return;
+
+  if (!found) {
+    const heard = _detectedPlaces[0].name;
+    _say(`We heard “${heard}” but couldn’t find it on the map.`, '',
+         'Check the spelling below, add the town, or skip this step.');
+    document.getElementById('place-search-input').value = heard;
+    _openChange(false);
+    return;
+  }
+
+  _selectedPlace = _detectedPlaces.find(p => p.name === found.name) || null;
+  _setPin(found.place, zoomFor(found.place.kind));
+  document.getElementById('place-search-input').value = found.name;
+  if (found.sure) {
+    _say('We put this story at', _shortLabel(found.place.label));
+    document.getElementById('place-change-btn').style.display = '';
+  } else {
+    _say(`We heard “${found.name}”. Our best guess is`, _shortLabel(found.place.label),
+         'If that’s not it, pick another below or type the town.');
+    _showResults([found.place, ...found.alternatives]);
+    _openChange(false);
+  }
 }
 
 // Build the map for step 2. Tapping it drops (or moves) the pin, so a place
@@ -387,22 +407,29 @@ function _initMap() {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(_map);
   L.control.zoom({ position: 'bottomright' }).addTo(_map);
-  _map.on('click', e => { _pinFromSearch = false; _setPin([e.latlng.lat, e.latlng.lng], null); });
+  _map.on('click', e => _handPin(e.latlng));
   setTimeout(() => _map && _map.invalidateSize(), 0);
 }
 
-// Put the pin at a spot. A zoom level also moves the map there.
-function _setPin(ll, zoom) {
+/** The person put the pin down (or dragged it) themselves. */
+function _handPin(latlng) {
+  const typed = document.getElementById('place-search-input').value.trim();
+  const label = (_pin && _pin.label) || typed || 'Pinned on the map';
+  _setPin({ lat: latlng.lat, lng: latlng.lng, label, kind: '' }, null, 'Exact spot');
+  _say('The pin is where you put it.', '', 'Press “Looks right” to keep it there.');
+}
+
+/** Put the pin at a place. A zoom level also moves the map there. */
+function _setPin(place, zoom, precision) {
   if (!_map) return;
+  const ll = [place.lat, place.lng];
   if (_marker) _marker.setLatLng(ll);
   else {
     _marker = L.marker(ll, { draggable: true }).addTo(_map);
-    _marker.on('dragend', () => { _pinFromSearch = false; });
+    _marker.on('dragend', () => _handPin(_marker.getLatLng()));
   }
   if (zoom != null) _map.setView(ll, zoom);
-  document.getElementById('placer-map-hint').style.display = 'block';
-  document.getElementById('placer-map-tip').style.display = 'none';
-  document.getElementById('precision-section').style.display = 'block';
+  _pin = { label: place.label, precision: precision || precisionFor(place.kind) };
   document.getElementById('placer-confirm-place').disabled = false;
 }
 
@@ -413,100 +440,63 @@ function _setStatus(msg, isError = false) {
   el.classList.toggle('is-error', !!isError);
 }
 
-// How far to zoom in for each kind of match.
-function _zoomFor(r) {
-  const t = r.addresstype || r.type || '';
-  if (/country/.test(t)) return 5;
-  if (/state|region|province/.test(t)) return 7;
-  if (/county/.test(t)) return 10;
-  if (/city|town|municipality/.test(t)) return 12;
-  if (/village|hamlet|suburb|neighbourhood|quarter/.test(t)) return 14;
-  return 16;
-}
-
-async function _lookup(q) {
-  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=5&q=' + encodeURIComponent(q);
-  const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-  if (!res.ok) throw new Error('lookup failed: ' + res.status);
-  return res.json();
-}
-
-let _searchSeq = 0;           // only the newest search may update the screen
-let _pinFromSearch = false;   // false once the pin was placed or moved by hand
-
-async function _geocode(query) {
-  _initMap();
-  const seq     = ++_searchSeq;
-  const btn     = document.getElementById('place-search-btn');
-  const input   = document.getElementById('place-search-input');
+/** List matches to choose from; the first is already pinned. */
+function _showResults(list) {
   const results = document.getElementById('place-results');
-  if (!btn || !input || !results) return;
-  results.style.display = 'none';
-  results.innerHTML = '';
+  if (!results) return;
+  if (list.length < 2) { results.style.display = 'none'; results.innerHTML = ''; return; }
+  results.innerHTML = '<div class="t-label" style="margin-bottom:6px">More than one match. Which one?</div>' +
+    list.map((r, i) => `<button type="button" class="${i === 0 ? 'on' : ''}">${_esc(r.label)}</button>`).join('');
+  results.style.display = '';
+  results.querySelectorAll('button').forEach((b, i) => {
+    b.onclick = () => {
+      _setPin(list[i], zoomFor(list[i].kind));
+      _say('We put this story at', _shortLabel(list[i].label));
+      results.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    };
+  });
+}
+
+let _searchSeq = 0;   // only the newest search may update the screen
+let _pin = null;      // { label, precision } for the pin now on the map
+
+/** A search the person typed. */
+async function _search(query) {
+  const seq = ++_searchSeq;
+  const btn = document.getElementById('place-search-btn');
+  if (!btn) return;
+  _selectedPlace = null;
+  _showResults([]);
   btn.disabled = true;
   btn.textContent = 'Searching…';
   _setStatus(`Looking for “${query}”…`);
-
   try {
-    // Spoken place names often carry an extra word or two ("Grand Rapids
-    // Michigan with"). If nothing matches, drop words off the end and retry.
-    const words = query.split(/\s+/);
-    let data = [], used = query;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (attempt) await new Promise(r => setTimeout(r, 1100));   // the lookup service allows one request a second
-      if (seq !== _searchSeq) return;
-      data = await _lookup(used);
-      if (seq !== _searchSeq) return;
-      if (data.length || words.length < 2) break;
-      words.pop();
-      used = words.join(' ').replace(/,$/, '');
-    }
-
-    if (!data.length) {
-      // A pin left over from an earlier search belongs to a different place.
-      // A pin the user put down by hand stays, and takes the typed name.
-      if (_marker && _pinFromSearch) {
-        _map.removeLayer(_marker);
-        _marker = null;
-        document.getElementById('placer-confirm-place').disabled = true;
-        document.getElementById('precision-section').style.display = 'none';
-        document.getElementById('placer-map-hint').style.display = 'none';
-        document.getElementById('placer-map-tip').style.display = '';
-      }
+    const { results } = await findPlace(query, _nearbyHint());
+    if (seq !== _searchSeq) return;
+    if (!results.length) {
       _setStatus(`We couldn’t find “${query}”. Try the town and state, like “Dayton, Ohio”, or tap the map to place the pin yourself.`, true);
       return;
     }
-
-    if (used !== query) input.value = used;
-    const pick = (r) => {
-      _pinFromSearch = true;
-      _setPin([parseFloat(r.lat), parseFloat(r.lon)], _zoomFor(r));
-      _setStatus(`Found: ${r.display_name}`);
-      results.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.place === String(r.place_id)));
-    };
-    if (data.length > 1) {
-      results.innerHTML = '<div class="t-label" style="margin-bottom:6px">More than one match. Which one?</div>' +
-        data.map(r => `<button type="button" data-place="${_esc(r.place_id)}">${_esc(r.display_name)}</button>`).join('');
-      results.style.display = '';
-      results.querySelectorAll('button').forEach((b, i) => { b.onclick = () => pick(data[i]); });
-    }
-    pick(data[0]);
+    _setStatus('');
+    _setPin(results[0], zoomFor(results[0].kind));
+    _say('We put this story at', _shortLabel(results[0].label));
+    _showResults(results);
   } catch (err) {
     if (seq === _searchSeq) {
       _setStatus('The search didn’t go through. Check your connection and try again, or tap the map to place the pin yourself.', true);
     }
   } finally {
-    if (seq === _searchSeq) { btn.disabled = false; btn.textContent = 'Search'; }
+    if (seq === _searchSeq && document.getElementById('place-search-btn')) { btn.disabled = false; btn.textContent = 'Search'; }
   }
 }
 
-function _finish(place) {
+function _finish(place, unchanged = false) {
   // Start from the stored copy: reorderStory() changed orderIndex there, and
   // saving our in-memory copy would put the story back at the end.
   _story = {
     ...(getStoryById(_story.id) || _story),
     place,
-    placeQuote: place ? (_selectedPlace?.quote || null) : null,
+    placeQuote: unchanged ? (_story.placeQuote ?? null) : (place ? (_selectedPlace?.quote || null) : null),
     ageAtEvent: _story.ageAtEvent ?? null,
   };
   saveStory(_story);

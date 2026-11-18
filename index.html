@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css?v=20261118b">
+  <link rel="stylesheet" href="css/style.css?v=20261118c">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -114,7 +114,7 @@
             <span class="about-step-icon about-step-icon-slate"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-pin"/></svg></span>
             <p class="v2-overline">Step 2</p>
             <h3 class="about-step-title">Place</h3>
-            <p class="about-step-body">Search for where the story happened and drop a pin. It suggests places it heard, but nothing is placed without you.</p>
+            <p class="about-step-body">It listens for where the story happened and drops the pin for you. If it gets it wrong, anyone can change the place later.</p>
           </article>
           <article class="v2-card about-step">
             <span class="about-step-icon about-step-icon-sage"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-map"/></svg></span>
@@ -142,7 +142,7 @@
             <h3><svg class="ico md" viewBox="0 0 24 24"><use href="#i-up"/></svg>Leaves this device</h3>
             <ul>
               <li>While you record, your browser may send audio to its own speech service (such as Google) to write the live transcript.</li>
-              <li>When you search for a place, the place name goes to OpenStreetMap to find it on the map.</li>
+              <li>When a story is saved, the place names heard in it go to two OpenStreetMap lookup services (Nominatim and Photon) to find them on the map. Nothing else from the story is sent.</li>
               <li>Map pictures are loaded from OpenStreetMap as you look around the map.</li>
             </ul>
           </article>
@@ -484,7 +484,7 @@
     <div id="record-state-ready">
       <div class="pad" style="margin-top:8px">
         <div class="card question-card">
-          <div class="t-over" style="color:var(--rust-dark)">A question to start</div>
+          <div class="t-over" id="record-question-over" style="color:var(--rust-dark)">A question to start</div>
           <p class="t-h2" id="record-question-text" style="margin-top:8px">Loading…</p>
           <p class="t-caption" style="margin-top:8px">What did it feel like? Who else was there?</p>
           <div class="row gap8" style="margin-top:14px">
@@ -776,7 +776,7 @@
       While you speak, your browser may also send audio to a speech service (such as Google) to produce a live transcript. This is handled by the browser itself, not by Story Atlas.
     </p>
     <p class="modal-sub" style="margin-top:12px;line-height:1.6">
-      If you add a place later, the place name you type or confirm will be sent to <strong>OpenStreetMap Nominatim</strong> to look up coordinates.
+      When you save a story, the place names heard in it are sent to <strong>OpenStreetMap lookup services</strong> (Nominatim and Photon) to find them on the map.
     </p>
     <div class="modal-actions">
       <button class="btn btn-primary btn-block" id="consent-accept-btn" style="font-size:17px;height:56px">
@@ -804,7 +804,7 @@
 </div>
 <script>
 (function () {
-  var FILES = ['app','storage','audiostore','backup','interview','recorder','transcriber','placer','player','map'];
+  var FILES = ['app','storage','audiostore','backup','interview','recorder','transcriber','placer','geocode','player','map'];
   var healing = false;
   function heal() {
     if (window.__saBooted || healing) return;
@@ -813,7 +813,7 @@
     try { tried = !!sessionStorage.getItem('sa_heal'); sessionStorage.setItem('sa_heal', '1'); } catch (e) { tried = true; }
     if (tried) { document.getElementById('boot-fail').style.display = ''; return; }
     var gets = FILES.map(function (f) {
-      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261118b' : '');
+      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261118c' : '');
       return fetch(url, { cache: 'reload' }).catch(function () {});
     });
     gets.push(fetch(location.pathname, { cache: 'reload' }).catch(function () {}));
@@ -823,7 +823,7 @@
   window.addEventListener('unhandledrejection', heal);
 })();
 </script>
-<script type="module" src="js/app.js?v=20261118b"></script>
+<script type="module" src="js/app.js?v=20261118c"></script>
 
 </body>
 </html>

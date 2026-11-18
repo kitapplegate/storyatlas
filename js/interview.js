@@ -12,6 +12,8 @@
  * Function signatures stay identical — swap the internals only.
  */
 
+import { detectPlaces } from './transcriber.js';
+
 // ── Question bank ─────────────────────────────────────────────────────────────
 // Open-ended, non-leading questions spanning a full life.
 const QUESTION_BANK = [
@@ -65,6 +67,97 @@ function pickNextQuestion(answeredIds = []) {
 
 function pickFollowUp() {
   return FOLLOW_UP_PROMPTS[Math.floor(Math.random() * FOLLOW_UP_PROMPTS.length)];
+}
+
+// ── Follow-up questions from earlier stories ──────────────────────────────────
+// A good interviewer listens. These questions are built from what the
+// storyteller has already said: the places, the people and the subjects in
+// their saved stories. Everything runs in the browser; nothing is sent anywhere.
+//
+// watsonx integration point: swap the body of followUpQuestions() for a model
+// call that is given the transcripts and returns questions in the same shape.
+
+const PEOPLE = 'mother|mom|mum|mama|father|dad|papa|brother|sister|grandmother|grandma|grandfather|grandpa|' +
+  'wife|husband|son|daughter|uncle|aunt|cousin|friend|teacher|boss|neighbor|neighbour|coach|sergeant|captain|chief';
+const PEOPLE_RE = new RegExp(
+  `\\bmy\\s+(?:(?:older|younger|little|big|best|late|first|oldest|youngest|baby|twin)\\s+)?(${PEOPLE})\\b(?:\\s+([A-Z][a-z]+))?`, 'gi');
+
+// A subject heard in the story, and a question that opens it up.
+const TOPICS = [
+  [/\b(school|classroom|recess|grade|elementary|kindergarten)\b/i, 'What was an ordinary school day like for you back then?'],
+  [/\b(job|worked|working|factory|office|shop|shift|hired|paycheck)\b/i, 'What was a normal day at that job like, from start to finish?'],
+  [/\b(army|navy|marines|air force|coast guard|stationed|enlisted|boot camp|deployed|the service|the war)\b/i, 'What do you remember about your first days in the service?'],
+  [/\b(married|wedding|engaged|proposed)\b/i, 'How did the two of you first meet?'],
+  [/\b(house|home|farm|apartment|porch|kitchen|backyard|yard)\b/i, 'Walk me through that home. What would I see if I came in the front door?'],
+  [/\b(car|truck|drove|driving|bus|train|boat|ship|plane|flew)\b/i, 'Tell me about getting from place to place in those days. What did you ride in?'],
+  [/\b(game|played|playing|team|baseball|football|basketball|fishing|hunting|swimming)\b/i, 'Who did you play with, and what did you like best about it?'],
+  [/\b(dinner|supper|cooked|cooking|baked|recipe|meal|ate)\b/i, 'What was on the table at a meal you still remember?'],
+  [/\b(church|sunday|christmas|easter|thanksgiving|holiday|birthday)\b/i, 'How did your family spend that day when you were young?'],
+  [/\b(moved|moving|left home|new town|new city)\b/i, 'What was it like on the first day in the new place?'],
+  [/\b(scared|afraid|frightened|worried|trouble|accident|hospital|sick)\b/i, 'How did things turn out in the end, and who helped you through it?'],
+];
+
+const _SHE = /^(mother|mom|mum|mama|sister|grandmother|grandma|wife|daughter|aunt)$/;
+const _HE  = /^(father|dad|papa|brother|grandfather|grandpa|husband|son|uncle)$/;
+const _pronoun = who => _SHE.test(who) ? 'was she' : _HE.test(who) ? 'was he' : 'were they';
+
+/**
+ * Questions that follow on from stories already told.
+ * @param {object[]} stories  saved stories (any order)
+ * @param {string[]} [asked]  question texts already used, so nothing is asked twice
+ * @returns {{ text: string, from: string }[]}  most recent story first; `from` is that story's title
+ */
+function followUpQuestions(stories, asked = []) {
+  const done = new Set(asked.map(q => (q || '').trim().toLowerCase()));
+  const seen = new Set();
+  const out  = [];
+  const recent = [...(stories || [])]
+    .filter(s => (s.transcriptLines || []).length)
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+    .slice(0, 4);
+
+  for (const story of recent) {
+    const text  = story.transcriptLines.join(' ');
+    const title = story.title || 'your last story';
+    const mine  = [];
+
+    // People: "my brother Tom" → ask about Tom.
+    PEOPLE_RE.lastIndex = 0;
+    const people = new Set();
+    let m;
+    while ((m = PEOPLE_RE.exec(text)) !== null && people.size < 2) {
+      const who = m[1].toLowerCase(), name = m[2] && /^[A-Z]/.test(m[2]) && !/^(And|But|Was|Who|He|She|They|We|I)$/.test(m[2]) ? m[2] : '';
+      if (people.has(who)) continue;
+      people.add(who);
+      mine.push(name
+        ? `You mentioned your ${who} ${name}. Tell me a story about the two of you.`
+        : `You talked about your ${who}. What ${_pronoun(who)} like, and what did the two of you do together?`);
+    }
+
+    // The place: the pinned name is the corrected one, so prefer it.
+    const pinned = story.place && story.place.label ? story.place.label.split(',')[0].trim() : '';
+    const heard  = pinned ? [pinned] : detectPlaces(text).slice(0, 1).map(p => p.name);
+    heard.forEach(place => {
+      if (place && place !== 'Pinned on the map') mine.push(`You mentioned ${place}. What do you remember most about it?`);
+    });
+
+    // Subjects that came up.
+    let topics = 0;
+    for (const [re, question] of TOPICS) {
+      if (topics < 2 && re.test(text)) { mine.push(question); topics++; }
+    }
+
+    // And always: what came next.
+    mine.push(`After “${title}”, what happened next?`);
+
+    for (const q of mine) {
+      const key = q.toLowerCase();
+      if (done.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ text: q, from: story.title || '' });
+    }
+  }
+  return out;
 }
 
 // ── Ordering question ─────────────────────────────────────────────────────────
@@ -168,6 +261,7 @@ export {
   QUESTION_BANK,
   pickNextQuestion,
   pickFollowUp,
+  followUpQuestions,
   detectPlace,
   buildOrderingQuestion,
   VoiceCapture,
