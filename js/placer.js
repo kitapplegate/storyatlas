@@ -7,8 +7,8 @@
  * Renders into #page-placer. Calls back when complete.
  */
 
-import { getStoriesSorted, getStoryById, reorderStory, saveStory } from './storage.js';
-import { autoPlace, findPlace, zoomFor, precisionFor } from './geocode.js';
+import { getStoriesSorted, getStoryById, reorderStory, saveStory, getStoryteller } from './storage.js';
+import { autoPlace, findPlace, searchExact, zoomFor, precisionFor } from './geocode.js';
 
 let _story    = null;   // the story being placed
 let _step     = 1;      // 1 or 2
@@ -101,7 +101,7 @@ function _renderStep1() {
       <button class="icon-btn" id="placer-back" aria-label="Back">
         <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
       </button>
-      <span class="t-label grow" style="font-size:18px">Place this story</span>
+      <span class="t-label grow" style="font-size:18px">When it happened</span>
       <span class="t-caption" style="padding-right:8px">Step 1 of 2</span>
     </header>
     <div class="steps" style="padding:0 24px; margin-top:4px">
@@ -253,7 +253,7 @@ function _renderStep2() {
       <button class="icon-btn" id="placer2-back" aria-label="Back">
         <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
       </button>
-      <span class="t-label grow" style="font-size:18px">${_placeOnly ? 'Change the place' : 'Place this story'}</span>
+      <span class="t-label grow" style="font-size:18px">${_placeOnly ? 'Change the place' : 'Where it happened'}</span>
       <span class="t-caption" style="padding-right:8px">${stepLabel}</span>
     </header>
     ${_placeOnly || !_sorted.length ? '' : `
@@ -365,13 +365,29 @@ function _nearbyHint() {
   return placed.length ? { lat: placed[0].place.lat, lng: placed[0].place.lng } : null;
 }
 
+/**
+ * With no pinned story yet, the town the storyteller grew up in (from "About
+ * the storyteller") is the next best idea of where to look for a misheard name.
+ */
+const _hometownSpots = new Map();
+async function _hometownHint() {
+  const town = String(getStoryteller().about?.hometown || '').trim();
+  if (!town) return null;
+  if (!_hometownSpots.has(town)) {
+    const hits = await searchExact(town).catch(() => []);
+    if (!hits.length) return null;
+    _hometownSpots.set(town, { lat: hits[0].lat, lng: hits[0].lng });
+  }
+  return _hometownSpots.get(town);
+}
+
 /** Find the place from what was said and drop the pin, with nothing to press. */
 async function _autoFind() {
   const seq = ++_searchSeq;
   _say('Finding the place on the map…');
   let found = null;
   try {
-    found = await autoPlace(_detectedPlaces.map(p => p.name), _nearbyHint());
+    found = await autoPlace(_detectedPlaces.map(p => p.name), _nearbyHint() || await _hometownHint());
   } catch (e) { /* treated as not found */ }
   if (seq !== _searchSeq || !document.getElementById('place-answer')) return;
 

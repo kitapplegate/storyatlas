@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css?v=20261118c">
+  <link rel="stylesheet" href="css/style.css?v=20261118d">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -483,10 +483,11 @@
     <!-- 2a: Ready state -->
     <div id="record-state-ready">
       <div class="pad" style="margin-top:8px">
+        <p class="record-hello" id="record-hello"></p>
         <div class="card question-card">
-          <div class="t-over" id="record-question-over" style="color:var(--rust-dark)">A question to start</div>
+          <div class="t-over" id="record-question-over" style="color:var(--rust-dark)">An easy one to start</div>
           <p class="t-h2" id="record-question-text" style="margin-top:8px">Loading…</p>
-          <p class="t-caption" style="margin-top:8px">What did it feel like? Who else was there?</p>
+          <p class="record-hint" id="record-question-hint"></p>
           <div class="row gap8" style="margin-top:14px">
             <button class="btn btn-speak btn-sm" id="btn-read-aloud" aria-label="Read question aloud" title="Read question aloud">
               <svg class="ico sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>
@@ -494,7 +495,7 @@
             </button>
             <button class="btn btn-secondary btn-sm" id="btn-skip-q">
               <svg class="ico sm" viewBox="0 0 24 24"><path d="M6 5l9 7-9 7zM18 5v14"/></svg>
-              Skip
+              Ask me something else
             </button>
             <button class="btn btn-secondary btn-sm" id="btn-write-q">
               <svg class="ico sm" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></svg>
@@ -520,6 +521,7 @@
         </button>
         <p class="t-h2" style="text-align:center;margin-top:32px">Record a story</p>
         <p class="t-body soft" style="text-align:center;margin-top:4px">Tap once to start. Take your time.</p>
+        <p class="record-pass">You can pass on any question. Only tell what you want to tell.</p>
       </div>
     </div>
 
@@ -740,6 +742,7 @@
       <input type="text" id="manage-name-input" maxlength="60" autocomplete="off">
       <button class="btn btn-secondary" id="manage-name-save">Save name</button>
     </div>
+    <button class="btn btn-secondary btn-block manage-about-btn" id="manage-about">About the storyteller and subjects to avoid</button>
     <div class="manage-danger">
       <h3>Start over or remove</h3>
       <p>These can't be undone. Download a copy first if you might want the stories back.</p>
@@ -749,6 +752,43 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="manage-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- About the storyteller: a short survey before the first interview -->
+<div class="modal-overlay" id="about-st-modal-overlay">
+  <div class="modal modal-wide about-st-modal" role="dialog" aria-modal="true" aria-labelledby="about-st-title">
+    <h2 id="about-st-title">A little about the storyteller</h2>
+    <p class="modal-sub">Five quick answers help Story Atlas ask better questions. Leave blank anything you don't know. Your answers are saved on this device only; the town is looked up on the map like any other place name.</p>
+    <div class="about-st-grid">
+      <div>
+        <label for="about-st-hometown">Where did they grow up?</label>
+        <input type="text" id="about-st-hometown" placeholder="e.g. Stillwater, Oklahoma" maxlength="80" autocomplete="off">
+      </div>
+      <div>
+        <label for="about-st-born">About what year were they born?</label>
+        <input type="text" id="about-st-born" inputmode="numeric" placeholder="e.g. 1948" maxlength="4" autocomplete="off">
+      </div>
+      <div>
+        <label for="about-st-work">What work did they do?</label>
+        <input type="text" id="about-st-work" placeholder="e.g. nursing, farming, teaching" maxlength="80" autocomplete="off">
+      </div>
+      <div>
+        <label for="about-st-service">Military service, if any</label>
+        <input type="text" id="about-st-service" placeholder="e.g. Navy" maxlength="40" autocomplete="off">
+      </div>
+    </div>
+    <fieldset class="about-st-avoid">
+      <legend>Is there anything we should not ask about?</legend>
+      <p>Tick a subject and the interviewer will leave it alone. They can still bring it up themselves.</p>
+      <div id="about-st-avoid"></div>
+      <label for="about-st-note">Anything else to steer clear of</label>
+      <input type="text" id="about-st-note" placeholder="Names or words, separated by commas" maxlength="160" autocomplete="off">
+    </fieldset>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="about-st-skip">Skip for now</button>
+      <button class="btn btn-primary" id="about-st-save">Save and continue</button>
     </div>
   </div>
 </div>
@@ -813,7 +853,7 @@
     try { tried = !!sessionStorage.getItem('sa_heal'); sessionStorage.setItem('sa_heal', '1'); } catch (e) { tried = true; }
     if (tried) { document.getElementById('boot-fail').style.display = ''; return; }
     var gets = FILES.map(function (f) {
-      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261118c' : '');
+      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261118d' : '');
       return fetch(url, { cache: 'reload' }).catch(function () {});
     });
     gets.push(fetch(location.pathname, { cache: 'reload' }).catch(function () {}));
@@ -823,7 +863,7 @@
   window.addEventListener('unhandledrejection', heal);
 })();
 </script>
-<script type="module" src="js/app.js?v=20261118c"></script>
+<script type="module" src="js/app.js?v=20261118d"></script>
 
 </body>
 </html>

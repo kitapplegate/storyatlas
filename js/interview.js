@@ -15,24 +15,131 @@
 import { detectPlaces } from './transcriber.js';
 
 // ── Question bank ─────────────────────────────────────────────────────────────
-// Open-ended, non-leading questions spanning a full life.
+// The way a person would run the interview: start with small, concrete things
+// that are easy to answer, and only reach for the big questions once the
+// storyteller is talking.
+//
+//   tier 1  warm-ups. One clear memory, nothing to weigh up.
+//   tier 2  fuller stories, still about one particular thing.
+//   tier 3  looking back. Only asked after a few stories are told.
+//
+// `topic` lets the family switch a subject off (see SENSITIVE_TOPICS).
+// `hint` is the nudge shown under the question for when someone is stuck.
 const QUESTION_BANK = [
-  { id: 'q_start',     era: 'Childhood',  text: "Tell me about the town or neighbourhood you grew up in — what did the streets look like when you stepped outside as a child?" },
-  { id: 'q_earliest',  era: 'Childhood',  text: "What's the earliest memory you can picture clearly? Take me back to that moment." },
-  { id: 'q_place0',    era: 'Childhood',  text: "What did the place you grew up look like? What did it smell like?" },
-  { id: 'q_school',    era: 'Childhood',  text: "Tell me about a teacher or a person who shaped you when you were young." },
-  { id: 'q_turning',   era: 'Young Life', text: "Was there a moment when you felt your life take a new direction? What happened?" },
-  { id: 'q_work1',     era: 'Work',       text: "What drew you to your field of work? Was there a particular moment you knew?" },
-  { id: 'q_abroad',    era: 'Work',       text: "Tell me about arriving somewhere new — a country or city — for the very first time." },
-  { id: 'q_challenge', era: 'Work',       text: "What's a challenge you faced that you're proud of having got through?" },
-  { id: 'q_people',    era: 'People',     text: "Who is someone you met along the way who you still think about?" },
-  { id: 'q_family1',   era: 'Family',     text: "Tell me about a moment with your family that you want to make sure is remembered." },
-  { id: 'q_place1',    era: 'Place',      text: "Is there a place in the world that feels like it belongs to you? Tell me about it." },
-  { id: 'q_surprise',  era: 'Reflection', text: "What surprised you about the way your life turned out?" },
-  { id: 'q_advice',    era: 'Reflection', text: "What do you know now that you wish someone had told you when you were starting out?" },
-  { id: 'q_object',    era: 'Memory',     text: "Is there an object you own that carries a story? Tell me about it." },
-  { id: 'q_free',      era: 'Open',       text: "Is there something you've wanted to say that no one has ever quite asked about?" },
+  { id: 'w_kitchen',  tier: 1, topic: 'home',     text: 'Picture the kitchen in the house where you grew up. What did it look like, and what was usually cooking?', hint: 'Start small: the table, the stove, who was standing at it.' },
+  { id: 'w_games',    tier: 1, topic: 'play',     text: 'What games did you play outside as a kid, and who played with you?', hint: 'Names help: the kids on your street, a brother or sister, a dog.' },
+  { id: 'w_firstjob', tier: 1, topic: 'work',     text: 'What was the first job you ever got paid for? What did it pay?', hint: 'A paper route, babysitting and farm chores all count.' },
+  { id: 'w_car',      tier: 1, topic: 'travel',   text: 'Tell me about the first car you remember, yours or your family’s.', hint: 'What color was it? Where did it take you?' },
+  { id: 'w_food',     tier: 1, topic: 'home',     text: 'What was your favorite thing to eat growing up, and who made it?', hint: 'Think of a birthday, a Sunday, or coming home from school.' },
+  { id: 'w_school',   tier: 1, topic: 'school',   text: 'What was the name of your first school, and how did you get there each morning?', hint: 'Did you walk? Who went with you?' },
+  { id: 'w_music',    tier: 1, topic: 'play',     text: 'What music did you love when you were a teenager, and where did you listen to it?', hint: 'A radio, a record player, a dance hall, a car.' },
+  { id: 'w_street',   tier: 1, topic: 'home',     text: 'Describe the street you lived on as a child. Who lived next door?', hint: 'Walk out the front door in your mind and look both ways.' },
+  { id: 'w_saturday', tier: 1, topic: 'play',     text: 'What did a Saturday look like when you were about ten years old?', hint: 'From waking up to supper. Chores count too.' },
+
+  { id: 'm_friend',   tier: 2, topic: 'people',   text: 'Who was your best friend growing up? Tell me about something the two of you did together.', hint: 'One afternoon is enough. What were you up to?' },
+  { id: 'm_lefthome', tier: 2, topic: 'travel',   text: 'Tell me about the day you first left home. Where were you headed?', hint: 'Who saw you off? What did you take with you?' },
+  { id: 'm_met',      tier: 2, topic: 'marriage', text: 'Tell me about the day you met the person you married.', hint: 'Where were you? What did you notice first?' },
+  { id: 'm_house',    tier: 2, topic: 'home',     text: 'Think of the home you lived in the longest. Walk me through it, room by room.', hint: 'Start at the front door.' },
+  { id: 'm_trip',     tier: 2, topic: 'travel',   text: 'What is the best trip you ever took? Who went with you?', hint: 'How did you get there, and what do you still picture?' },
+  { id: 'm_holiday',  tier: 2, topic: 'family',   text: 'Pick one holiday at your house that you remember well. What happened that day?', hint: 'Who was at the table? What was the fuss about?' },
+  { id: 'm_cowork',   tier: 2, topic: 'work',     text: 'Tell me about a boss or someone you worked with that you still remember.', hint: 'What did they say or do that stuck with you?' },
+  { id: 'm_ownplace', tier: 2, topic: 'home',     text: 'What was the first place you lived on your own like?', hint: 'The rent, the furniture, the neighbors.' },
+  { id: 'm_made',     tier: 2, topic: 'work',     text: 'Tell me about something you built, fixed or made with your own hands.', hint: 'Who was it for? Is it still around?' },
+  { id: 'm_child',    tier: 2, topic: 'family',   text: 'Tell me about a child in your life when they were small: your own, a niece or nephew, a grandchild.', hint: 'One thing they said or did that the family still talks about.' },
+  { id: 'm_teacher',  tier: 2, topic: 'school',   text: 'Tell me about a teacher or a grown-up who looked out for you when you were young.', hint: 'What did they do that you still remember?' },
+
+  { id: 'r_proud',    tier: 3, topic: 'reflect',  text: 'What is something you are proud of that people might not know about?', hint: 'It does not have to be big.' },
+  { id: 'r_gone',     tier: 3, topic: 'reflect',  text: 'Is there a place that is gone now that you would like people to remember? What was there?', hint: 'A store, a farm, a ballpark, a whole street.' },
+  { id: 'r_advice',   tier: 3, topic: 'reflect',  text: 'What do you know now that you wish someone had told you at twenty?', hint: 'Think of one time it would have helped.' },
+  { id: 'r_know',     tier: 3, topic: 'reflect',  text: 'What would you like the people who come after you to know about your life?', hint: 'Say it the way you would say it to a grandchild.' },
 ];
+
+// Subjects a family can ask the interviewer to leave alone. The keys are saved
+// with the storyteller (about.avoid) and matched against question topics and,
+// through `words`, against the wording of any question.
+const SENSITIVE_TOPICS = [
+  { key: 'service',  label: 'Military service or war',       words: /\b(army|navy|marines?|air force|coast guard|military|the service|served|war|combat|deployed|stationed|boot camp|sergeant|captain)\b/i },
+  { key: 'loss',     label: 'The death of someone close',    words: /\b(died|death|passed away|funeral|late (husband|wife|son|daughter|mother|father|brother|sister))\b/i },
+  { key: 'marriage', label: 'Marriage or divorce',           words: /\b(married|marriage|wedding|husband|wife|divorce|engaged|proposed)\b/i },
+  { key: 'health',   label: 'Illness or hospital stays',     words: /\b(sick|illness|hospital|cancer|accident|surgery|doctor)\b/i },
+  { key: 'family',   label: 'Parents, children or family',   words: /\b(mother|mom|mum|mama|father|dad|papa|brother|sister|son|daughter|children|child|family|grandmother|grandma|grandfather|grandpa)\b/i },
+];
+
+// A story that touches something painful. The interviewer does not press on
+// these: no "what happened next?", no digging for detail.
+const HARD_RE = /\b(died|dying|death|passed away|funeral|killed|buried|cancer|stroke|suicide|divorced?|miscarriage|abused?|lost (my|our|his|her|the baby)|wounded|shot|drowned)\b/i;
+
+/** True when a question should not be asked for this storyteller. */
+function _blocked(text, topic, about) {
+  const avoid = (about && about.avoid) || [];
+  if (topic && avoid.includes(topic)) return true;
+  for (const t of SENSITIVE_TOPICS) {
+    if (avoid.includes(t.key) && t.words.test(text)) return true;
+  }
+  // Anything the family typed in: plain words, separated by commas.
+  const extra = String((about && about.avoidNote) || '').toLowerCase().split(/[,;\n]+/).map(w => w.trim()).filter(w => w.length > 2);
+  const low = text.toLowerCase();
+  return extra.some(w => low.includes(w));
+}
+
+/** Questions made from what the family said about the storyteller beforehand. */
+function _personalQuestions(about) {
+  const a = about || {}, out = [];
+  const town = String(a.hometown || '').trim();
+  const work = String(a.work || '').trim();
+  const svc  = String(a.service || '').trim();
+  const born = parseInt(a.born, 10);
+  if (town) out.push({ id: 'p_town', tier: 1, topic: 'home', text: `You grew up in ${town}. What did your street look like when you stepped out the front door?`, hint: 'Who lived next door? Where did the kids go to play?' });
+  if (born > 1900 && born < 2020) {
+    const decade = Math.floor((born + 10) / 10) * 10;
+    out.push({ id: 'p_decade', tier: 1, topic: 'play', text: `You were a kid in the ${decade}s. What did you do for fun back then?`, hint: 'A game, a radio or TV show, a place you went on Saturdays.' });
+  }
+  if (work) out.push({ id: 'p_work', tier: 2, topic: 'work', text: `I hear your work was ${work}. How did you get started in it?`, hint: 'Your first day is a good place to begin.' });
+  if (svc)  out.push({ id: 'p_service', tier: 2, topic: 'service', text: `You served in the ${svc}. Where were you when you signed up, and what did your family say?`, hint: 'Only tell what you want to tell.' });
+  return out;
+}
+
+const _shuffle = (list, rand) => {
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+};
+
+/**
+ * Line up the questions for one sitting.
+ *  - First sitting: easy warm-ups, starting with anything we know about them.
+ *  - Later sittings: follow-ups on the stories already told come first.
+ *  - Looking-back questions wait until three stories are saved.
+ *  - Nothing already answered is asked again; switched-off subjects are left out.
+ *
+ * @param {{stories?: object[], about?: object, rand?: () => number}} opts
+ * @returns {{ text: string, hint: string, from: string, label: string }[]}
+ */
+function buildQuestionQueue({ stories = [], about = null, rand = Math.random } = {}) {
+  const told   = stories.filter(s => (s.transcriptLines || []).length || s.question);
+  const asked  = told.map(s => (s.question || '').trim().toLowerCase()).filter(Boolean);
+  const fresh  = q => !asked.includes(q.text.toLowerCase()) && !_blocked(q.text + ' ' + (q.hint || ''), q.topic, about);
+  const first  = told.length === 0;
+  const shape  = (q, label) => ({ text: q.text, hint: q.hint || '', from: '', label });
+
+  const personal = _personalQuestions(about).filter(fresh);
+  const tier = n => _shuffle(QUESTION_BANK.filter(q => q.tier === n).filter(fresh), rand);
+  const follow = first ? [] : followUpQuestions(stories, asked, about)
+    .map(f => ({ ...f, hint: 'Take your time. The small details are the good part.', label: `Following up on “${f.from}”` }));
+
+  const easyLabel = first ? 'An easy one to start' : 'Your next question';
+  const queue = [
+    ...follow.slice(0, 4),
+    ...personal.filter(q => q.tier === 1).map(q => shape(q, easyLabel)),
+    ...tier(1).map(q => shape(q, easyLabel)),
+    ...personal.filter(q => q.tier === 2).map(q => shape(q, 'Your next question')),
+    ...tier(2).map(q => shape(q, 'Your next question')),
+    ...(told.length >= 3 ? tier(3).map(q => shape(q, 'Looking back')) : []),
+    ...follow.slice(4),
+  ];
+  // Never hand back nothing, even if every subject was switched off.
+  return queue.length ? queue : [{ text: 'Tell me about a day you would like to live over again.', hint: 'Where were you, and who was with you?', from: '', label: 'Your next question' }];
+}
 
 const FOLLOW_UP_PROMPTS = [
   "What did it feel like in that moment?",
@@ -94,8 +201,9 @@ const TOPICS = [
   [/\b(dinner|supper|cooked|cooking|baked|recipe|meal|ate)\b/i, 'What was on the table at a meal you still remember?'],
   [/\b(church|sunday|christmas|easter|thanksgiving|holiday|birthday)\b/i, 'How did your family spend that day when you were young?'],
   [/\b(moved|moving|left home|new town|new city)\b/i, 'What was it like on the first day in the new place?'],
-  [/\b(scared|afraid|frightened|worried|trouble|accident|hospital|sick)\b/i, 'How did things turn out in the end, and who helped you through it?'],
 ];
+// (There is deliberately no follow-up for fear, illness or accidents: the
+// interviewer does not go looking for painful things. See HARD_RE.)
 
 const _SHE = /^(mother|mom|mum|mama|sister|grandmother|grandma|wife|daughter|aunt)$/;
 const _HE  = /^(father|dad|papa|brother|grandfather|grandpa|husband|son|uncle)$/;
@@ -105,9 +213,10 @@ const _pronoun = who => _SHE.test(who) ? 'was she' : _HE.test(who) ? 'was he' : 
  * Questions that follow on from stories already told.
  * @param {object[]} stories  saved stories (any order)
  * @param {string[]} [asked]  question texts already used, so nothing is asked twice
+ * @param {object} [about]    what the family said beforehand, including subjects to leave alone
  * @returns {{ text: string, from: string }[]}  most recent story first; `from` is that story's title
  */
-function followUpQuestions(stories, asked = []) {
+function followUpQuestions(stories, asked = [], about = null) {
   const done = new Set(asked.map(q => (q || '').trim().toLowerCase()));
   const seen = new Set();
   const out  = [];
@@ -120,6 +229,10 @@ function followUpQuestions(stories, asked = []) {
     const text  = story.transcriptLines.join(' ');
     const title = story.title || 'your last story';
     const mine  = [];
+    // A painful story: ask only gently about the people in it, and move on.
+    const hard  = HARD_RE.test(text);
+    const avoid = (about && about.avoid) || [];
+    if (hard && (avoid.includes('loss') || avoid.includes('health'))) continue;
 
     // People: "my brother Tom" → ask about Tom.
     PEOPLE_RE.lastIndex = 0;
@@ -129,9 +242,12 @@ function followUpQuestions(stories, asked = []) {
       const who = m[1].toLowerCase(), name = m[2] && /^[A-Z]/.test(m[2]) && !/^(And|But|Was|Who|He|She|They|We|I)$/.test(m[2]) ? m[2] : '';
       if (people.has(who)) continue;
       people.add(who);
-      mine.push(name
+      if (hard) mine.push(`You talked about your ${who}${name ? ' ' + name : ''}. What is a happy memory you have of the two of you?`);
+      else mine.push(name
         ? `You mentioned your ${who} ${name}. Tell me a story about the two of you.`
-        : `You talked about your ${who}. What ${_pronoun(who)} like, and what did the two of you do together?`);
+        : (_SHE.test(who) || _HE.test(who))
+          ? `You talked about your ${who}. What ${_pronoun(who)} like, and what did the two of you do together?`
+          : `You talked about your ${who}. What do you remember most about them?`);
     }
 
     // The place: the pinned name is the corrected one, so prefer it.
@@ -144,15 +260,15 @@ function followUpQuestions(stories, asked = []) {
     // Subjects that came up.
     let topics = 0;
     for (const [re, question] of TOPICS) {
-      if (topics < 2 && re.test(text)) { mine.push(question); topics++; }
+      if (!hard && topics < 2 && re.test(text)) { mine.push(question); topics++; }
     }
 
-    // And always: what came next.
-    mine.push(`After “${title}”, what happened next?`);
+    // And what came next, unless the story was a painful one.
+    if (!hard) mine.push(`After “${title}”, what happened next?`);
 
     for (const q of mine) {
       const key = q.toLowerCase();
-      if (done.has(key) || seen.has(key)) continue;
+      if (done.has(key) || seen.has(key) || _blocked(q, '', about)) continue;
       seen.add(key);
       out.push({ text: q, from: story.title || '' });
     }
@@ -262,6 +378,8 @@ export {
   pickNextQuestion,
   pickFollowUp,
   followUpQuestions,
+  buildQuestionQueue,
+  SENSITIVE_TOPICS,
   detectPlace,
   buildOrderingQuestion,
   VoiceCapture,

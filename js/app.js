@@ -13,7 +13,7 @@ import {
 import { putAudio, getAudio, deleteAudio, requestPersistence } from './audiostore.js';
 import { downloadBackup, restoreBackup } from './backup.js';
 
-import { speakQuestion, stopSpeaking, followUpQuestions } from './interview.js';
+import { speakQuestion, stopSpeaking, buildQuestionQueue, SENSITIVE_TOPICS } from './interview.js';
 
 import { Recorder, renderWaveform } from './recorder.js';
 import { transcribe, detectPlaces, splitIntoLines } from './transcriber.js';
@@ -65,25 +65,8 @@ const DEMO_STORYTELLER = { name: 'Grandpa Joe' };
 function _getStories()     { return _demoMode ? DEMO_STORIES    : getStoriesSorted(); }
 function _getStoryteller() { return _demoMode ? DEMO_STORYTELLER : getStoryteller(); }
 
-// Question bank (15 open-ended prompts)
-const QUESTIONS = [
-  'Tell me about the town or neighbourhood you grew up in — what did the streets look like when you stepped outside as a child?',
-  'Tell me about the house you grew up in.',
-  'What is your earliest memory of school?',
-  'Tell me about a journey or trip that changed something for you.',
-  'Tell me about the work you did that you are most proud of.',
-  'What was the neighbourhood like when you first moved somewhere new?',
-  'Tell me about the people who shaped who you became.',
-  'Tell me about a celebration or gathering you still remember clearly.',
-  'What was happening in the world when you were young, and how did you feel it?',
-  'Tell me about a time you had to make a hard decision.',
-  'Tell me about someone you loved and what they were like.',
-  'Tell me about a place that no longer exists but that you remember well.',
-  'Tell me about the food, music, or smells that take you back to a particular time.',
-  'What is something you made, built, or created that you are proud of?',
-  'Tell me what you would want the people who come after you to know about your life.',
-];
-let _questionQueue = [];   // [{ text, from }] — `from` is the story a follow-up came from
+// The questions themselves live in interview.js (buildQuestionQueue).
+let _questionQueue = [];   // [{ text, hint, from, label }] for this sitting
 
 // ── Init ─────────────────────────────────────────────────────────
 
@@ -273,8 +256,10 @@ function _bindNav() {
 
 function _navRecord() {
   if (_demoMode) { _showToast('Exit the demo to record your own stories.'); return; }
-  if (!getStoryteller().name) { _promptForName(() => _showPage('record')); }
-  else { _showPage('record'); }
+  if (!getStoryteller().name) { _promptForName(() => _navRecord()); return; }
+  // Before the very first interview, ask the family a few things about the storyteller.
+  if (!getStoryteller().about && getStoriesSorted().length === 0) { _openAbout(() => _showPage('record')); return; }
+  _showPage('record');
 }
 
 /** Landing page: one button per storyteller (device profile). */
@@ -396,6 +381,13 @@ function _openManage() {
     _showToast('Name saved.');
   };
   $('manage-download').onclick = () => $('backup-download-btn').click();
+  $('manage-about').onclick = () => {
+    close();
+    _openAbout(() => {
+      _showToast('Saved. The questions will use this from now on.');
+      if (_currentPage === 'record') _buildQuestionQueue();
+    });
+  };
   $('manage-erase').onclick = () => {
     const n = getStoriesSorted().length;
     _confirm({
@@ -846,28 +838,82 @@ function _nextQuestion() {
     readBtn.setAttribute('aria-label', 'Read question aloud');
   }
 
-  if (!_questionQueue.length) _questionQueue = _shuffled(QUESTIONS).map(text => ({ text, from: '' }));
+  if (!_questionQueue.length) _questionQueue = _freshQueue();
   const next = _questionQueue.shift();
   _currentQuestion = next.text;
   $('record-question-text').textContent = _currentQuestion;
   $('record-question-compact').textContent = _currentQuestion;
-  $('record-question-over').textContent = next.from ? `Following up on “${next.from}”` : 'A question to start';
+  $('record-question-over').textContent = next.label || 'Your next question';
+  $('record-question-hint').textContent = next.hint || '';
 }
 
-const _shuffled = (list) => [...list].sort(() => Math.random() - 0.5);
+const _freshQueue = () => buildQuestionQueue({
+  stories: _demoMode ? [] : getStoriesSorted(),
+  about:   _demoMode ? null : getStoryteller().about,
+});
 
 /**
- * Line up the questions for this sitting. The interviewer remembers: it starts
- * with follow-ups drawn from the stories already told (newest first), never
- * repeats a question that has been answered, then falls back to the question bank.
+ * Line up the questions for this sitting (see buildQuestionQueue): easy
+ * warm-ups first for a new storyteller, follow-ups on earlier stories after
+ * that, and nothing the family asked to leave alone.
  */
 function _buildQuestionQueue() {
-  const stories = _demoMode ? [] : getStoriesSorted();
-  const asked   = stories.map(s => s.question).filter(Boolean);
-  const follow  = followUpQuestions(stories, asked);
-  const bank    = _shuffled(QUESTIONS.filter(q => !asked.includes(q))).map(text => ({ text, from: '' }));
-  _questionQueue = [...follow.slice(0, 5), ...bank, ...follow.slice(5)];
+  _questionQueue = _freshQueue();
   _nextQuestion();
+  _renderInterviewerHello();
+}
+
+/** The interviewer's greeting above the question: who it is talking to, and what it remembers. */
+function _renderInterviewerHello() {
+  const el = $('record-hello');
+  if (!el) return;
+  const name    = (getStoryteller().name || '').trim();
+  const stories = _demoMode ? [] : getStoriesSorted();
+  const newest  = [...stories].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))[0];
+  el.textContent = newest
+    ? `Welcome back${name ? ', ' + name : ''}. Last time you told me about “${newest.title || 'your last story'}”.`
+    : `Hello${name ? ', ' + name : ''}. I’ll ask one question at a time. There are no wrong answers, and a few minutes is plenty.`;
+}
+
+// ── "About the storyteller": a few answers before the first interview ──────────
+// Filled in by the family member or volunteer. It makes the first questions
+// personal and tells the interviewer which subjects to leave alone. Saved with
+// the storyteller on this device only.
+
+function _openAbout(after) {
+  const st    = getStoryteller();
+  const about = st.about || {};
+  const close = _openModal('about-st-modal-overlay');
+  $('about-st-title').textContent = st.name ? `A little about ${st.name}` : 'A little about the storyteller';
+  $('about-st-hometown').value = about.hometown || '';
+  $('about-st-born').value     = about.born || '';
+  $('about-st-work').value     = about.work || '';
+  $('about-st-service').value  = about.service || '';
+  $('about-st-note').value     = about.avoidNote || '';
+  $('about-st-avoid').innerHTML = SENSITIVE_TOPICS.map(t => `
+    <label class="about-st-check">
+      <input type="checkbox" value="${t.key}" ${(about.avoid || []).includes(t.key) ? 'checked' : ''}>
+      <span>${t.label}</span>
+    </label>`).join('');
+
+  const done = (save) => {
+    if (save) {
+      saveStoryteller({ about: {
+        hometown:  $('about-st-hometown').value.trim(),
+        born:      $('about-st-born').value.trim(),
+        work:      $('about-st-work').value.trim(),
+        service:   $('about-st-service').value.trim(),
+        avoid:     [...$('about-st-avoid').querySelectorAll('input:checked')].map(i => i.value),
+        avoidNote: $('about-st-note').value.trim(),
+      } });
+    } else if (!st.about) {
+      saveStoryteller({ about: {} });   // skipped: don't ask again, it stays under "Manage this atlas"
+    }
+    close();
+    if (after) after();
+  };
+  $('about-st-save').onclick = () => done(true);
+  $('about-st-skip').onclick = () => done(false);
 }
 
 function _showRecordReady() {
