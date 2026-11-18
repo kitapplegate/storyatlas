@@ -107,6 +107,59 @@ function createProfile(name) {
   return id;
 }
 
+/** Rename a profile (and the storyteller inside it). Returns false if it didn't save. */
+function renameProfile(id, name) {
+  const idx = _loadProfileIndex();
+  const p   = idx.profiles.find(x => x.id === id);
+  name = (name || '').trim();
+  if (!p || !name) return false;
+  p.name = name;
+  const data = _readJson(p.key) || { storyteller: { name: '', dob: '' }, stories: [] };
+  data.storyteller = { ...data.storyteller, name };
+  try { localStorage.setItem(p.key, JSON.stringify(data)); } catch (e) { return false; }
+  return _saveProfileIndex(idx);
+}
+
+/**
+ * Delete recordings from IndexedDB, except any that a profile other than
+ * `exceptKey` still uses (a backup restored into two profiles shares story ids).
+ */
+function _dropAudio(ids, exceptKey) {
+  const keep = new Set();
+  _loadProfileIndex().profiles.forEach(p => {
+    if (p.key === exceptKey) return;
+    (_readJson(p.key)?.stories || []).forEach(s => keep.add(s.id));
+  });
+  ids.filter(id => !keep.has(id)).forEach(id => { deleteAudio(id).catch(() => {}); });
+}
+
+/**
+ * Delete a profile with all its stories and recordings. If it was the open
+ * profile, nobody is signed in afterwards. Returns false if it didn't save.
+ */
+function deleteProfile(id) {
+  const idx = _loadProfileIndex();
+  const p   = idx.profiles.find(x => x.id === id);
+  if (!p) return false;
+  const ids = (_readJson(p.key)?.stories || []).map(s => s.id);
+  idx.profiles = idx.profiles.filter(x => x.id !== id);
+  if (idx.activeId === id) idx.activeId = null;
+  if (!_saveProfileIndex(idx)) return false;
+  try { localStorage.removeItem(p.key); } catch (e) { /* nothing more to do */ }
+  _dropAudio(ids, p.key);
+  return true;
+}
+
+/** Erase every story and recording in the open profile. The profile itself stays. */
+function clearStories() {
+  const data = loadData();
+  const ids  = data.stories.map(s => s.id);
+  data.stories = [];
+  if (!saveData(data)) return false;
+  _dropAudio(ids, _activeKey());
+  return true;
+}
+
 function loadData() {
   try {
     const raw = localStorage.getItem(_activeKey());
@@ -154,7 +207,7 @@ function deleteStory(id) {
   const data = loadData();
   data.stories = data.stories.filter(s => s.id !== id);
   saveData(data);
-  deleteAudio(id).catch(() => {});
+  _dropAudio([id], _activeKey());
 }
 
 /**
@@ -263,5 +316,6 @@ export {
   getStoriesSorted, reorderStory, migrateAudioToIndexedDB,
   getStoryteller, saveStoryteller,
   getProfiles, getActiveProfileId, setActiveProfile, createProfile,
+  renameProfile, deleteProfile, clearStories,
   generateId, formatDuration, assignEra,
 };

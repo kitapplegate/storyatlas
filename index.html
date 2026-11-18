@@ -8,7 +8,7 @@
   <title>Story Atlas</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-  <link rel="stylesheet" href="css/style.css?v=20261118a">
+  <link rel="stylesheet" href="css/style.css?v=20261118b">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -68,6 +68,10 @@
           <button id="avatar-menu-switch">
             <svg class="ico sm2" viewBox="0 0 24 24"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>
             Switch storyteller
+          </button>
+          <button id="avatar-menu-manage">
+            <svg class="ico sm2" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+            Manage this atlas
           </button>
           <button id="avatar-menu-signout">
             <svg class="ico sm2" viewBox="0 0 24 24"><use href="#i-signout"/></svg>
@@ -199,6 +203,11 @@
           <div class="si-profiles">
             <h2 class="si-profiles-h2" id="profile-heading">Who's telling stories?</h2>
             <div class="si-profile-list" id="profile-list" role="list"></div>
+            <div class="si-profile-tools" id="profile-tools" style="display:none">
+              <button class="v2-link" id="profile-show-all" style="display:none"></button>
+              <span class="grow"></span>
+              <button class="v2-link" id="profile-manage-btn">Remove a storyteller</button>
+            </div>
             <form class="si-profile-add" id="profile-add-form" autocomplete="off">
               <label class="si-profile-add-label" for="profile-add-input" id="profile-add-label">Add a storyteller</label>
               <div class="si-profile-add-row">
@@ -260,6 +269,71 @@
           </figure>
         </div>
       </div>
+
+      <!-- What it is -->
+      <section class="lp-section" aria-labelledby="lp-how-h">
+        <p class="v2-overline about-overline">How it works</p>
+        <h2 class="lp-h2" id="lp-how-h">Sit down together. Story Atlas does the interview.</h2>
+        <div class="about-steps">
+          <article class="v2-card about-step">
+            <span class="about-step-icon"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-mic"/></svg></span>
+            <p class="v2-overline">Step 1</p>
+            <h3 class="about-step-title">Record</h3>
+            <p class="about-step-body">It asks a question and can read it aloud. Tap the microphone and let them talk. It writes down what they say.</p>
+          </article>
+          <article class="v2-card about-step">
+            <span class="about-step-icon about-step-icon-slate"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-pin"/></svg></span>
+            <p class="v2-overline">Step 2</p>
+            <h3 class="about-step-title">Place</h3>
+            <p class="about-step-body">Say when it happened and where. Each story gets its spot in their life and a pin on the map.</p>
+          </article>
+          <article class="v2-card about-step">
+            <span class="about-step-icon about-step-icon-sage"><svg class="ico md" viewBox="0 0 24 24"><use href="#i-map"/></svg></span>
+            <p class="v2-overline">Step 3</p>
+            <h3 class="about-step-title">Listen</h3>
+            <p class="about-step-body">Open the map and tap a pin to hear the story in their own voice, or go through a whole life in order.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- Privacy -->
+      <section class="lp-section" aria-labelledby="lp-privacy-h">
+        <p class="v2-overline about-overline">Privacy</p>
+        <h2 class="lp-h2" id="lp-privacy-h">Your family's stories stay with your family.</h2>
+        <div class="lp-facts">
+          <article class="lp-fact">
+            <svg class="ico md" viewBox="0 0 24 24"><use href="#i-lock"/></svg>
+            <h3>No account, no password</h3>
+            <p>You don't sign up for anything. A storyteller is just a name on your own phone or computer.</p>
+          </article>
+          <article class="lp-fact">
+            <svg class="ico md" viewBox="0 0 24 24"><use href="#i-device"/></svg>
+            <h3>Kept on your device</h3>
+            <p>Recordings, transcripts and map pins are stored in your browser. We have no server holding them, and nobody else can see them.</p>
+          </article>
+          <article class="lp-fact">
+            <svg class="ico md" viewBox="0 0 24 24"><path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 20h14"/></svg>
+            <h3>Yours to keep or delete</h3>
+            <p>Download a copy of everything whenever you like, and delete a story or a whole storyteller at any time.</p>
+          </article>
+        </div>
+        <p class="lp-more"><button class="v2-link js-about-link">Read exactly what stays on your device and what leaves it</button></p>
+      </section>
+
+      <!-- Closing call to action -->
+      <section class="lp-cta">
+        <h2 class="lp-h2">Start with one story.</h2>
+        <p>Ten minutes and one question is enough for the first one.</p>
+        <div class="lp-cta-actions">
+          <button class="btn btn-primary" id="lp-start-btn">Start an atlas</button>
+          <button class="btn btn-secondary" id="lp-demo-btn">Try the demo first</button>
+        </div>
+      </section>
+
+      <footer class="lp-footer">
+        <span>Story Atlas</span>
+        <button class="v2-link js-about-link">About &amp; privacy</button>
+      </footer>
     </main>
   </section>
 
@@ -651,7 +725,42 @@
     <div class="modal-actions">
       <button class="btn btn-primary" id="edit-story-save">Save changes</button>
       <button class="btn btn-ghost" id="edit-story-cancel">Cancel</button>
-      <button id="edit-story-delete" style="background:none;border:none;cursor:pointer;font-size:14px;color:#c0392b;margin-top:8px;width:100%;padding:6px 0;">Delete this story</button>
+    </div>
+    <button class="modal-danger-link" id="edit-story-delete">Delete this story</button>
+  </div>
+</div>
+
+<!-- Manage atlas modal -->
+<div class="modal-overlay" id="manage-modal-overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="manage-modal-title">
+    <h2 id="manage-modal-title">Manage this atlas</h2>
+    <p class="manage-usage" id="manage-usage"></p>
+    <label for="manage-name-input">Storyteller's name</label>
+    <div class="manage-name-row">
+      <input type="text" id="manage-name-input" maxlength="60" autocomplete="off">
+      <button class="btn btn-secondary" id="manage-name-save">Save name</button>
+    </div>
+    <div class="manage-danger">
+      <h3>Start over or remove</h3>
+      <p>These can't be undone. Download a copy first if you might want the stories back.</p>
+      <button class="btn btn-secondary btn-block" id="manage-download">Download a copy first</button>
+      <button class="btn btn-danger-outline btn-block" id="manage-erase">Erase all stories and start over</button>
+      <button class="btn btn-danger-outline btn-block" id="manage-delete">Delete this storyteller</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="manage-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal (deleting things) -->
+<div class="modal-overlay" id="confirm-modal-overlay" style="z-index:210">
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-body">
+    <h2 id="confirm-modal-title"></h2>
+    <p class="confirm-body" id="confirm-modal-body"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="confirm-cancel">Keep it</button>
+      <button class="btn btn-danger" id="confirm-ok"></button>
     </div>
   </div>
 </div>
@@ -704,7 +813,7 @@
     try { tried = !!sessionStorage.getItem('sa_heal'); sessionStorage.setItem('sa_heal', '1'); } catch (e) { tried = true; }
     if (tried) { document.getElementById('boot-fail').style.display = ''; return; }
     var gets = FILES.map(function (f) {
-      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261118a' : '');
+      var url = 'js/' + f + '.js' + (f === 'app' ? '?v=20261118b' : '');
       return fetch(url, { cache: 'reload' }).catch(function () {});
     });
     gets.push(fetch(location.pathname, { cache: 'reload' }).catch(function () {}));
@@ -714,7 +823,7 @@
   window.addEventListener('unhandledrejection', heal);
 })();
 </script>
-<script type="module" src="js/app.js?v=20261118a"></script>
+<script type="module" src="js/app.js?v=20261118b"></script>
 
 </body>
 </html>

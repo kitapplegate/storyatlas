@@ -7,6 +7,7 @@ import {
   getStoriesSorted, getStoryById, saveStory, deleteStory,
   getStoryteller, saveStoryteller, migrateAudioToIndexedDB,
   getProfiles, getActiveProfileId, setActiveProfile, createProfile,
+  renameProfile, deleteProfile, clearStories,
   generateId, formatDuration, assignEra,
 } from './storage.js';
 import { putAudio, getAudio, deleteAudio, requestPersistence } from './audiostore.js';
@@ -36,6 +37,9 @@ let _currentStory    = null;
 let _listenMapReady  = false;
 let _currentQuestion = null;
 let _demoMode        = false;   // true when exploring the sample atlas
+let _landingManage   = false;   // landing page: showing Delete buttons on storytellers
+let _landingShowAll  = false;   // landing page: showing every storyteller, not just the first few
+const LANDING_MAX    = 3;
 
 // "Signed in" means a device profile is active (see storage.js). No passwords.
 const _isSignedIn = () => !!getActiveProfileId();
@@ -137,10 +141,19 @@ function _bindSignIn() {
     _enterProfile(id);
   };
   // Try the demo
-  $('demo-btn').onclick = () => {
+  $('demo-btn').onclick = $('lp-demo-btn').onclick = () => {
     _demoMode = true;
     _showPage('home');
   };
+  // Bottom-of-page "Start an atlas": back up to the name box
+  $('lp-start-btn').onclick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    $('profile-add-input').focus({ preventScroll: true });
+  };
+  // Storyteller list tools
+  $('profile-manage-btn').onclick = () => { _landingManage = !_landingManage; _renderLanding(); };
+  $('profile-show-all').onclick   = () => { _landingShowAll = !_landingShowAll; _renderLanding(); };
+  $('avatar-menu-manage').onclick = () => { $('avatar-menu').style.display = 'none'; _openManage(); };
   // Avatar → toggle menu
   $('topbar-avatar').onclick = (e) => {
     e.stopPropagation();
@@ -271,20 +284,134 @@ function _renderLanding() {
   const activeId = getActiveProfileId();
   $('profile-heading').textContent = profiles.length ? "Who's telling stories?" : 'Start an atlas';
   $('profile-add-label').textContent = profiles.length ? 'Add another storyteller' : "Who's telling the stories?";
-  list.innerHTML = profiles.map(p => {
+  if (!profiles.length) _landingManage = false;
+
+  // The open storyteller goes first; a long list is cut short until asked for.
+  const ordered = [...profiles].sort((a, b) => (b.id === activeId) - (a.id === activeId));
+  const shown   = _landingShowAll || _landingManage ? ordered : ordered.slice(0, LANDING_MAX);
+  list.innerHTML = shown.map(p => {
     const initials = p.name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
     const count    = `${p.storyCount} stor${p.storyCount === 1 ? 'y' : 'ies'}`;
     const current  = p.id === activeId;
-    return `<button class="si-profile${current ? ' is-current' : ''}" role="listitem" data-profile-id="${_esc(p.id)}"${current ? ' aria-current="true"' : ''}>
-      <span class="si-profile-dot" aria-hidden="true">${_esc(initials)}</span>
-      <span class="si-profile-text"><b>${_esc(p.name)}</b><small>${count}</small></span>
-      ${current ? '<span class="si-profile-badge">Open now</span>' : ''}
-      <svg class="si-profile-chev" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chev"/></svg>
-    </button>`;
+    return `<div class="si-profile-row" role="listitem">
+      <button class="si-profile${current ? ' is-current' : ''}" data-profile-id="${_esc(p.id)}"${current ? ' aria-current="true"' : ''}>
+        <span class="si-profile-dot" aria-hidden="true">${_esc(initials)}</span>
+        <span class="si-profile-text"><b>${_esc(p.name)}</b><small>${count}</small></span>
+        ${current ? '<span class="si-profile-badge">Open now</span>' : ''}
+        ${_landingManage ? '' : '<svg class="si-profile-chev" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chev"/></svg>'}
+      </button>
+      ${_landingManage ? `<button class="si-profile-del" data-del-id="${_esc(p.id)}" aria-label="Delete ${_esc(p.name)}">Delete</button>` : ''}
+    </div>`;
   }).join('');
   list.querySelectorAll('.si-profile').forEach(btn => {
     btn.onclick = () => _enterProfile(btn.dataset.profileId);
   });
+  list.querySelectorAll('.si-profile-del').forEach(btn => {
+    btn.onclick = () => _confirmDeleteProfile(btn.dataset.delId);
+  });
+
+  $('profile-tools').style.display = profiles.length ? '' : 'none';
+  $('profile-manage-btn').textContent = _landingManage ? 'Done' : 'Remove a storyteller';
+  const more = $('profile-show-all');
+  more.style.display = (profiles.length > LANDING_MAX && !_landingManage) ? '' : 'none';
+  more.textContent   = _landingShowAll ? 'Show fewer' : `Show all ${profiles.length}`;
+}
+
+// ── Deleting things ──────────────────────────────────────────────
+
+/** Ask before deleting. `onOk` runs only if the person confirms. */
+function _confirm({ title, body, ok, onOk }) {
+  $('confirm-modal-title').textContent = title;
+  $('confirm-modal-body').textContent  = body;
+  $('confirm-ok').textContent          = ok;
+  const close = _openModal('confirm-modal-overlay');
+  $('confirm-cancel').onclick = close;
+  $('confirm-ok').onclick     = () => { close(); onOk(); };
+  $('confirm-cancel').focus();   // the safe choice is the default
+}
+
+function _confirmDeleteStory(story, after) {
+  _confirm({
+    title: `Delete “${story.title || 'Untitled'}”?`,
+    body:  'The recording and its written words will be removed from this device. This can’t be undone.',
+    ok:    'Delete story',
+    onOk:  () => {
+      deleteStory(story.id);
+      if (_currentStory && _currentStory.id === story.id) _currentStory = null;
+      if (after) after();
+      _refreshAll();
+      _showToast('Story deleted.');
+    },
+  });
+}
+
+function _confirmDeleteProfile(id, after) {
+  const p = getProfiles().find(x => x.id === id);
+  if (!p) return;
+  const n = p.storyCount;
+  _confirm({
+    title: `Delete ${p.name}?`,
+    body:  (n ? `${p.name}’s ${n} stor${n === 1 ? 'y' : 'ies'} and recordings` : `${p.name}’s atlas`) +
+           ' will be removed from this device. This can’t be undone.',
+    ok:    'Delete storyteller',
+    onOk:  () => {
+      const wasOpen = getActiveProfileId() === id;
+      if (!deleteProfile(id)) { _showToast('Could not delete. Please try again.'); return; }
+      if (wasOpen) _currentStory = null;
+      if (after) after();
+      _showPage('signin', _currentPage !== 'signin');
+      _showToast(`${p.name} was deleted.`);
+    },
+  });
+}
+
+/** "Manage this atlas": rename, see what is stored, start over, or delete. */
+function _openManage() {
+  const id = getActiveProfileId();
+  if (!id || _demoMode) return;
+  const close = _openModal('manage-modal-overlay');
+  const input = $('manage-name-input');
+  const usage = $('manage-usage');
+  const fill  = () => {
+    const st = getStoryteller();
+    const n  = getStoriesSorted().length;
+    input.value = st.name || '';
+    usage.textContent = `${n} stor${n === 1 ? 'y' : 'ies'} saved on this device.`;
+    $('manage-erase').disabled = $('manage-download').disabled = n === 0;
+    // How much room everything in this browser is taking, when the browser will say.
+    navigator.storage?.estimate?.().then(({ usage: used }) => {
+      if (used == null) return;
+      const mb = used / 1048576;
+      usage.textContent += ` Story Atlas is using ${mb < 1 ? 'less than 1' : 'about ' + Math.round(mb)} MB here.`;
+    }).catch(() => {});
+  };
+  fill();
+
+  $('manage-close').onclick = close;
+  $('manage-name-save').onclick = () => {
+    const name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    if (!renameProfile(id, name)) { _showToast('Could not save the name.'); return; }
+    _showPage(_currentPage, false);   // top bar and page pick up the new name
+    _showToast('Name saved.');
+  };
+  $('manage-download').onclick = () => $('backup-download-btn').click();
+  $('manage-erase').onclick = () => {
+    const n = getStoriesSorted().length;
+    _confirm({
+      title: 'Erase all stories?',
+      body:  `All ${n} stor${n === 1 ? 'y' : 'ies'} and recordings will be removed from this device. The storyteller stays, ready to start again. This can’t be undone.`,
+      ok:    'Erase all stories',
+      onOk:  () => {
+        if (!clearStories()) { _showToast('Could not erase. Please try again.'); return; }
+        _currentStory = null;
+        close();
+        _showPage('home', _currentPage !== 'home');
+        _showToast('All stories erased.');
+      },
+    });
+  };
+  $('manage-delete').onclick = () => _confirmDeleteProfile(id, close);
 }
 
 function _showPage(name, push = true) {
@@ -331,6 +458,8 @@ function _showPage(name, push = true) {
     window.scrollTo(0, 0);
   }
   $('avatar-menu-switch').style.display = onEntry ? 'none' : '';
+  $('avatar-menu-manage').style.display = (_isSignedIn() && !_demoMode) ? '' : 'none';
+  if (!onEntry) { _landingManage = false; _landingShowAll = false; }
 
   // Update avatar initials
   if (showAvatar) {
@@ -634,13 +763,7 @@ function _openEditModal(id) {
 
   const deleteBtn = $('edit-story-delete');
   if (deleteBtn) {
-    deleteBtn.onclick = () => {
-      if (!confirm(`Delete "${story.title || 'Untitled'}"? This cannot be undone.`)) return;
-      deleteStory(story.id);
-      close();
-      _refreshAll();
-      _showToast('Story deleted.');
-    };
+    deleteBtn.onclick = () => _confirmDeleteStory(story, close);
   }
 }
 
@@ -992,6 +1115,7 @@ function _listenSheetHtml(story, idx, total) {
       ${_timelineStripHtml(_getStories(), story.id)}
       ${_scrubberHtml('mobile', story)}
       ${_audioControlsHtml('mobile')}
+      ${_storyActionsHtml(story)}
       <div class="listen-transcript" id="transcript-mobile">
         ${lines.map(l => `<p class="transcript-line">${_esc(l)}</p>`).join('')}
         ${!lines.length && story.transcriptStatus === 'transcribing'
@@ -1028,6 +1152,7 @@ function _listenDesktopHtml(story, idx, total) {
       ${_scrubberHtml('desktop', story)}
       ${_audioControlsHtml('desktop')}
     </div>
+    ${_storyActionsHtml(story)}
     <div class="t-over" style="margin-top:22px;display:flex;align-items:center;gap:10px">
       Transcript
       <span style="flex:1;height:1px;background:var(--line)"></span>
@@ -1250,8 +1375,35 @@ function _openModal(overlayId, onClose) {
 }
 
 function _refreshAll() {
-  if (_currentPage === 'home') _renderHome();
+  if (_currentPage === 'home')    _renderHome();
+  if (_currentPage === 'stories') _renderStoriesPage();
+  if (_currentPage === 'listen') {
+    // Show the edited story again, or the first one left if it was deleted.
+    _currentStory = _currentStory && !_demoMode ? getStoryById(_currentStory.id) : _currentStory;
+    _showPage('listen', false);
+  }
 }
+
+/** Edit / Delete buttons shown with a story on the map page. */
+function _storyActionsHtml(story) {
+  if (_demoMode) return '';
+  return `
+    <div class="story-actions">
+      <button class="story-action" data-story-action="edit" data-story-id="${_esc(story.id)}">${_penSvg()}Edit</button>
+      <button class="story-action story-action-danger" data-story-action="delete" data-story-id="${_esc(story.id)}">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>Delete
+      </button>
+    </div>`;
+}
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-story-action]');
+  if (!btn) return;
+  const story = getStoryById(btn.dataset.storyId);
+  if (!story) return;
+  if (btn.dataset.storyAction === 'edit') _openEditModal(story.id);
+  else _confirmDeleteStory(story);
+});
 
 function _showToast(msg) {
   const t = $('toast');

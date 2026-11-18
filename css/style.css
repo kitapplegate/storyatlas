@@ -1592,3 +1592,92 @@ body.page-landing .bottom-nav { display: none; }
   #page-placer > div { max-width: 680px; margin-left: auto; margin-right: auto; }
   .placer-footer { left: 50%; right: auto; width: min(632px, calc(100vw - 48px)); transform: translateX(-50%); }
 }
+
+/* ════════════════════════════════════════════════════════════
+   DELETING + PUBLIC LANDING PAGE (2026-11-18)
+════════════════════════════════════════════════════════════ */
+
+/* ── Danger buttons and the confirm dialog ───────────────── */
+.btn-danger { background: var(--record); color: #fff; }
+.btn-danger:hover { background: #a93523; }
+.btn-danger-outline { background: var(--paper); color: #9c2f1f; border: 1.5px solid #e0b3a9; }
+.btn-danger-outline:hover { background: #fbeeea; }
+.btn-danger-outline:disabled, .btn-secondary:disabled { opacity: .5; cursor: default; }
+.confirm-body { font-size: 17px; line-height: 26px; color: var(--ink-soft); margin: 4px 0 22px; }
+.modal-danger-link {
+  display: block; width: 100%; margin-top: 14px; padding: 10px 0; min-height: 44px;
+  background: none; border: none; border-top: 1px solid var(--line); cursor: pointer;
+  font: 600 15px var(--font-sans); color: #9c2f1f;
+}
+.modal-danger-link:hover { text-decoration: underline; }
+
+/* ── Manage this atlas ───────────────────────────────────── */
+.manage-usage { font-size: 16px; line-height: 24px; color: var(--ink-soft); margin-bottom: 18px; }
+.manage-name-row { display: flex; gap: 10px; align-items: flex-start; }
+.manage-name-row input { flex: 1; min-width: 0; }
+.manage-name-row .btn { flex: none; height: 48px; padding: 0 18px; font-size: 16px; }
+.manage-danger {
+  display: flex; flex-direction: column; gap: 10px; margin: 6px 0 18px; padding: 18px;
+  border-radius: 16px; background: var(--parchment); border: 1px solid var(--line);
+}
+.manage-danger h3 { font: 600 17px/22px var(--font-sans); }
+.manage-danger p { font-size: 15px; line-height: 22px; color: var(--ink-soft); margin-bottom: 4px; }
+.manage-danger .btn { height: 48px; font-size: 16px; }
+
+/* ── Edit / Delete on a story ────────────────────────────── */
+.story-actions { display: flex; gap: 8px; margin-top: 14px; }
+.story-action {
+  display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px;
+  border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper);
+  font: 600 15px var(--font-sans); color: var(--ink); cursor: pointer;
+}
+.story-action .ico { width: 18px; height: 18px; }
+.story-action:hover { border-color: #cdbfa8; background: var(--parchment); }
+.story-action-danger { color: #9c2f1f; }
+.story-action-danger:hover { border-color: #e0b3a9; background: #fbeeea; }
+
+/* ── Storyteller list tools (landing) ────────────────────── */
+.si-profile-row { display: flex; gap: 8px; align-items: stretch; }
+.si-profile-row .si-profile { flex: 1; min-width: 0; }
+.si-profile-del {
+  flex: none; padding: 0 16px; border-radius: 16px; border: 1.5px solid #e0b3a9;
+  background: var(--paper); color: #9c2f1f; font: 600 15px var(--font-sans); cursor: pointer;
+}
+.si-profile-del:hover { background: #fbeeea; }
+.si-profile-tools { display: flex; align-items: center; gap: 12px; margin-top: 6px; min-height: 44px; font-size: 15px; }
+.si-profile-tools .v2-link { text-decoration: underline; padding: 10px 0; }
+.si-profile-tools .grow { flex: 1; }
+
+/* ── Landing page sections ───────────────────────────────── */
+.si-layout { min-height: 0; padding-bottom: 72px; }
+.lp-section { padding: 72px 0 0; border-top: 1px solid var(--line); margin-bottom: 72px; }
+.lp-h2 { font: 500 clamp(28px,3.4vw,40px)/1.15 var(--font-serif); letter-spacing: -.01em; margin: 10px 0 28px; max-width: 22em; }
+.lp-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.lp-fact { padding: 24px; border-radius: 20px; background: var(--sage-tint); border: 1px solid #c9d3b8; }
+.lp-fact svg { color: var(--sage-deep); }
+.lp-fact h3 { font: 600 19px/25px var(--font-sans); margin: 12px 0 6px; }
+.lp-fact p { font-size: 16px; line-height: 25px; color: var(--ink-soft); }
+.lp-more { margin-top: 20px; font-size: 16px; }
+.lp-more .v2-link { text-decoration: underline; padding: 10px 0; text-align: left; }
+.lp-cta {
+  margin-bottom: 56px; padding: 48px 32px; border-radius: 24px; text-align: center;
+  background: var(--paper); border: 1px solid var(--line);
+}
+.lp-cta .lp-h2 { margin: 0 auto 8px; }
+.lp-cta p { font-size: 18px; line-height: 28px; color: var(--ink-soft); }
+.lp-cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
+.lp-footer {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 20px 0 40px; border-top: 1px solid var(--line); font-size: 15px; color: var(--ink-soft);
+}
+.lp-footer .v2-link { text-decoration: underline; padding: 10px 0; }
+@media (max-width: 720px) {
+  .lp-section { padding-top: 44px; margin-bottom: 44px; }
+  .lp-facts { grid-template-columns: 1fr; }
+  .lp-cta { padding: 32px 20px; }
+  .lp-cta-actions .btn { width: 100%; }
+  .lp-footer { padding-bottom: 28px; }
+  .manage-name-row { flex-direction: column; }
+  .manage-name-row .btn { width: 100%; }
+  .modal-overlay { padding: 16px; overflow-y: auto; }
+}
