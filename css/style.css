@@ -1565,3 +1565,30 @@ body.page-landing .bottom-nav { display: none; }
   .about-h2 { font-size: 26px; line-height: 32px; }
   .about-steps, .about-split, .about-tips-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Place step: search feedback and match list ──────────── */
+.place-status { margin-top: 10px; font-size: 16px; line-height: 23px; color: var(--ink-soft); }
+.place-status:empty { display: none; }
+.place-status.is-error {
+  padding: 12px 14px; border-radius: 12px; background: var(--rust-tint);
+  border: 1px solid #e8c9b6; color: var(--ink);
+}
+.place-results { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.place-results button {
+  text-align: left; padding: 11px 14px; min-height: 44px; border-radius: 12px;
+  border: 1.5px solid var(--line); background: var(--paper);
+  font: 500 15px/21px var(--font-sans); color: var(--ink);
+}
+.place-results button:hover { border-color: var(--rust); }
+.place-results button.on { border-color: var(--rust); background: var(--rust-tint); }
+#placer-map { cursor: crosshair; }
+/* Keep the step buttons clear of the phone tab bar, and in a readable column on wide screens. */
+.placer-footer { z-index: 5; }
+@media (max-width: 720px) {
+  .placer-footer { bottom: 88px; left: 16px; right: 16px; }
+  #page-placer { padding-bottom: 180px; }
+}
+@media (min-width: 721px) {
+  #page-placer > div { max-width: 680px; margin-left: auto; margin-right: auto; }
+  .placer-footer { left: 50%; right: auto; width: min(632px, calc(100vw - 48px)); transform: translateX(-50%); }
+}

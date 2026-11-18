@@ -257,8 +257,8 @@ function _renderStep2() {
       <h1 class="t-h1" style="font-size:30px">Where did this happen?</h1>
       <p class="t-body soft" style="margin-top:4px;font-size:17px;line-height:24px">
         ${_detectedPlaces.length > 0
-          ? 'Places we heard in the story. Pick one, then move the pin if needed.'
-          : 'Type a place name and we\'ll find it on the map.'}
+          ? 'Places we heard in the story. Tap one to find it, or type the place yourself.'
+          : 'Type a town, a street or a landmark and we\'ll find it on the map.'}
       </p>
 
       ${_detectedPlaces.length > 0 ? _renderPlaceSuggestions() : ''}
@@ -274,7 +274,11 @@ function _renderStep2() {
         </div>
       </div>
 
-      <div id="placer-map" class="map-area card" style="height:236px;margin-top:14px;border-radius:18px;display:none"></div>
+      <p id="place-search-status" class="place-status" role="status" aria-live="polite"></p>
+      <div id="place-results" class="place-results" style="display:none"></div>
+
+      <div id="placer-map" class="map-area card" style="height:236px;margin-top:14px;border-radius:18px"></div>
+      <p id="placer-map-tip" class="t-caption" style="margin-top:8px">Can't find it? Zoom in and tap the map to put the pin there yourself.</p>
       <div id="placer-map-hint" style="display:none;margin-top:6px">
         <span class="chip chip-paper" style="background:rgba(43,38,34,.82);color:var(--paper)">
           <svg class="ico sm" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg>
@@ -295,12 +299,8 @@ function _renderStep2() {
       </div>
     </div>
 
-    <div class="row gap12" style="position:fixed;left:24px;right:24px;bottom:22px">
-      <button class="btn btn-secondary" id="placer-add-place" style="padding:0 16px;display:none">
-        <svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-        Add place
-      </button>
-      <button class="btn btn-secondary grow" id="placer-skip-place">Skip — no place</button>
+    <div class="row gap12 placer-footer">
+      <button class="btn btn-secondary grow" id="placer-skip-place">Skip, no place</button>
       <button class="btn btn-primary grow" id="placer-confirm-place" disabled>Confirm place</button>
     </div>
   `;
@@ -325,12 +325,12 @@ function _renderStep2() {
   };
   document.getElementById('place-search-btn').onclick = () => {
     const val = document.getElementById('place-search-input').value.trim();
-    if (val) _geocode(val);
+    if (val) { _selectedPlace = null; _geocode(val); }
   };
   document.getElementById('place-search-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       const val = e.target.value.trim();
-      if (val) _geocode(val);
+      if (val) { _selectedPlace = null; _geocode(val); }
     }
   });
 
@@ -350,9 +350,12 @@ function _renderStep2() {
   document.getElementById('placer-confirm-place').onclick = () => {
     if (_marker) {
       const ll = _marker.getLatLng();
-      _finish({ label: document.getElementById('place-search-input').value.trim(), lat: ll.lat, lng: ll.lng, precision: _precision });
+      const label = document.getElementById('place-search-input').value.trim() || 'Pinned on the map';
+      _finish({ label, lat: ll.lat, lng: ll.lng, precision: _precision });
     }
   };
+
+  _initMap();
 }
 
 function _renderPlaceSuggestions() {
@@ -375,45 +378,125 @@ function _renderPlaceSuggestions() {
   `;
 }
 
-async function _geocode(query) {
-  const mapEl = document.getElementById('placer-map');
-  if (!mapEl) return;
-  mapEl.style.display = 'block';
-  document.getElementById('placer-map-hint').style.display = 'block';
-  document.getElementById('precision-section').style.display = 'block';
+// Build the map for step 2. Tapping it drops (or moves) the pin, so a place
+// can always be set by hand when the search can't find it.
+function _initMap() {
+  if (_map || !document.getElementById('placer-map')) return;
+  _map = L.map('placer-map', { zoomControl: false }).setView([30, -40], 2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(_map);
+  L.control.zoom({ position: 'bottomright' }).addTo(_map);
+  _map.on('click', e => { _pinFromSearch = false; _setPin([e.latlng.lat, e.latlng.lng], null); });
+  setTimeout(() => _map && _map.invalidateSize(), 0);
+}
 
-  // Init map if needed
-  if (!_map) {
-    _map = L.map('placer-map', { zoomControl: false }).setView([20, 0], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(_map);
-    L.control.zoom({ position: 'bottomright' }).addTo(_map);
+// Put the pin at a spot. A zoom level also moves the map there.
+function _setPin(ll, zoom) {
+  if (!_map) return;
+  if (_marker) _marker.setLatLng(ll);
+  else {
+    _marker = L.marker(ll, { draggable: true }).addTo(_map);
+    _marker.on('dragend', () => { _pinFromSearch = false; });
   }
+  if (zoom != null) _map.setView(ll, zoom);
+  document.getElementById('placer-map-hint').style.display = 'block';
+  document.getElementById('placer-map-tip').style.display = 'none';
+  document.getElementById('precision-section').style.display = 'block';
+  document.getElementById('placer-confirm-place').disabled = false;
+}
+
+function _setStatus(msg, isError = false) {
+  const el = document.getElementById('place-search-status');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.classList.toggle('is-error', !!isError);
+}
+
+// How far to zoom in for each kind of match.
+function _zoomFor(r) {
+  const t = r.addresstype || r.type || '';
+  if (/country/.test(t)) return 5;
+  if (/state|region|province/.test(t)) return 7;
+  if (/county/.test(t)) return 10;
+  if (/city|town|municipality/.test(t)) return 12;
+  if (/village|hamlet|suburb|neighbourhood|quarter/.test(t)) return 14;
+  return 16;
+}
+
+async function _lookup(q) {
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=5&q=' + encodeURIComponent(q);
+  const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+  if (!res.ok) throw new Error('lookup failed: ' + res.status);
+  return res.json();
+}
+
+let _searchSeq = 0;           // only the newest search may update the screen
+let _pinFromSearch = false;   // false once the pin was placed or moved by hand
+
+async function _geocode(query) {
+  _initMap();
+  const seq     = ++_searchSeq;
+  const btn     = document.getElementById('place-search-btn');
+  const input   = document.getElementById('place-search-input');
+  const results = document.getElementById('place-results');
+  if (!btn || !input || !results) return;
+  results.style.display = 'none';
+  results.innerHTML = '';
+  btn.disabled = true;
+  btn.textContent = 'Searching…';
+  _setStatus(`Looking for “${query}”…`);
 
   try {
-    const res  = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
-      headers: { 'Accept-Language': 'en' },
-    });
-    const data = await res.json();
-    if (!data.length) { _showToast('Place not found — try a different name.'); return; }
-
-    const { lat, lon, display_name } = data[0];
-    const ll = [parseFloat(lat), parseFloat(lon)];
-
-    if (_marker) _marker.setLatLng(ll);
-    else {
-      _marker = L.marker(ll, { draggable: true }).addTo(_map);
-      _marker.on('dragend', () => {
-        document.getElementById('placer-confirm-place').disabled = false;
-      });
+    // Spoken place names often carry an extra word or two ("Grand Rapids
+    // Michigan with"). If nothing matches, drop words off the end and retry.
+    const words = query.split(/\s+/);
+    let data = [], used = query;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt) await new Promise(r => setTimeout(r, 1100));   // the lookup service allows one request a second
+      if (seq !== _searchSeq) return;
+      data = await _lookup(used);
+      if (seq !== _searchSeq) return;
+      if (data.length || words.length < 2) break;
+      words.pop();
+      used = words.join(' ').replace(/,$/, '');
     }
-    _map.setView(ll, 15);
-    _selectedPlace = { name: display_name, quote: '' };
-    document.getElementById('placer-confirm-place').disabled = false;
-    document.getElementById('placer-add-place').style.display = 'inline-flex';
+
+    if (!data.length) {
+      // A pin left over from an earlier search belongs to a different place.
+      // A pin the user put down by hand stays, and takes the typed name.
+      if (_marker && _pinFromSearch) {
+        _map.removeLayer(_marker);
+        _marker = null;
+        document.getElementById('placer-confirm-place').disabled = true;
+        document.getElementById('precision-section').style.display = 'none';
+        document.getElementById('placer-map-hint').style.display = 'none';
+        document.getElementById('placer-map-tip').style.display = '';
+      }
+      _setStatus(`We couldn’t find “${query}”. Try the town and state, like “Dayton, Ohio”, or tap the map to place the pin yourself.`, true);
+      return;
+    }
+
+    if (used !== query) input.value = used;
+    const pick = (r) => {
+      _pinFromSearch = true;
+      _setPin([parseFloat(r.lat), parseFloat(r.lon)], _zoomFor(r));
+      _setStatus(`Found: ${r.display_name}`);
+      results.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.place === String(r.place_id)));
+    };
+    if (data.length > 1) {
+      results.innerHTML = '<div class="t-label" style="margin-bottom:6px">More than one match. Which one?</div>' +
+        data.map(r => `<button type="button" data-place="${_esc(r.place_id)}">${_esc(r.display_name)}</button>`).join('');
+      results.style.display = '';
+      results.querySelectorAll('button').forEach((b, i) => { b.onclick = () => pick(data[i]); });
+    }
+    pick(data[0]);
   } catch (err) {
-    _showToast('Could not search — check your connection.');
+    if (seq === _searchSeq) {
+      _setStatus('The search didn’t go through. Check your connection and try again, or tap the map to place the pin yourself.', true);
+    }
+  } finally {
+    if (seq === _searchSeq) { btn.disabled = false; btn.textContent = 'Search'; }
   }
 }
 
